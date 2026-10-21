@@ -81,6 +81,8 @@ impl Database {
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN expires_at REAL DEFAULT NULL;", []);
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN request_limit INTEGER DEFAULT 0;", []);
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN limit_type TEXT DEFAULT 'tokens';", []);
+        let _ = writer.execute("ALTER TABLE accounts ADD COLUMN is_banned INTEGER DEFAULT 0;", []);
+        let _ = writer.execute("ALTER TABLE accounts ADD COLUMN ban_reason TEXT DEFAULT NULL;", []);
 
         // 2. Пул параллельных читателей (4 подключения)
         let num_readers = 4;
@@ -121,7 +123,8 @@ impl Database {
             let mut stmt = conn.prepare(
                 r#"
                 SELECT id, email, refresh_token, access_token, expires_at, quota_json,
-                       gemini_remaining, claude_remaining, last_quota_check, cooldown_until, enabled
+                       gemini_remaining, claude_remaining, last_quota_check, cooldown_until, enabled,
+                       COALESCE(is_banned, 0), ban_reason
                 FROM accounts
                 WHERE enabled = 1
                 ORDER BY id ASC
@@ -130,6 +133,7 @@ impl Database {
 
             let rows = stmt.query_map([], |row| {
                 let enabled_int: i64 = row.get(10)?;
+                let banned_int: i64 = row.get(11)?;
                 Ok(Account {
                     id: row.get(0)?,
                     email: row.get(1)?,
@@ -142,6 +146,8 @@ impl Database {
                     last_quota_check: row.get(8)?,
                     cooldown_until: row.get(9)?,
                     enabled: enabled_int == 1,
+                    is_banned: banned_int == 1,
+                    ban_reason: row.get(12)?,
                 })
             })?;
 
@@ -161,7 +167,8 @@ impl Database {
             let mut stmt = conn.prepare(
                 r#"
                 SELECT id, email, refresh_token, access_token, expires_at, quota_json,
-                       gemini_remaining, claude_remaining, last_quota_check, cooldown_until, enabled
+                       gemini_remaining, claude_remaining, last_quota_check, cooldown_until, enabled,
+                       COALESCE(is_banned, 0), ban_reason
                 FROM accounts
                 ORDER BY id ASC
                 "#,
@@ -169,6 +176,7 @@ impl Database {
 
             let rows = stmt.query_map([], |row| {
                 let enabled_int: i64 = row.get(10)?;
+                let banned_int: i64 = row.get(11)?;
                 Ok(Account {
                     id: row.get(0)?,
                     email: row.get(1)?,
@@ -181,6 +189,8 @@ impl Database {
                     last_quota_check: row.get(8)?,
                     cooldown_until: row.get(9)?,
                     enabled: enabled_int == 1,
+                    is_banned: banned_int == 1,
+                    ban_reason: row.get(12)?,
                 })
             })?;
 
@@ -359,6 +369,15 @@ impl Database {
         conn.execute(
             "UPDATE accounts SET enabled = ?1 WHERE id = ?2",
             params![if enabled { 1 } else { 0 }, id],
+        )?;
+        Ok(())
+    }
+
+    pub async fn mark_account_banned(&self, id: i64, reason: &str) -> Result<()> {
+        let conn = self.writer.lock().await;
+        conn.execute(
+            "UPDATE accounts SET enabled = 0, is_banned = 1, ban_reason = ?1 WHERE id = ?2",
+            params![reason, id],
         )?;
         Ok(())
     }

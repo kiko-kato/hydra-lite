@@ -107,6 +107,17 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-logout svg {
+      width: 16px;
+      height: 16px;
+      min-width: 16px;
+      min-height: 16px;
+      max-width: 16px;
+      max-height: 16px;
+      flex-shrink: 0;
+      fill: currentColor;
     }
     .btn-logout:hover { background: rgba(239, 68, 68, 0.18); color: #fff; }
 
@@ -168,6 +179,14 @@
     .badge-success { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
     .badge-danger { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); }
     .badge-warning { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .badge-banned {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+      border: 1px solid #ef4444;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+    }
 
     /* Switch */
     .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
@@ -211,38 +230,129 @@
     }
     .input-search:focus { border-color: var(--accent); }
 
-    /* Modal */
+    /* Key Token Mask & Copy */
+    .key-token-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(10, 8, 20, 0.7);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .key-token-box:hover {
+      border-color: var(--accent);
+      background: rgba(124, 77, 255, 0.12);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .key-token-text {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 12px;
+      color: var(--accent-light);
+      letter-spacing: 0.5px;
+    }
+    .key-token-icon { width: 14px; height: 14px; fill: currentColor; opacity: 0.6; }
+    .key-token-box:hover .key-token-icon { opacity: 1; fill: #fff; }
+
+    /* Toast */
+    .toast-msg {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+      z-index: 9999;
+      opacity: 0;
+      transform: translateY(15px);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .toast-msg.show { opacity: 1; transform: translateY(0); }
+
+    /* Smooth Animated Modals */
     .modal-backdrop {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(8px);
-      display: none;
+      backdrop-filter: blur(14px);
+      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.22s ease-out, visibility 0.22s ease-out;
+    }
+    .modal-backdrop.show {
+      opacity: 1;
+      visibility: visible;
     }
     .modal-box {
-      background: linear-gradient(135deg, rgba(28, 25, 48, 0.95) 0%, rgba(16, 14, 28, 0.98) 100%);
+      background: linear-gradient(135deg, rgba(26, 23, 44, 0.96) 0%, rgba(14, 12, 24, 0.98) 100%);
       border: 1px solid var(--border-accent);
+      border-top: 1px solid var(--border-top);
       border-radius: var(--radius-lg);
-      padding: 32px;
-      max-width: 520px;
+      padding: 30px 34px;
+      max-width: 540px;
       width: 100%;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 35px var(--accent-glow);
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .modal-head { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 20px; }
-    .modal-field { margin-bottom: 18px; }
+    .modal-backdrop.show .modal-box {
+      transform: scale(1) translateY(0);
+    }
+    .modal-head { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 22px; display:flex; justify-content:space-between; align-items:center; }
+    .modal-field { margin-bottom: 20px; }
     .modal-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
     .modal-input {
-      width: 100%; padding: 12px 14px; background: rgba(10,9,18,0.8);
+      width: 100%; padding: 12px 14px; background: rgba(10,9,18,0.85);
       border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fff; font-size: 14px; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .modal-input:focus { border-color: var(--accent); }
-    .modal-radio-group { display: flex; gap: 16px; margin-top: 6px; }
-    .modal-radio-group label { display: flex; align-items: center; gap: 6px; font-weight: normal; color: #fff; cursor: pointer; }
-    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+    .modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.2); }
+
+    /* Segmented Control (Pill-кнопки) */
+    .segmented-control {
+      display: flex;
+      background: rgba(10, 8, 20, 0.85);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      gap: 4px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .seg-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .seg-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 26px; }
     .btn-secondary { background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 10px 18px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
     .btn-secondary:hover { background: rgba(255,255,255,0.14); }
+    .btn-danger-del { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; padding: 10px 18px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+    .btn-danger-del:hover { background: rgba(239, 68, 68, 0.3); color: #fff; }
   </style>
 </head>
 <body>
@@ -251,6 +361,8 @@
     <div class="ambient-orb ambient-orb-2"></div>
     <div class="ambient-orb ambient-orb-3"></div>
   </div>
+
+  <div id="toast" class="toast-msg">Токен скопирован в буфер!</div>
 
   <!-- Sidebar -->
   <aside class="sidebar">
@@ -288,7 +400,7 @@
         <span>Логи ошибок</span>
       </button>
       <button class="nav-link" onclick="switchTab('keys', 'Управление API ключами')">
-        <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2 2z"/></svg>
         <span>API Ключи</span>
       </button>
     </nav>
@@ -341,7 +453,7 @@
                 <th>Email аккаунта</th>
                 <th>5-часовая квота & Сброс</th>
                 <th>Недельная квота & Дата сброса</th>
-                <th>Активен</th>
+                <th>Статус / Активность</th>
               </tr>
             </thead>
             <tbody id="accountsTableBody">
@@ -355,7 +467,7 @@
       <section id="pane-top" class="tab-pane">
         <div class="glass-table-container">
           <div class="glass-table-header">
-            <div class="glass-table-title">Рейтинг потребления токенов по клиентам</div>
+            <div class="glass-table-title">Рейтинг потребления ресурсов клиентами</div>
             <button class="btn-action" onclick="loadTopConsumers()">Обновить рейтинг</button>
           </div>
           <table>
@@ -517,10 +629,11 @@
                 <th>RPM</th>
                 <th>Срок действия</th>
                 <th>Статус</th>
+                <th>Действия</th>
               </tr>
             </thead>
             <tbody id="keysTableBody">
-              <tr><td colspan="9" style="text-align:center;">Загрузка ключей...</td></tr>
+              <tr><td colspan="10" style="text-align:center;">Загрузка ключей...</td></tr>
             </tbody>
           </table>
         </div>
@@ -531,27 +644,30 @@
   <!-- Modal: Создание нового ключа -->
   <div id="newKeyModalBackdrop" class="modal-backdrop">
     <div class="modal-box">
-      <div class="modal-head">Создание нового API ключа</div>
+      <div class="modal-head">
+        <span>Новый API ключ</span>
+        <button onclick="closeNewKeyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+      </div>
       
       <div class="modal-field">
-        <label>Имя клиента / проекта</label>
+        <label>Имя клиента или проекта</label>
         <input type="text" id="modalKeyName" class="modal-input" placeholder="Например: Разработчик 1" required>
       </div>
 
       <div class="modal-field">
         <label>Роль доступа</label>
-        <div class="modal-radio-group">
-          <label><input type="radio" name="modalRole" value="user" checked> Пользователь (USER)</label>
-          <label><input type="radio" name="modalRole" value="admin"> Администратор (ADMIN)</label>
+        <div class="segmented-control" id="segRole">
+          <button class="seg-btn active" type="button" onclick="setSegment('segRole', 'user')">Пользователь (USER)</button>
+          <button class="seg-btn" type="button" onclick="setSegment('segRole', 'admin')">Администратор (ADMIN)</button>
         </div>
       </div>
 
       <div class="modal-field">
         <label>Тип лимита баланса</label>
-        <div class="modal-radio-group">
-          <label><input type="radio" name="modalLimitType" value="tokens" checked onchange="toggleLimitFields()"> Токены</label>
-          <label><input type="radio" name="modalLimitType" value="requests" onchange="toggleLimitFields()"> Запросы</label>
-          <label><input type="radio" name="modalLimitType" value="unlimited" onchange="toggleLimitFields()"> Безлимит</label>
+        <div class="segmented-control" id="segLimitType">
+          <button class="seg-btn active" type="button" onclick="setSegment('segLimitType', 'tokens')">Токены</button>
+          <button class="seg-btn" type="button" onclick="setSegment('segLimitType', 'requests')">Запросы</button>
+          <button class="seg-btn" type="button" onclick="setSegment('segLimitType', 'unlimited')">Безлимит</button>
         </div>
       </div>
 
@@ -562,18 +678,18 @@
 
       <div class="modal-field">
         <label>Ограничение RPM (запросов в минуту)</label>
-        <div class="modal-radio-group">
-          <label><input type="radio" name="modalRpmType" value="unlim" checked onchange="toggleRpmField()"> Безлимит</label>
-          <label><input type="radio" name="modalRpmType" value="custom" onchange="toggleRpmField()"> Заданное число</label>
+        <div class="segmented-control" id="segRpm">
+          <button class="seg-btn active" type="button" onclick="setSegment('segRpm', 'unlim')">Безлимит</button>
+          <button class="seg-btn" type="button" onclick="setSegment('segRpm', 'custom')">Заданное число</button>
         </div>
         <input type="number" id="modalRpmValue" class="modal-input" placeholder="60" min="1" style="display:none; margin-top:8px;">
       </div>
 
       <div class="modal-field">
         <label>Срок действия (тухлость ключа)</label>
-        <div class="modal-radio-group">
-          <label><input type="radio" name="modalExpType" value="never" checked onchange="toggleExpField()"> Бессрочно</label>
-          <label><input type="radio" name="modalExpType" value="date" onchange="toggleExpField()"> До даты</label>
+        <div class="segmented-control" id="segExp">
+          <button class="seg-btn active" type="button" onclick="setSegment('segExp', 'never')">Бессрочно</button>
+          <button class="seg-btn" type="button" onclick="setSegment('segExp', 'date')">До даты</button>
         </div>
         <input type="date" id="modalExpDate" class="modal-input" style="display:none; margin-top:8px;">
       </div>
@@ -585,10 +701,94 @@
     </div>
   </div>
 
+  <!-- Modal: Настройки существующего ключа -->
+  <div id="editKeyModalBackdrop" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span>Настройки API ключа</span>
+        <button onclick="closeEditKeyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+      </div>
+      
+      <input type="hidden" id="editKeyId">
+
+      <div class="modal-field">
+        <label>Имя клиента</label>
+        <input type="text" id="editKeyName" class="modal-input" required>
+      </div>
+
+      <div class="modal-field">
+        <label>Токен ключа</label>
+        <div class="key-token-box" onclick="copyFullKeyFromInput()" style="width:100%; justify-content:space-between; padding:10px 14px;">
+          <span id="editKeyTokenText" class="key-token-text" style="font-size:13px;"></span>
+          <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>Роль доступа</label>
+        <div class="segmented-control" id="editSegRole">
+          <button class="seg-btn" type="button" onclick="setSegment('editSegRole', 'user')">Пользователь (USER)</button>
+          <button class="seg-btn" type="button" onclick="setSegment('editSegRole', 'admin')">Администратор (ADMIN)</button>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>Тип лимита баланса</label>
+        <div class="segmented-control" id="editSegLimitType">
+          <button class="seg-btn" type="button" onclick="setSegment('editSegLimitType', 'tokens')">Токены</button>
+          <button class="seg-btn" type="button" onclick="setSegment('editSegLimitType', 'requests')">Запросы</button>
+          <button class="seg-btn" type="button" onclick="setSegment('editSegLimitType', 'unlimited')">Безлимит</button>
+        </div>
+      </div>
+
+      <div class="modal-field" id="editLimitValueGroup">
+        <label id="editLimitValueLabel">Количество токенов (0 = анлим)</label>
+        <input type="number" id="editLimitValue" class="modal-input" min="0">
+      </div>
+
+      <div class="modal-field">
+        <label>Ограничение RPM</label>
+        <div class="segmented-control" id="editSegRpm">
+          <button class="seg-btn" type="button" onclick="setSegment('editSegRpm', 'unlim')">Безлимит</button>
+          <button class="seg-btn" type="button" onclick="setSegment('editSegRpm', 'custom')">Заданное число</button>
+        </div>
+        <input type="number" id="editRpmValue" class="modal-input" style="display:none; margin-top:8px;" min="1">
+      </div>
+
+      <div class="modal-field">
+        <label>Срок действия (тухлость ключа)</label>
+        <div class="segmented-control" id="editSegExp">
+          <button class="seg-btn" type="button" onclick="setSegment('editSegExp', 'never')">Бессрочно</button>
+          <button class="seg-btn" type="button" onclick="setSegment('editSegExp', 'date')">До даты</button>
+        </div>
+        <input type="date" id="editExpDate" class="modal-input" style="display:none; margin-top:8px;">
+      </div>
+
+      <div class="modal-field" style="display:flex; align-items:center; justify-content:space-between;">
+        <label style="margin:0;">Активность ключа</label>
+        <label class="switch">
+          <input type="checkbox" id="editKeyEnabled">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button class="btn-danger-del" onclick="deleteCurrentKey()">Удалить ключ</button>
+        <div style="display:flex; gap:12px;">
+          <button class="btn-secondary" onclick="closeEditKeyModal()">Отмена</button>
+          <button class="btn-action" onclick="submitEditKey()">Сохранить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Добавление решения в Антидот -->
   <div id="addAntidoteModalBackdrop" class="modal-backdrop">
     <div class="modal-box" style="max-width:620px;">
-      <div class="modal-head">Добавить решение в Антидот L1</div>
+      <div class="modal-head">
+        <span>Добавить решение в Антидот L1</span>
+        <button onclick="closeAddAntidoteModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+      </div>
       
       <div class="modal-field">
         <label>Суть проблемы / Заголовок</label>
@@ -619,6 +819,8 @@
 
   <script>
     let allModels = [];
+    let allKeys = [];
+    let fullKeyMap = {};
 
     function getCookie(name) {
       const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -632,6 +834,33 @@
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + adminToken
       };
+    }
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      toast.innerText = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function maskKey(keyStr) {
+      if (!keyStr || keyStr.length < 16) return keyStr;
+      const prefix = keyStr.slice(0, 10);
+      const suffix = keyStr.slice(-4);
+      return `${prefix}••••••••${suffix}`;
+    }
+
+    function copyToClipboard(rawKey) {
+      navigator.clipboard.writeText(rawKey).then(() => {
+        showToast('Ключ скопирован в буфер!');
+      }).catch(() => {
+        showToast('Ошибка копирования');
+      });
+    }
+
+    function copyFullKeyFromInput() {
+      const raw = document.getElementById('editKeyTokenText').getAttribute('data-full');
+      if (raw) copyToClipboard(raw);
     }
 
     function switchTab(tabId, title) {
@@ -693,11 +922,10 @@
         const summary = await sumRes.json() || {};
         const accounts = accData.accounts || [];
 
-        // Расчет ориентировочного удовлетворения пула
         let totalRemSum = 0;
         let activeCount = 0;
         accounts.forEach(a => {
-          if (a.enabled) {
+          if (a.enabled && !a.is_banned) {
             totalRemSum += (a.gemini_5h !== undefined ? a.gemini_5h : a.gemini_remaining || 1.0);
             activeCount++;
           }
@@ -729,10 +957,25 @@
           const wkDateStr = formatDateShort(a.gemini_weekly_reset);
           const resetWkText = a.gemini_weekly_reset ? `${wkDateStr} (${formatTimeRemaining(a.gemini_weekly_reset)})` : 'нет данных';
 
+          let statusHtml = '';
+          if (a.is_banned || (!a.enabled && a.ban_reason)) {
+            statusHtml = `<span class="badge badge-banned" title="${a.ban_reason || 'TOS Violation'}">ЗАБАНЕН</span>`;
+          } else {
+            statusHtml = `
+              <label class="switch">
+                <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
+                <span class="slider"></span>
+              </label>
+            `;
+          }
+
           tbody.innerHTML += `
             <tr>
               <td class="mono">#${a.id}</td>
-              <td class="mono" style="font-weight:700; color:#fff;">${a.email || 'anon'}</td>
+              <td class="mono" style="font-weight:700; color:#fff;">
+                ${a.email || 'anon'}
+                ${a.is_banned ? '<span style="display:block; font-size:11px; color:#ef4444; font-weight:normal;">TOS PERMANENT BAN</span>' : ''}
+              </td>
               <td style="width: 280px;">
                 <div style="display:flex; justify-content:space-between; font-size:12px;">
                   <span>Остаток: <b>${g5hPct}%</b></span>
@@ -747,12 +990,7 @@
                 </div>
                 <div class="progress-bar-bg"><div class="progress-bar-fill fill-weekly" style="width:${gWkPct}%"></div></div>
               </td>
-              <td>
-                <label class="switch">
-                  <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
-                  <span class="slider"></span>
-                </label>
-              </td>
+              <td>${statusHtml}</td>
             </tr>
           `;
         });
@@ -779,11 +1017,17 @@
 
         topList.forEach((k, idx) => {
           const pct = k.token_percent || 0;
+          const masked = maskKey(k.key);
           tbody.innerHTML += `
             <tr>
               <td class="mono" style="font-weight:700;">#${idx + 1}</td>
               <td style="font-weight:700; color:#fff;">${k.name}</td>
-              <td class="mono" style="color:var(--accent-light);">${k.key}</td>
+              <td>
+                <div class="key-token-box" onclick="copyToClipboard('${k.key}')" title="Кликните, чтобы скопировать">
+                  <span class="key-token-text">${masked}</span>
+                  <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                </div>
+              </td>
               <td style="width: 260px;">
                 <div style="display:flex; justify-content:space-between; font-size:12px;">
                   <span style="font-weight:700; color:#fff;">${pct}%</span>
@@ -850,10 +1094,10 @@
     }
 
     function showAddAntidoteModal() {
-      document.getElementById('addAntidoteModalBackdrop').style.display = 'flex';
+      document.getElementById('addAntidoteModalBackdrop').classList.add('show');
     }
     function closeAddAntidoteModal() {
-      document.getElementById('addAntidoteModalBackdrop').style.display = 'none';
+      document.getElementById('addAntidoteModalBackdrop').classList.remove('show');
     }
     async function submitAddAntidote() {
       const title = document.getElementById('antidoteTitle').value.trim();
@@ -991,10 +1235,11 @@
       try {
         const res = await fetch('/api/keys', { headers: authHeaders() });
         const data = await res.json();
-        const list = data.keys || [];
+        allKeys = data.keys || [];
         const tbody = document.getElementById('keysTableBody');
         tbody.innerHTML = '';
-        list.forEach(k => {
+        allKeys.forEach(k => {
+          fullKeyMap[k.id] = k;
           const limLabel = k.limit_type === 'requests' 
             ? (k.request_limit > 0 ? k.request_limit.toLocaleString() + ' req' : 'unlim')
             : (k.token_limit > 0 ? (k.token_limit / 1000).toFixed(0) + 'k tok' : 'unlim');
@@ -1003,54 +1248,117 @@
             : (k.tokens_used || 0).toLocaleString() + ' tok';
 
           const expLabel = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
+          const masked = maskKey(k.key);
 
           tbody.innerHTML += `
             <tr>
               <td class="mono">#${k.id}</td>
               <td style="font-weight:700; color:#fff;">${k.name}</td>
-              <td class="mono" style="color:var(--accent-light);">${k.key}</td>
+              <td>
+                <div class="key-token-box" onclick="copyToClipboard('${k.key}')" title="Кликните, чтобы скопировать токен">
+                  <span class="key-token-text">${masked}</span>
+                  <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                </div>
+              </td>
               <td><span class="badge ${k.is_admin ? 'badge-admin' : 'badge-user'}">${k.is_admin ? 'ADMIN' : 'USER'}</span></td>
               <td class="mono">${limLabel}</td>
               <td class="mono">${usedLabel}</td>
               <td class="mono">${k.rpm_limit > 0 ? k.rpm_limit : 'unlim'}</td>
               <td>${expLabel}</td>
               <td><span class="badge ${k.enabled ? 'badge-success' : 'badge-danger'}">${k.enabled ? 'Активен' : 'Отключен'}</span></td>
+              <td>
+                <button class="btn-action" style="padding:6px 12px; font-size:12px;" onclick="openEditKeyModal(${k.id})">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                  <span>Настроить</span>
+                </button>
+              </td>
             </tr>
           `;
         });
       } catch (e) { console.error(e); }
     }
 
-    // Modal helpers
+    // Segment helpers
+    function setSegment(groupId, value) {
+      const container = document.getElementById(groupId);
+      const buttons = container.querySelectorAll('.seg-btn');
+      buttons.forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      container.setAttribute('data-value', value);
+
+      // Trigger conditions
+      if (groupId === 'segLimitType') {
+        const grp = document.getElementById('modalLimitValueGroup');
+        const lbl = document.getElementById('modalLimitValueLabel');
+        if (value === 'unlimited') grp.style.display = 'none';
+        else {
+          grp.style.display = 'block';
+          lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
+        }
+      }
+      if (groupId === 'segRpm') {
+        document.getElementById('modalRpmValue').style.display = value === 'custom' ? 'block' : 'none';
+      }
+      if (groupId === 'segExp') {
+        document.getElementById('modalExpDate').style.display = value === 'date' ? 'block' : 'none';
+      }
+
+      if (groupId === 'editSegLimitType') {
+        const grp = document.getElementById('editLimitValueGroup');
+        const lbl = document.getElementById('editLimitValueLabel');
+        if (value === 'unlimited') grp.style.display = 'none';
+        else {
+          grp.style.display = 'block';
+          lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
+        }
+      }
+      if (groupId === 'editSegRpm') {
+        document.getElementById('editRpmValue').style.display = value === 'custom' ? 'block' : 'none';
+      }
+      if (groupId === 'editSegExp') {
+        document.getElementById('editExpDate').style.display = value === 'date' ? 'block' : 'none';
+      }
+    }
+
+    function getSegmentValue(groupId) {
+      return document.getElementById(groupId).getAttribute('data-value') || 'tokens';
+    }
+
+    function setSegmentActive(groupId, value) {
+      const container = document.getElementById(groupId);
+      container.setAttribute('data-value', value);
+      const buttons = container.querySelectorAll('.seg-btn');
+      buttons.forEach(b => {
+        const clickAttr = b.getAttribute('onclick') || '';
+        if (clickAttr.includes(`'${value}'`)) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+    }
+
+    // New Key Modal
     function openNewKeyModal() {
       document.getElementById('modalKeyName').value = '';
       document.getElementById('modalLimitValue').value = '';
-      document.getElementById('newKeyModalBackdrop').style.display = 'flex';
-      toggleLimitFields();
-      toggleRpmField();
-      toggleExpField();
+      document.getElementById('modalRpmValue').value = '';
+      document.getElementById('modalExpDate').value = '';
+      
+      setSegmentActive('segRole', 'user');
+      setSegmentActive('segLimitType', 'tokens');
+      setSegmentActive('segRpm', 'unlim');
+      setSegmentActive('segExp', 'never');
+
+      document.getElementById('modalLimitValueGroup').style.display = 'block';
+      document.getElementById('modalLimitValueLabel').innerText = 'Количество токенов (0 = анлим)';
+      document.getElementById('modalRpmValue').style.display = 'none';
+      document.getElementById('modalExpDate').style.display = 'none';
+
+      document.getElementById('newKeyModalBackdrop').classList.add('show');
     }
     function closeNewKeyModal() {
-      document.getElementById('newKeyModalBackdrop').style.display = 'none';
-    }
-    function toggleLimitFields() {
-      const type = document.querySelector('input[name="modalLimitType"]:checked').value;
-      const group = document.getElementById('modalLimitValueGroup');
-      const label = document.getElementById('modalLimitValueLabel');
-      if (type === 'unlimited') {
-        group.style.display = 'none';
-      } else {
-        group.style.display = 'block';
-        label.innerText = type === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
-      }
-    }
-    function toggleRpmField() {
-      const type = document.querySelector('input[name="modalRpmType"]:checked').value;
-      document.getElementById('modalRpmValue').style.display = type === 'custom' ? 'block' : 'none';
-    }
-    function toggleExpField() {
-      const type = document.querySelector('input[name="modalExpType"]:checked').value;
-      document.getElementById('modalExpDate').style.display = type === 'date' ? 'block' : 'none';
+      document.getElementById('newKeyModalBackdrop').classList.remove('show');
     }
 
     async function submitNewKey() {
@@ -1059,8 +1367,8 @@
         alert('Введите имя клиента');
         return;
       }
-      const isAdmin = document.querySelector('input[name="modalRole"]:checked').value === 'admin';
-      const limitType = document.querySelector('input[name="modalLimitType"]:checked').value;
+      const role = getSegmentValue('segRole');
+      const limitType = getSegmentValue('segLimitType');
       let token_limit = 0;
       let request_limit = 0;
 
@@ -1070,10 +1378,10 @@
         request_limit = parseInt(document.getElementById('modalLimitValue').value, 10) || 0;
       }
 
-      const rpmType = document.querySelector('input[name="modalRpmType"]:checked').value;
+      const rpmType = getSegmentValue('segRpm');
       const rpm_limit = rpmType === 'custom' ? (parseInt(document.getElementById('modalRpmValue').value, 10) || 0) : 0;
 
-      const expType = document.querySelector('input[name="modalExpType"]:checked').value;
+      const expType = getSegmentValue('segExp');
       let expires_at = null;
       if (expType === 'date') {
         const dVal = document.getElementById('modalExpDate').value;
@@ -1087,7 +1395,7 @@
         headers: authHeaders(),
         body: JSON.stringify({
           name,
-          is_admin: isAdmin,
+          is_admin: role === 'admin',
           limit_type: limitType === 'unlimited' ? 'tokens' : limitType,
           token_limit,
           request_limit,
@@ -1097,6 +1405,122 @@
       });
 
       closeNewKeyModal();
+      loadKeys();
+    }
+
+    // Edit Key Modal
+    function openEditKeyModal(id) {
+      const k = fullKeyMap[id];
+      if (!k) return;
+
+      document.getElementById('editKeyId').value = k.id;
+      document.getElementById('editKeyName').value = k.name;
+      
+      const tokElem = document.getElementById('editKeyTokenText');
+      tokElem.innerText = maskKey(k.key);
+      tokElem.setAttribute('data-full', k.key);
+
+      setSegmentActive('editSegRole', k.is_admin ? 'admin' : 'user');
+      
+      const limType = k.limit_type || 'tokens';
+      setSegmentActive('editSegLimitType', limType);
+
+      const limValInput = document.getElementById('editLimitValue');
+      if (limType === 'requests') {
+        limValInput.value = k.request_limit || '';
+        document.getElementById('editLimitValueLabel').innerText = 'Количество запросов (0 = анлим)';
+      } else {
+        limValInput.value = k.token_limit || '';
+        document.getElementById('editLimitValueLabel').innerText = 'Количество токенов (0 = анлим)';
+      }
+
+      if (k.rpm_limit > 0) {
+        setSegmentActive('editSegRpm', 'custom');
+        document.getElementById('editRpmValue').style.display = 'block';
+        document.getElementById('editRpmValue').value = k.rpm_limit;
+      } else {
+        setSegmentActive('editSegRpm', 'unlim');
+        document.getElementById('editRpmValue').style.display = 'none';
+        document.getElementById('editRpmValue').value = '';
+      }
+
+      if (k.expires_at) {
+        setSegmentActive('editSegExp', 'date');
+        document.getElementById('editExpDate').style.display = 'block';
+        const d = new Date(k.expires_at * 1000);
+        document.getElementById('editExpDate').value = d.toISOString().split('T')[0];
+      } else {
+        setSegmentActive('editSegExp', 'never');
+        document.getElementById('editExpDate').style.display = 'none';
+        document.getElementById('editExpDate').value = '';
+      }
+
+      document.getElementById('editKeyEnabled').checked = k.enabled;
+      document.getElementById('editKeyModalBackdrop').classList.add('show');
+    }
+
+    function closeEditKeyModal() {
+      document.getElementById('editKeyModalBackdrop').classList.remove('show');
+    }
+
+    async function submitEditKey() {
+      const id = document.getElementById('editKeyId').value;
+      const name = document.getElementById('editKeyName').value.trim();
+      const role = getSegmentValue('editSegRole');
+      const limitType = getSegmentValue('editSegLimitType');
+      
+      let token_limit = 0;
+      let request_limit = 0;
+      if (limitType === 'tokens') {
+        token_limit = parseInt(document.getElementById('editLimitValue').value, 10) || 0;
+      } else if (limitType === 'requests') {
+        request_limit = parseInt(document.getElementById('editLimitValue').value, 10) || 0;
+      }
+
+      const rpmType = getSegmentValue('editSegRpm');
+      const rpm_limit = rpmType === 'custom' ? (parseInt(document.getElementById('editRpmValue').value, 10) || 0) : 0;
+
+      const expType = getSegmentValue('editSegExp');
+      let expires_at = null;
+      if (expType === 'date') {
+        const dVal = document.getElementById('editExpDate').value;
+        if (dVal) {
+          expires_at = Math.floor(new Date(dVal + 'T23:59:59Z').getTime() / 1000);
+        }
+      }
+
+      const enabled = document.getElementById('editKeyEnabled').checked;
+
+      await fetch(`/api/keys/${id}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          name,
+          is_admin: role === 'admin',
+          limit_type: limitType === 'unlimited' ? 'tokens' : limitType,
+          token_limit,
+          request_limit,
+          rpm_limit,
+          expires_at,
+          enabled
+        })
+      });
+
+      closeEditKeyModal();
+      loadKeys();
+    }
+
+    async function deleteCurrentKey() {
+      const id = document.getElementById('editKeyId').value;
+      const name = document.getElementById('editKeyName').value;
+      if (!confirm(`Удалить ключ "${name}" безвозвратно?`)) return;
+
+      await fetch(`/api/keys/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders()
+      });
+
+      closeEditKeyModal();
       loadKeys();
     }
 

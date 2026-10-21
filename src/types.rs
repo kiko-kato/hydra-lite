@@ -13,6 +13,9 @@ pub struct Account {
     pub last_quota_check: f64,
     pub cooldown_until: f64,
     pub enabled: bool,
+    #[serde(default)]
+    pub is_banned: bool,
+    pub ban_reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
