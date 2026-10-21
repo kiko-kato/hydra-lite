@@ -1018,9 +1018,10 @@ async fn handle_chat_completions(
     }
 
     // -------------------------------------------------------------------------
-    // ЭТАП 1: HRW AFFINITY ROUTING (Привязка сессии к аккаунту)
+    // ЭТАП 1: HRW AFFINITY ROUTING (Ключевая изоляция сессий + привязка к аккаунту)
     // -------------------------------------------------------------------------
-    let affinity_key = translator::compute_session_affinity_key(&req);
+    let raw_affinity = translator::compute_session_affinity_key(&req);
+    let affinity_key = format!("key:{}|sess:{}", auth_key_name, raw_affinity);
     let active_streams_snapshot = state.active_streams.read().clone();
     if cfg.caching.enabled && cfg.caching.hrw_affinity {
         eligible.sort_by(|a, b| {

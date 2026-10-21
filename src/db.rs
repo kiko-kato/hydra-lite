@@ -62,7 +62,8 @@ impl Database {
                 is_admin INTEGER DEFAULT 0,
                 expires_at REAL DEFAULT NULL,
                 request_limit INTEGER DEFAULT 0,
-                limit_type TEXT DEFAULT 'tokens'
+                limit_type TEXT DEFAULT 'tokens',
+                created_by INTEGER DEFAULT NULL
             );
 
             CREATE INDEX IF NOT EXISTS idx_api_keys_lookup ON api_keys(key, enabled);
@@ -81,6 +82,7 @@ impl Database {
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN expires_at REAL DEFAULT NULL;", []);
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN request_limit INTEGER DEFAULT 0;", []);
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN limit_type TEXT DEFAULT 'tokens';", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN created_by INTEGER DEFAULT NULL;", []);
         let _ = writer.execute("ALTER TABLE accounts ADD COLUMN is_banned INTEGER DEFAULT 0;", []);
         let _ = writer.execute("ALTER TABLE accounts ADD COLUMN ban_reason TEXT DEFAULT NULL;", []);
 
@@ -210,7 +212,7 @@ impl Database {
             let mut stmt = conn.prepare(
                 r#"
                 SELECT id, name, key, rpm_limit, token_limit, COALESCE(request_limit, 0), COALESCE(limit_type, 'tokens'),
-                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at
+                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at, created_by
                 FROM api_keys
                 ORDER BY id ASC
                 "#,
@@ -232,6 +234,7 @@ impl Database {
                     created_at: row.get(10)?,
                     is_admin: is_adm_int == 1,
                     expires_at: row.get(12)?,
+                    created_by: row.get(13)?,
                 })
             })?;
             let mut list = Vec::new();
@@ -251,7 +254,7 @@ impl Database {
             let mut stmt = conn.prepare(
                 r#"
                 SELECT id, name, key, rpm_limit, token_limit, COALESCE(request_limit, 0), COALESCE(limit_type, 'tokens'),
-                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at
+                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at, created_by
                 FROM api_keys
                 WHERE key = ?1
                 LIMIT 1
@@ -274,6 +277,7 @@ impl Database {
                     created_at: row.get(10)?,
                     is_admin: is_adm_int == 1,
                     expires_at: row.get(12)?,
+                    created_by: row.get(13)?,
                 })
             })?;
             if let Some(res) = rows.next() {
@@ -451,15 +455,16 @@ impl Database {
         limit_type: &str,
         is_admin: bool,
         expires_at: Option<f64>,
+        created_by: Option<i64>,
         now: f64,
     ) -> Result<ApiKey> {
         let conn = self.writer.lock().await;
         conn.execute(
             r#"
-            INSERT INTO api_keys (name, key, rpm_limit, token_limit, request_limit, limit_type, tokens_used, requests_count, enabled, created_at, is_admin, expires_at)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 0, 1, ?7, ?8, ?9)
+            INSERT INTO api_keys (name, key, rpm_limit, token_limit, request_limit, limit_type, tokens_used, requests_count, enabled, created_at, is_admin, expires_at, created_by)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 0, 1, ?7, ?8, ?9, ?10)
             "#,
-            params![name, key, rpm_limit, token_limit, request_limit, limit_type, now, if is_admin { 1 } else { 0 }, expires_at],
+            params![name, key, rpm_limit, token_limit, request_limit, limit_type, now, if is_admin { 1 } else { 0 }, expires_at, created_by],
         )?;
         let id = conn.last_insert_rowid();
         Ok(ApiKey {
@@ -476,7 +481,32 @@ impl Database {
             created_at: now,
             is_admin,
             expires_at,
+            created_by,
         })
+    }
+
+    pub async fn is_in_creator_tree(&self, descendant_id: i64, ancestor_id: i64) -> Result<bool> {
+        if descendant_id == ancestor_id {
+            return Ok(true);
+        }
+        let r = self.reader();
+        tokio::task::spawn_blocking(move || {
+            let conn = r.lock();
+            let mut stmt = conn.prepare(
+                r#"
+                WITH RECURSIVE key_tree AS (
+                    SELECT id, created_by FROM api_keys WHERE id = ?1
+                    UNION ALL
+                    SELECT k.id, k.created_by FROM api_keys k
+                    JOIN key_tree kt ON k.id = kt.created_by
+                )
+                SELECT count(*) FROM key_tree WHERE id = ?2;
+                "#,
+            )?;
+            let count: i64 = stmt.query_row(params![descendant_id, ancestor_id], |row| row.get(0))?;
+            Ok(count > 0)
+        })
+        .await?
     }
 
     pub async fn update_key(
@@ -623,4 +653,5 @@ pub struct ApiKey {
     #[serde(default)]
     pub is_admin: bool,
     pub expires_at: Option<f64>,
+    pub created_by: Option<i64>,
 }
