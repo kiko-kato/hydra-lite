@@ -850,12 +850,46 @@
       return `${prefix}••••••••${suffix}`;
     }
 
-    function copyToClipboard(rawKey) {
-      navigator.clipboard.writeText(rawKey).then(() => {
-        showToast('Ключ скопирован в буфер!');
-      }).catch(() => {
-        showToast('Ошибка копирования');
-      });
+    function copyToClipboard(text) {
+      if (!text) return;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Ключ скопирован в буфер!');
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.width = "2em";
+        textArea.style.height = "2em";
+        textArea.style.padding = "0";
+        textArea.style.border = "none";
+        textArea.style.outline = "none";
+        textArea.style.boxShadow = "none";
+        textArea.style.background = "transparent";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textArea);
+        if (successful) {
+          showToast('Ключ скопирован в буфер!');
+        } else {
+          prompt("Скопируйте ключ:", text);
+        }
+      } catch (err) {
+        prompt("Скопируйте ключ:", text);
+      }
     }
 
     function copyFullKeyFromInput() {
