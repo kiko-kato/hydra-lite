@@ -403,6 +403,10 @@
         <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2 2z"/></svg>
         <span>API Ключи</span>
       </button>
+      <button class="nav-link" onclick="switchTab('my-limits', 'Мой баланс и лимиты')">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+        <span>Мой баланс</span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">
@@ -636,6 +640,53 @@
               <tr><td colspan="10" style="text-align:center;">Загрузка ключей...</td></tr>
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <!-- Tab: Мой баланс и лимиты -->
+      <section id="pane-my-limits" class="tab-pane">
+        <div class="glass-table-container" style="padding: 32px;">
+          <div style="font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
+            <span>Персональный баланс и потребление текущего ключа</span>
+            <span class="badge badge-admin" id="myRoleBadge">ADMIN</span>
+          </div>
+
+          <div class="kpi-cards-grid" style="margin-bottom: 28px;">
+            <div class="kpi-card">
+              <div class="kpi-label">Текущий ключ</div>
+              <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
+                <span class="mono" style="font-size:15px; color:var(--accent-light); font-weight:700;" id="myKeyToken">--</span>
+                <button class="btn-action" style="padding:4px 8px; font-size:11px;" onclick="copyMyKey()">Скопировать</button>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Лимит RPM</div>
+              <div class="kpi-val" style="font-size:26px;" id="myRpmLimit">Безлимит</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Выполнено запросов</div>
+              <div class="kpi-val" style="font-size:26px;" id="myRequestsCount">0</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label">Срок действия ключа</div>
+              <div class="kpi-val" style="font-size:20px;" id="myExpiresAt">Бессрочно</div>
+            </div>
+          </div>
+
+          <!-- Progress Block -->
+          <div style="background: rgba(14, 12, 24, 0.6); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+              <span style="font-weight:700; color:#fff; font-size:15px;" id="myUsageTitle">Расход токенов</span>
+              <span style="font-size:13px; color:var(--text-secondary);" id="myUsageFraction">-- / --</span>
+            </div>
+            <div class="progress-bar-bg" style="height:12px; border-radius:6px;">
+              <div id="myUsageBar" class="progress-bar-fill fill-top" style="width: 0%; border-radius:6px;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:var(--text-muted);">
+              <span id="myPercentUsed">0% израсходовано</span>
+              <span id="myRemainingVal">Осталось: --</span>
+            </div>
+          </div>
         </div>
       </section>
     </div>
@@ -910,6 +961,49 @@
       if (tabId === 'requests') loadRequests();
       if (tabId === 'errors') loadErrors();
       if (tabId === 'keys') loadKeys();
+      if (tabId === 'my-limits') loadMyLimits();
+    }
+
+    async function loadMyLimits() {
+      try {
+        const res = await fetch('/api/user/me', { headers: authHeaders() });
+        if (res.status === 401) return logout();
+        const k = await res.json();
+        
+        document.getElementById('myKeyToken').innerText = maskKey(k.key);
+        document.getElementById('myKeyToken').setAttribute('data-full', k.key);
+        document.getElementById('myRoleBadge').innerText = k.is_admin ? 'ADMIN' : 'USER';
+        document.getElementById('myRequestsCount').innerText = (k.requests_count || 0).toLocaleString();
+        document.getElementById('myRpmLimit').innerText = k.rpm_limit > 0 ? k.rpm_limit + ' req/min' : 'Безлимит';
+        document.getElementById('myExpiresAt').innerText = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
+
+        const isReq = k.limit_type === 'requests';
+        const used = isReq ? (k.requests_count || 0) : (k.tokens_used || 0);
+        const limit = isReq ? (k.request_limit || 0) : (k.token_limit || 0);
+        const unit = isReq ? 'запросов' : 'токенов';
+
+        document.getElementById('myUsageTitle').innerText = isReq ? 'Расход запросов' : 'Расход токенов';
+
+        if (limit > 0) {
+          const pct = Math.min(100, Math.round((used / limit) * 100));
+          const remaining = Math.max(0, limit - used);
+          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} / ${limit.toLocaleString()} ${unit}`;
+          document.getElementById('myUsageBar').style.width = pct + '%';
+          document.getElementById('myPercentUsed').innerText = `${pct}% израсходовано`;
+          document.getElementById('myRemainingVal').innerText = `Осталось: ${remaining.toLocaleString()} ${unit}`;
+        } else {
+          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} ${unit} (безлимит)`;
+          document.getElementById('myUsageBar').style.width = '100%';
+          document.getElementById('myUsageBar').className = 'progress-bar-fill fill-5h';
+          document.getElementById('myPercentUsed').innerText = 'Лимит не установлен';
+          document.getElementById('myRemainingVal').innerText = 'Неограниченный доступ';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function copyMyKey() {
+      const full = document.getElementById('myKeyToken').getAttribute('data-full');
+      if (full) copyToClipboard(full);
     }
 
     function logout() {
