@@ -79,9 +79,9 @@ impl ModelManager {
             short_aliases.push("flash".to_string());
             short_aliases.push("flash-high".to_string());
         } else if base.contains("3.1-flash-image") || key.contains("3.1-flash-image") || base.contains("nano-banana") {
-            primary_alias = Some("nano-banana-2".to_string());
+            primary_alias = Some("nano-banana".to_string());
             short_aliases.push("gemini-3.1-flash-image".to_string());
-            short_aliases.push("nano-banana".to_string());
+            short_aliases.push("nano-banana-2".to_string());
             short_aliases.push("nano-banana-pro".to_string());
         } else if base.contains("3.8-flash-medium") || key.contains("3.8-flash-medium") {
             short_aliases.push("flash-medium".to_string());
@@ -237,7 +237,7 @@ impl ModelManager {
                 "owned_by": "google",
             }));
             list.push(serde_json::json!({
-                "id": "nano-banana-2",
+                "id": "nano-banana",
                 "object": "model",
                 "created": now,
                 "owned_by": "google",
