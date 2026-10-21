@@ -69,12 +69,20 @@ impl ModelManager {
         };
 
         // Если генерация не удалась по правилам — выводим голое название
-        let primary_alias = generated.or_else(|| Some(key.to_string()));
+        let mut primary_alias = generated.or_else(|| Some(key.to_string()));
         let base = primary_alias.as_deref().unwrap_or(key);
 
         if base.contains("3.8-flash-high") || key.contains("3.8-flash-high") {
+            primary_alias = Some("gemini-3.8".to_string());
+            short_aliases.push("gemini-3.8-flash-high".to_string());
             short_aliases.push("gemini-3.8-flash".to_string());
+            short_aliases.push("flash".to_string());
             short_aliases.push("flash-high".to_string());
+        } else if base.contains("3.1-flash-image") || key.contains("3.1-flash-image") || base.contains("nano-banana") {
+            primary_alias = Some("nano-banana-2".to_string());
+            short_aliases.push("gemini-3.1-flash-image".to_string());
+            short_aliases.push("nano-banana".to_string());
+            short_aliases.push("nano-banana-pro".to_string());
         } else if base.contains("3.8-flash-medium") || key.contains("3.8-flash-medium") {
             short_aliases.push("flash-medium".to_string());
         } else if base.contains("3.8-flash-low") || key.contains("3.8-flash-low") {
@@ -208,7 +216,7 @@ impl ModelManager {
                 continue;
             }
 
-            // Добавляем основной алиас или оригинальный ID
+            // Добавляем строго основной публичный алиас (gemini-3.8 или nano-banana-2)
             let public_id = m.primary_alias.as_deref().unwrap_or(&m.original_id);
             if seen.insert(public_id.to_string()) {
                 list.push(serde_json::json!({
@@ -218,46 +226,22 @@ impl ModelManager {
                     "owned_by": "google",
                 }));
             }
-
-            // Дополнительно открываем короткие алиасы в списке
-            for s in &m.short_aliases {
-                if seen.insert(s.clone()) {
-                    list.push(serde_json::json!({
-                        "id": s,
-                        "object": "model",
-                        "created": now,
-                        "owned_by": "google",
-                    }));
-                }
-            }
-
-            // И оригинальный ID, если отличается
-            if seen.insert(m.original_id.clone()) {
-                list.push(serde_json::json!({
-                    "id": m.original_id,
-                    "object": "model",
-                    "created": now,
-                    "owned_by": "google",
-                }));
-            }
         }
 
-        // Если каталог еще пуст (первые секунды после старта), добавляем базовые
+        // Если каталог еще пуст (первые секунды после старта), добавляем базовые две
         if list.is_empty() {
-            for fallback in &[
-                "gemini-3.8-flash-high",
-                "gemini-3.8-flash",
-                "gemini-2.5-pro",
-                "gemini-2.5-flash",
-                "gpt-oss-120b-medium",
-            ] {
-                list.push(serde_json::json!({
-                    "id": fallback,
-                    "object": "model",
-                    "created": now,
-                    "owned_by": "google",
-                }));
-            }
+            list.push(serde_json::json!({
+                "id": "gemini-3.8",
+                "object": "model",
+                "created": now,
+                "owned_by": "google",
+            }));
+            list.push(serde_json::json!({
+                "id": "nano-banana-2",
+                "object": "model",
+                "created": now,
+                "owned_by": "google",
+            }));
         }
 
         list
