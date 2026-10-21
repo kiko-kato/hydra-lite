@@ -59,7 +59,10 @@ impl Database {
                 requests_count INTEGER DEFAULT 0,
                 enabled INTEGER DEFAULT 1,
                 created_at REAL NOT NULL,
-                is_admin INTEGER DEFAULT 0
+                is_admin INTEGER DEFAULT 0,
+                expires_at REAL DEFAULT NULL,
+                request_limit INTEGER DEFAULT 0,
+                limit_type TEXT DEFAULT 'tokens'
             );
 
             CREATE INDEX IF NOT EXISTS idx_api_keys_lookup ON api_keys(key, enabled);
@@ -73,8 +76,11 @@ impl Database {
             "#,
         )?;
 
-        // Автомиграция для старых БД (добавление колонки is_admin)
+        // Автомиграция для старых БД
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN is_admin INTEGER DEFAULT 0;", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN expires_at REAL DEFAULT NULL;", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN request_limit INTEGER DEFAULT 0;", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN limit_type TEXT DEFAULT 'tokens';", []);
 
         // 2. Пул параллельных читателей (4 подключения)
         let num_readers = 4;
@@ -193,25 +199,29 @@ impl Database {
             let conn = r.lock();
             let mut stmt = conn.prepare(
                 r#"
-                SELECT id, name, key, rpm_limit, token_limit, tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0)
+                SELECT id, name, key, rpm_limit, token_limit, COALESCE(request_limit, 0), COALESCE(limit_type, 'tokens'),
+                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at
                 FROM api_keys
                 ORDER BY id ASC
                 "#,
             )?;
             let rows = stmt.query_map([], |row| {
-                let enabled_int: i64 = row.get(7)?;
-                let is_adm_int: i64 = row.get(9)?;
+                let enabled_int: i64 = row.get(9)?;
+                let is_adm_int: i64 = row.get(11)?;
                 Ok(ApiKey {
                     id: row.get(0)?,
                     name: row.get(1)?,
                     key: row.get(2)?,
                     rpm_limit: row.get(3)?,
                     token_limit: row.get(4)?,
-                    tokens_used: row.get(5)?,
-                    requests_count: row.get(6)?,
+                    request_limit: row.get(5)?,
+                    limit_type: row.get(6)?,
+                    tokens_used: row.get(7)?,
+                    requests_count: row.get(8)?,
                     enabled: enabled_int == 1,
-                    created_at: row.get(8)?,
+                    created_at: row.get(10)?,
                     is_admin: is_adm_int == 1,
+                    expires_at: row.get(12)?,
                 })
             })?;
             let mut list = Vec::new();
@@ -230,26 +240,30 @@ impl Database {
             let conn = r.lock();
             let mut stmt = conn.prepare(
                 r#"
-                SELECT id, name, key, rpm_limit, token_limit, tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0)
+                SELECT id, name, key, rpm_limit, token_limit, COALESCE(request_limit, 0), COALESCE(limit_type, 'tokens'),
+                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at
                 FROM api_keys
                 WHERE key = ?1
                 LIMIT 1
                 "#,
             )?;
             let mut rows = stmt.query_map(params![token_owned], |row| {
-                let enabled_int: i64 = row.get(7)?;
-                let is_adm_int: i64 = row.get(9)?;
+                let enabled_int: i64 = row.get(9)?;
+                let is_adm_int: i64 = row.get(11)?;
                 Ok(ApiKey {
                     id: row.get(0)?,
                     name: row.get(1)?,
                     key: row.get(2)?,
                     rpm_limit: row.get(3)?,
                     token_limit: row.get(4)?,
-                    tokens_used: row.get(5)?,
-                    requests_count: row.get(6)?,
+                    request_limit: row.get(5)?,
+                    limit_type: row.get(6)?,
+                    tokens_used: row.get(7)?,
+                    requests_count: row.get(8)?,
                     enabled: enabled_int == 1,
-                    created_at: row.get(8)?,
+                    created_at: row.get(10)?,
                     is_admin: is_adm_int == 1,
+                    expires_at: row.get(12)?,
                 })
             })?;
             if let Some(res) = rows.next() {
@@ -414,16 +428,19 @@ impl Database {
         key: &str,
         rpm_limit: i64,
         token_limit: i64,
+        request_limit: i64,
+        limit_type: &str,
         is_admin: bool,
+        expires_at: Option<f64>,
         now: f64,
     ) -> Result<ApiKey> {
         let conn = self.writer.lock().await;
         conn.execute(
             r#"
-            INSERT INTO api_keys (name, key, rpm_limit, token_limit, tokens_used, requests_count, enabled, created_at, is_admin)
-            VALUES (?1, ?2, ?3, ?4, 0, 0, 1, ?5, ?6)
+            INSERT INTO api_keys (name, key, rpm_limit, token_limit, request_limit, limit_type, tokens_used, requests_count, enabled, created_at, is_admin, expires_at)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 0, 1, ?7, ?8, ?9)
             "#,
-            params![name, key, rpm_limit, token_limit, now, if is_admin { 1 } else { 0 }],
+            params![name, key, rpm_limit, token_limit, request_limit, limit_type, now, if is_admin { 1 } else { 0 }, expires_at],
         )?;
         let id = conn.last_insert_rowid();
         Ok(ApiKey {
@@ -432,11 +449,14 @@ impl Database {
             key: key.to_string(),
             rpm_limit,
             token_limit,
+            request_limit,
+            limit_type: limit_type.to_string(),
             tokens_used: 0,
             requests_count: 0,
             enabled: true,
             created_at: now,
             is_admin,
+            expires_at,
         })
     }
 
@@ -447,42 +467,39 @@ impl Database {
         key: Option<&str>,
         rpm_limit: Option<i64>,
         token_limit: Option<i64>,
+        request_limit: Option<i64>,
+        limit_type: Option<&str>,
         enabled: Option<bool>,
         is_admin: Option<bool>,
+        expires_at: Option<Option<f64>>,
     ) -> Result<()> {
         let conn = self.writer.lock().await;
         if let Some(n) = name {
-            conn.execute(
-                "UPDATE api_keys SET name = ?1 WHERE id = ?2",
-                params![n, id],
-            )?;
+            conn.execute("UPDATE api_keys SET name = ?1 WHERE id = ?2", params![n, id])?;
         }
         if let Some(k) = key {
             conn.execute("UPDATE api_keys SET key = ?1 WHERE id = ?2", params![k, id])?;
         }
         if let Some(r) = rpm_limit {
-            conn.execute(
-                "UPDATE api_keys SET rpm_limit = ?1 WHERE id = ?2",
-                params![r, id],
-            )?;
+            conn.execute("UPDATE api_keys SET rpm_limit = ?1 WHERE id = ?2", params![r, id])?;
         }
         if let Some(t) = token_limit {
-            conn.execute(
-                "UPDATE api_keys SET token_limit = ?1 WHERE id = ?2",
-                params![t, id],
-            )?;
+            conn.execute("UPDATE api_keys SET token_limit = ?1 WHERE id = ?2", params![t, id])?;
+        }
+        if let Some(rl) = request_limit {
+            conn.execute("UPDATE api_keys SET request_limit = ?1 WHERE id = ?2", params![rl, id])?;
+        }
+        if let Some(lt) = limit_type {
+            conn.execute("UPDATE api_keys SET limit_type = ?1 WHERE id = ?2", params![lt, id])?;
         }
         if let Some(en) = enabled {
-            conn.execute(
-                "UPDATE api_keys SET enabled = ?1 WHERE id = ?2",
-                params![if en { 1 } else { 0 }, id],
-            )?;
+            conn.execute("UPDATE api_keys SET enabled = ?1 WHERE id = ?2", params![if en { 1 } else { 0 }, id])?;
         }
         if let Some(adm) = is_admin {
-            conn.execute(
-                "UPDATE api_keys SET is_admin = ?1 WHERE id = ?2",
-                params![if adm { 1 } else { 0 }, id],
-            )?;
+            conn.execute("UPDATE api_keys SET is_admin = ?1 WHERE id = ?2", params![if adm { 1 } else { 0 }, id])?;
+        }
+        if let Some(exp) = expires_at {
+            conn.execute("UPDATE api_keys SET expires_at = ?1 WHERE id = ?2", params![exp, id])?;
         }
         Ok(())
     }
@@ -500,6 +517,52 @@ impl Database {
             params![tokens, id],
         )?;
         Ok(())
+    }
+
+    pub async fn get_keys_consumption_analytics(&self) -> Result<serde_json::Value> {
+        let keys = self.list_keys().await?;
+        let total_tokens: i64 = keys.iter().map(|k| k.tokens_used).sum();
+        let total_requests: i64 = keys.iter().map(|k| k.requests_count).sum();
+
+        let mut sorted = keys.clone();
+        sorted.sort_by(|a, b| b.tokens_used.cmp(&a.tokens_used));
+
+        let top_items: Vec<serde_json::Value> = sorted
+            .into_iter()
+            .map(|k| {
+                let token_pct = if total_tokens > 0 {
+                    (k.tokens_used as f64 / total_tokens as f64) * 100.0
+                } else {
+                    0.0
+                };
+                let req_pct = if total_requests > 0 {
+                    (k.requests_count as f64 / total_requests as f64) * 100.0
+                } else {
+                    0.0
+                };
+                serde_json::json!({
+                    "id": k.id,
+                    "name": k.name,
+                    "key": k.key,
+                    "tokens_used": k.tokens_used,
+                    "token_percent": (token_pct * 10.0).round() / 10.0,
+                    "requests_count": k.requests_count,
+                    "request_percent": (req_pct * 10.0).round() / 10.0,
+                    "limit_type": k.limit_type,
+                    "token_limit": k.token_limit,
+                    "request_limit": k.request_limit,
+                    "rpm_limit": k.rpm_limit,
+                    "is_admin": k.is_admin,
+                    "enabled": k.enabled,
+                })
+            })
+            .collect();
+
+        Ok(serde_json::json!({
+            "total_tokens": total_tokens,
+            "total_requests": total_requests,
+            "top": top_items,
+        }))
     }
 
     pub async fn set_model_config(
@@ -532,10 +595,13 @@ pub struct ApiKey {
     pub key: String,
     pub rpm_limit: i64,
     pub token_limit: i64,
+    pub request_limit: i64,
+    pub limit_type: String,
     pub tokens_used: i64,
     pub requests_count: i64,
     pub enabled: bool,
     pub created_at: f64,
     #[serde(default)]
     pub is_admin: bool,
+    pub expires_at: Option<f64>,
 }

@@ -25,6 +25,7 @@ pub use logger::{AuditLogger, RequestLog};
 pub use telemetry::TelemetryEngine;
 
 use anyhow::Result;
+use futures::StreamExt;
 use axum::{
     body::Body,
     extract::State,
@@ -72,6 +73,33 @@ impl RpmTracker {
 }
 
 #[derive(Clone)]
+pub struct StreamLease {
+    acc_id: i64,
+    map: Arc<parking_lot::RwLock<std::collections::HashMap<i64, usize>>>,
+}
+
+impl StreamLease {
+    pub fn new(acc_id: i64, map: Arc<parking_lot::RwLock<std::collections::HashMap<i64, usize>>>) -> Self {
+        {
+            let mut guard = map.write();
+            *guard.entry(acc_id).or_insert(0) += 1;
+        }
+        Self { acc_id, map }
+    }
+}
+
+impl Drop for StreamLease {
+    fn drop(&mut self) {
+        let mut guard = self.map.write();
+        if let Some(count) = guard.get_mut(&self.acc_id) {
+            if *count > 0 {
+                *count -= 1;
+            }
+        }
+    }
+}
+
+#[derive(Clone)]
 pub(crate) struct AppState {
     pub(crate) config: Arc<parking_lot::RwLock<Config>>,
     pub(crate) db: Database,
@@ -84,6 +112,7 @@ pub(crate) struct AppState {
     pub(crate) antidote: Arc<antidote::AntidoteEngine>,
     pub(crate) circuit_breaker: Arc<circuit_breaker::CircuitBreakerManager>,
     pub(crate) model_manager: Arc<model_manager::ModelManager>,
+    pub(crate) active_streams: Arc<parking_lot::RwLock<std::collections::HashMap<i64, usize>>>,
 }
 
 pub async fn run_router(config: Arc<Config>) -> Result<()> {
@@ -182,6 +211,8 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
     ));
     model_manager.clone().start_worker(Duration::from_secs(300));
 
+    let active_streams = Arc::new(parking_lot::RwLock::new(std::collections::HashMap::new()));
+
     let state = AppState {
         config: config_lock,
         db: db.clone(),
@@ -193,6 +224,7 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
         antidote,
         circuit_breaker,
         model_manager,
+        active_streams,
     };
 
     // Фоновый демон обновления токенов Google OAuth (за 5 мин до истечения)
@@ -297,6 +329,11 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
         .route("/api/telemetry/summary", get(handle_telemetry_summary))
         .route("/api/telemetry/requests", get(handle_telemetry_requests))
         .route("/api/telemetry/errors", get(handle_telemetry_errors))
+        .route("/api/keys/analytics", get(handle_keys_analytics))
+        .route("/api/user/me", get(handle_user_me))
+        .route("/api/user/requests", get(handle_user_requests))
+        .route("/api/antidote/problems", get(handle_antidote_problems).post(handle_antidote_add))
+        .route("/api/antidote/stats", get(handle_antidote_stats))
         .route(
             "/api/accounts",
             get(api_accounts::handle_get_accounts).post(api_accounts::handle_add_account),
@@ -534,22 +571,28 @@ async fn handle_admin_ui(
         }
     }
 
-    let is_admin = if let Some(ref t) = token {
+    let (is_auth, is_admin) = if let Some(ref t) = token {
         if t == &state.config.read().server.api_key {
-            true
+            (true, true)
         } else if let Ok(Some(k)) = state.db.get_key_by_token(t).await {
-            k.enabled && k.is_admin
+            if k.enabled {
+                (true, k.is_admin)
+            } else {
+                (false, false)
+            }
         } else {
-            false
+            (false, false)
         }
     } else {
-        false
+        (false, false)
     };
 
-    if is_admin {
+    if !is_auth {
+        axum::response::Html(include_str!("../static/login.html"))
+    } else if is_admin {
         axum::response::Html(include_str!("../static/dashboard.html"))
     } else {
-        axum::response::Html(include_str!("../static/login.html"))
+        axum::response::Html(include_str!("../static/user_cabinet.html"))
     }
 }
 
@@ -589,25 +632,196 @@ async fn handle_admin_login(
                     Json(serde_json::json!({ "status": "error", "message": "API ключ отключен" })),
                 );
             }
-            if k.is_admin {
-                return (
-                    StatusCode::OK,
-                    Json(serde_json::json!({
-                        "status": "ok",
-                        "role": "admin",
-                        "name": k.name
-                    })),
-                );
-            } else {
-                return (
-                    StatusCode::FORBIDDEN,
-                    Json(serde_json::json!({ "status": "error", "message": "У данного ключа нет прав администратора" })),
-                );
+            if let Some(exp) = k.expires_at {
+                let now = SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs_f64();
+                if now > exp {
+                    return (
+                        StatusCode::FORBIDDEN,
+                        Json(serde_json::json!({ "status": "error", "message": "Срок действия API ключа истек" })),
+                    );
+                }
             }
+            let role = if k.is_admin { "admin" } else { "user" };
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({
+                    "status": "ok",
+                    "role": role,
+                    "name": k.name
+                })),
+            )
         }
         _ => (
             StatusCode::UNAUTHORIZED,
             Json(serde_json::json!({ "status": "error", "message": "Неверный API ключ" })),
+        ),
+    }
+}
+
+async fn handle_keys_analytics(State(state): State<AppState>) -> impl IntoResponse {
+    match state.db.get_keys_consumption_analytics().await {
+        Ok(res) => (StatusCode::OK, Json(res)),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+async fn handle_user_me(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let mut token = None;
+    if let Some(auth) = headers.get("authorization").and_then(|h| h.to_str().ok()) {
+        if let Some(bearer) = auth.strip_prefix("Bearer ") {
+            token = Some(bearer.trim().to_string());
+        }
+    }
+    if token.is_none() {
+        if let Some(cookie_hdr) = headers.get("cookie").and_then(|h| h.to_str().ok()) {
+            for part in cookie_hdr.split(';') {
+                let trimmed = part.trim();
+                if let Some(val) = trimmed.strip_prefix("hydra_admin_auth=") {
+                    token = Some(val.trim().to_string());
+                    break;
+                }
+            }
+        }
+    }
+
+    let tok = match token {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({ "error": "Unauthorized" })),
+            );
+        }
+    };
+
+    match state.db.get_key_by_token(&tok).await {
+        Ok(Some(k)) => (StatusCode::OK, Json(serde_json::to_value(&k).unwrap_or_default())),
+        _ => (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({ "error": "Invalid key" })),
+        ),
+    }
+}
+
+async fn handle_user_requests(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let mut token = None;
+    if let Some(auth) = headers.get("authorization").and_then(|h| h.to_str().ok()) {
+        if let Some(bearer) = auth.strip_prefix("Bearer ") {
+            token = Some(bearer.trim().to_string());
+        }
+    }
+    if token.is_none() {
+        if let Some(cookie_hdr) = headers.get("cookie").and_then(|h| h.to_str().ok()) {
+            for part in cookie_hdr.split(';') {
+                let trimmed = part.trim();
+                if let Some(val) = trimmed.strip_prefix("hydra_admin_auth=") {
+                    token = Some(val.trim().to_string());
+                    break;
+                }
+            }
+        }
+    }
+
+    let tok = match token {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({ "error": "Unauthorized" })),
+            );
+        }
+    };
+
+    if let Ok(Some(k)) = state.db.get_key_by_token(&tok).await {
+        match state.telemetry.get_user_requests(&k.name, 50) {
+            Ok(reqs) => (StatusCode::OK, Json(serde_json::to_value(reqs).unwrap_or_default())),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            ),
+        }
+    } else {
+        (
+            StatusCode::UNAUTHORIZED,
+            Json(serde_json::json!({ "error": "Invalid key" })),
+        )
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct AntidoteQuery {
+    q: Option<String>,
+    limit: Option<usize>,
+}
+
+async fn handle_antidote_problems(
+    State(state): State<AppState>,
+    axum::extract::Query(query): axum::extract::Query<AntidoteQuery>,
+) -> impl IntoResponse {
+    let limit = query.limit.unwrap_or(50).min(200);
+    let res = if let Some(ref q) = query.q {
+        let trimmed = q.trim();
+        if !trimmed.is_empty() {
+            state.antidote.search_problems(trimmed, limit)
+        } else {
+            state.antidote.get_recent_problems(limit)
+        }
+    } else {
+        state.antidote.get_recent_problems(limit)
+    };
+
+    match res {
+        Ok(items) => (StatusCode::OK, Json(serde_json::json!({ "problems": items }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+async fn handle_antidote_stats(State(state): State<AppState>) -> impl IntoResponse {
+    match state.antidote.get_stats() {
+        Ok(stats) => (StatusCode::OK, Json(stats)),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct AddProblemRequest {
+    title: String,
+    error_signature: String,
+    solution: String,
+    tags: Option<String>,
+}
+
+async fn handle_antidote_add(
+    State(state): State<AppState>,
+    Json(payload): Json<AddProblemRequest>,
+) -> impl IntoResponse {
+    let tags = payload.tags.unwrap_or_default();
+    match state.antidote.add_problem(&payload.title, &payload.error_signature, &payload.solution, &tags) {
+        Ok(issue_id) => (
+            StatusCode::CREATED,
+            Json(serde_json::json!({ "status": "created", "issue_id": issue_id })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
         ),
     }
 }
@@ -807,6 +1021,7 @@ async fn handle_chat_completions(
     // ЭТАП 1: HRW AFFINITY ROUTING (Привязка сессии к аккаунту)
     // -------------------------------------------------------------------------
     let affinity_key = translator::compute_session_affinity_key(&req);
+    let active_streams_snapshot = state.active_streams.read().clone();
     if cfg.caching.enabled && cfg.caching.hrw_affinity {
         eligible.sort_by(|a, b| {
             let rem_a = if is_claude {
@@ -819,8 +1034,15 @@ async fn handle_chat_completions(
             } else {
                 b.gemini_remaining
             };
-            let score_a = compute_hrw_score(&affinity_key, a.id, rem_a);
-            let score_b = compute_hrw_score(&affinity_key, b.id, rem_b);
+
+            let in_flight_a = active_streams_snapshot.get(&a.id).copied().unwrap_or(0);
+            let in_flight_b = active_streams_snapshot.get(&b.id).copied().unwrap_or(0);
+
+            let penalty_a = if in_flight_a >= 2 { 100.0 } else { 1.0 + (in_flight_a as f64) * 2.0 };
+            let penalty_b = if in_flight_b >= 2 { 100.0 } else { 1.0 + (in_flight_b as f64) * 2.0 };
+
+            let score_a = compute_hrw_score(&affinity_key, a.id, rem_a) / penalty_a;
+            let score_b = compute_hrw_score(&affinity_key, b.id, rem_b) / penalty_b;
             score_b
                 .partial_cmp(&score_a)
                 .unwrap_or(std::cmp::Ordering::Equal)
@@ -1074,11 +1296,21 @@ async fn handle_chat_completions(
                         auth_key_id,
                         Some(state.db.clone()),
                     );
+
+                    let lease = StreamLease::new(chosen_acc.id, state.active_streams.clone());
+                    let guarded_stream = async_stream::stream! {
+                        let _holder = lease;
+                        tokio::pin!(transformed_stream);
+                        while let Some(chunk) = transformed_stream.next().await {
+                            yield chunk;
+                        }
+                    };
+
                     return Response::builder()
                         .header("Content-Type", "text/event-stream")
                         .header("Cache-Control", "no-cache")
                         .header("Connection", "keep-alive")
-                        .body(Body::from_stream(transformed_stream))
+                        .body(Body::from_stream(guarded_stream))
                         .unwrap_or_else(|_| {
                             (StatusCode::INTERNAL_SERVER_ERROR, "Stream build error")
                                 .into_response()
@@ -1129,6 +1361,7 @@ async fn handle_chat_completions(
                 }
             }
         } else {
+            let _lease = StreamLease::new(chosen_acc.id, state.active_streams.clone());
             match state.client.generate_content(&token, &gemini_payload).await {
                 Ok(gemini_resp) => {
                     match translator::parse_gemini_response(
@@ -1424,15 +1657,33 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
             if !key.enabled {
                 return AuthResult::Forbidden(format!("API key '{}' is disabled", key.name));
             }
-            if key.token_limit > 0 && key.tokens_used >= key.token_limit {
-                return AuthResult::RateLimited(format!(
-                    "Token limit reached for key '{}' ({} / {} tokens)",
-                    key.name, key.tokens_used, key.token_limit
-                ));
+            let now_f64 = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs_f64();
+            if let Some(exp) = key.expires_at {
+                if now_f64 > exp {
+                    return AuthResult::Forbidden(format!("Срок действия API ключа '{}' истек", key.name));
+                }
             }
-            if !state.rpm_tracker.check_and_record(key.id, key.rpm_limit) {
+            if key.limit_type == "requests" {
+                if key.request_limit > 0 && key.requests_count >= key.request_limit {
+                    return AuthResult::RateLimited(format!(
+                        "Лимит запросов исчерпан для ключа '{}' ({} / {} запросов)",
+                        key.name, key.requests_count, key.request_limit
+                    ));
+                }
+            } else {
+                if key.token_limit > 0 && key.tokens_used >= key.token_limit {
+                    return AuthResult::RateLimited(format!(
+                        "Лимит токенов исчерпан для ключа '{}' ({} / {} токенов)",
+                        key.name, key.tokens_used, key.token_limit
+                    ));
+                }
+            }
+            if key.rpm_limit > 0 && !state.rpm_tracker.check_and_record(key.id, key.rpm_limit) {
                 return AuthResult::RateLimited(format!(
-                    "RPM limit exceeded for key '{}' (limit: {} req/min)",
+                    "RPM лимит превышен для ключа '{}' (limit: {} req/min)",
                     key.name, key.rpm_limit
                 ));
             }

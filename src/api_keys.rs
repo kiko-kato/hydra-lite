@@ -12,7 +12,10 @@ pub struct CreateKeyRequest {
     pub key: Option<String>,
     pub rpm_limit: Option<i64>,
     pub token_limit: Option<i64>,
+    pub request_limit: Option<i64>,
+    pub limit_type: Option<String>,
     pub is_admin: Option<bool>,
+    pub expires_at: Option<f64>,
 }
 
 #[derive(Deserialize)]
@@ -21,8 +24,11 @@ pub struct UpdateKeyRequest {
     pub key: Option<String>,
     pub rpm_limit: Option<i64>,
     pub token_limit: Option<i64>,
+    pub request_limit: Option<i64>,
+    pub limit_type: Option<String>,
     pub enabled: Option<bool>,
     pub is_admin: Option<bool>,
+    pub expires_at: Option<Option<f64>>,
 }
 
 pub(crate) async fn handle_get_keys(State(state): State<AppState>) -> impl IntoResponse {
@@ -47,9 +53,11 @@ pub(crate) async fn handle_create_key(
         );
     }
 
+    let is_admin = payload.is_admin.unwrap_or(false);
     let token = payload.key.unwrap_or_default().trim().to_string();
     let final_key = if token.is_empty() {
-        format!("hydra-{}", uuid::Uuid::new_v4().simple())
+        let prefix = if is_admin { "hydra-adm" } else { "hydra-usr" };
+        format!("{}-{}", prefix, uuid::Uuid::new_v4().simple())
     } else {
         token
     };
@@ -61,11 +69,22 @@ pub(crate) async fn handle_create_key(
 
     let rpm = payload.rpm_limit.unwrap_or(0).max(0);
     let tok_lim = payload.token_limit.unwrap_or(0).max(0);
-    let is_admin = payload.is_admin.unwrap_or(false);
+    let req_lim = payload.request_limit.unwrap_or(0).max(0);
+    let lim_type = payload.limit_type.unwrap_or_else(|| "tokens".to_string());
 
     match state
         .db
-        .create_key(name, &final_key, rpm, tok_lim, is_admin, now)
+        .create_key(
+            name,
+            &final_key,
+            rpm,
+            tok_lim,
+            req_lim,
+            &lim_type,
+            is_admin,
+            payload.expires_at,
+            now,
+        )
         .await
     {
         Ok(created) => (
@@ -86,6 +105,7 @@ pub(crate) async fn handle_update_key(
 ) -> impl IntoResponse {
     let name_opt = payload.name.as_deref().map(|s| s.trim());
     let key_opt = payload.key.as_deref().map(|s| s.trim());
+    let lim_type_opt = payload.limit_type.as_deref().map(|s| s.trim());
     match state
         .db
         .update_key(
@@ -94,8 +114,11 @@ pub(crate) async fn handle_update_key(
             key_opt,
             payload.rpm_limit,
             payload.token_limit,
+            payload.request_limit,
+            lim_type_opt,
             payload.enabled,
             payload.is_admin,
+            payload.expires_at,
         )
         .await
     {

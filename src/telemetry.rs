@@ -327,6 +327,63 @@ impl TelemetryEngine {
         Ok(res)
     }
 
+    pub fn get_user_requests(&self, key_name: &str, limit: usize) -> Result<Vec<RequestMetric>> {
+        let conn = Connection::open(&self.db_path)?;
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT timestamp_epoch, created_at, model, account_id, account_email,
+                   proxy_used, stream, status_code, connect_latency_ms, ttft_ms,
+                   thinking_time_ms, generation_time_ms, total_latency_ms,
+                   prompt_tokens, completion_tokens, cached_tokens, reasoning_tokens,
+                   total_tokens, tok_per_sec, clean_tok_per_sec, chunks_count,
+                   max_chunk_gap_ms, fast_gate_us, cache_hit_type, error, key_name
+            FROM request_analytics
+            WHERE key_name = ?1
+            ORDER BY id DESC
+            LIMIT ?2
+            "#,
+        )?;
+
+        let rows = stmt.query_map(params![key_name, limit as i64], |row| {
+            Ok(RequestMetric {
+                timestamp_epoch: row.get(0)?,
+                created_at: row.get(1)?,
+                model: row.get(2)?,
+                account_id: row.get(3)?,
+                account_email: row.get(4)?,
+                proxy_used: row.get(5)?,
+                stream: row.get::<_, i64>(6)? == 1,
+                status_code: row.get::<_, i64>(7)? as u16,
+                connect_latency_ms: row.get::<_, i64>(8)? as u64,
+                ttft_ms: row.get::<_, i64>(9)? as u64,
+                thinking_time_ms: row.get::<_, i64>(10)? as u64,
+                generation_time_ms: row.get::<_, i64>(11)? as u64,
+                total_latency_ms: row.get::<_, i64>(12)? as u64,
+                prompt_tokens: row.get::<_, i64>(13)? as u32,
+                completion_tokens: row.get::<_, i64>(14)? as u32,
+                cached_tokens: row.get::<_, i64>(15)? as u32,
+                reasoning_tokens: row.get::<_, i64>(16)? as u32,
+                total_tokens: row.get::<_, i64>(17)? as u32,
+                tok_per_sec: row.get(18)?,
+                clean_tok_per_sec: row.get(19)?,
+                chunks_count: row.get::<_, i64>(20)? as u32,
+                max_chunk_gap_ms: row.get::<_, i64>(21)? as u64,
+                fast_gate_us: row.get::<_, i64>(22)? as u64,
+                cache_hit_type: row.get(23)?,
+                error: row.get(24)?,
+                key_name: row.get(25)?,
+            })
+        })?;
+
+        let mut res = Vec::new();
+        for r in rows {
+            if let Ok(m) = r {
+                res.push(m);
+            }
+        }
+        Ok(res)
+    }
+
     pub fn get_averages(&self) -> Result<TelemetryAverages> {
         let conn = Connection::open(&self.db_path)?;
         let mut stmt = conn.prepare(

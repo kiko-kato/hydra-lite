@@ -544,4 +544,106 @@ impl AntidoteEngine {
 
         None
     }
+
+    pub fn get_recent_problems(&self, limit: usize) -> anyhow::Result<Vec<serde_json::Value>> {
+        let conn = self.db.lock().unwrap();
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT issue_id, title, error_signature, problem_text, solution_text, source, hit_count, created_at, COALESCE(tags, '')
+            FROM problems
+            ORDER BY id DESC
+            LIMIT ?1
+            "#,
+        )?;
+        let rows = stmt.query_map(params![limit as i64], |row| {
+            Ok(serde_json::json!({
+                "issue_id": row.get::<_, String>(0)?,
+                "title": row.get::<_, String>(1)?,
+                "error_signature": row.get::<_, String>(2)?,
+                "problem_text": row.get::<_, String>(3)?,
+                "solution_text": row.get::<_, String>(4)?,
+                "source": row.get::<_, String>(5)?,
+                "hit_count": row.get::<_, i64>(6)?,
+                "created_at": row.get::<_, String>(7)?,
+                "tags": row.get::<_, String>(8)?,
+            }))
+        })?;
+        let mut list = Vec::new();
+        for r in rows {
+            if let Ok(v) = r {
+                list.push(v);
+            }
+        }
+        Ok(list)
+    }
+
+    pub fn search_problems(&self, query: &str, limit: usize) -> anyhow::Result<Vec<serde_json::Value>> {
+        let conn = self.db.lock().unwrap();
+        let q_pattern = format!("%{}%", query.trim());
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT issue_id, title, error_signature, problem_text, solution_text, source, hit_count, created_at, COALESCE(tags, '')
+            FROM problems
+            WHERE title LIKE ?1 OR error_signature LIKE ?1 OR problem_text LIKE ?1 OR tags LIKE ?1
+            ORDER BY hit_count DESC, id DESC
+            LIMIT ?2
+            "#,
+        )?;
+        let rows = stmt.query_map(params![q_pattern, limit as i64], |row| {
+            Ok(serde_json::json!({
+                "issue_id": row.get::<_, String>(0)?,
+                "title": row.get::<_, String>(1)?,
+                "error_signature": row.get::<_, String>(2)?,
+                "problem_text": row.get::<_, String>(3)?,
+                "solution_text": row.get::<_, String>(4)?,
+                "source": row.get::<_, String>(5)?,
+                "hit_count": row.get::<_, i64>(6)?,
+                "created_at": row.get::<_, String>(7)?,
+                "tags": row.get::<_, String>(8)?,
+            }))
+        })?;
+        let mut list = Vec::new();
+        for r in rows {
+            if let Ok(v) = r {
+                list.push(v);
+            }
+        }
+        Ok(list)
+    }
+
+    pub fn get_stats(&self) -> anyhow::Result<serde_json::Value> {
+        let conn = self.db.lock().unwrap();
+        let total_problems: i64 = conn.query_row("SELECT count(*) FROM problems", [], |r| r.get(0)).unwrap_or(0);
+        let total_hits: i64 = conn.query_row("SELECT COALESCE(sum(hit_count), 0) FROM problems", [], |r| r.get(0)).unwrap_or(0);
+        Ok(serde_json::json!({
+            "total_solutions": total_problems,
+            "total_injections": total_hits,
+            "engine_version": "2.0.0",
+        }))
+    }
+
+    pub fn add_problem(&self, title: &str, error_sig: &str, solution: &str, tags: &str) -> anyhow::Result<String> {
+        let conn = self.db.lock().unwrap();
+        let issue_id = format!("ISSUE-{}", uuid::Uuid::new_v4().simple());
+        let now = chrono_like_now_antidote();
+        conn.execute(
+            r#"
+            INSERT INTO problems (issue_id, title, error_signature, problem_text, solution_text, source, hit_count, created_at, updated_at, tags)
+            VALUES (?1, ?2, ?3, ?2, ?4, 'admin', 0, ?5, ?5, ?6)
+            "#,
+            params![issue_id, title, error_sig, solution, now, tags],
+        )?;
+        Ok(issue_id)
+    }
+}
+
+fn chrono_like_now_antidote() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs();
+    let sec = now % 60;
+    let min = (now / 60) % 60;
+    let hour = (now / 3600) % 24;
+    format!("{:02}:{:02}:{:02} UTC", hour, min, sec)
 }
