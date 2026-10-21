@@ -1,0 +1,54 @@
+[server]
+bind = "127.0.0.1:1024"
+api_key = "hydra-adm-demo-master-key-01"
+request_body_limit_mb = 64
+cors_allow_all = true
+
+[oauth]
+client_id = "your-app-id.apps.googleusercontent.com"
+client_secret = "GOCSPX-your-google-oauth-secret"
+token_endpoint = "https://oauth2.googleapis.com/token"
+token_refresh_skew_sec = 300.0
+token_error_cooldown_sec = 60.0
+
+[upstream]
+proxy = ""
+connect_timeout_ms = 15000
+total_timeout_ms = 300000
+stream_idle_timeout_ms = 300000
+max_retries = 3
+backoff_initial_ms = 500
+backoff_multiplier = 2.0
+generate_endpoints = ["https://cloudcode-pa.googleapis.com/v1internal:generateContent"]
+stream_endpoints = ["https://cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse"]
+
+[quota]
+poll_interval_sec = 1800
+min_fraction = 0.02
+rate_limit_cooldown_sec = 30.0
+load_balancing_strategy = "fraction_desc"
+
+[signatures]
+enabled = true
+
+[generation_defaults]
+default_model = "gemini-3.8-flash-high"
+max_output_tokens = 65536
+default_temperature = 0.7
+top_p = 0.95
+top_k = 40
+
+[caching]
+enabled = true
+debug = false
+hrw_affinity = true
+exact_cache = false
+prefix_normalization = true
+strip_ansi = true
+cache_control_headers = true
+
+[database]
+path = "data/antigravity.db"
+logs_db_path = "data/logs.db"
+wal_autocheckpoint_pages = 1000
+busy_timeout_ms = 5000

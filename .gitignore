@@ -1,0 +1,15 @@
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Databases, WAL, logs & secrets
+data/*
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.log
+*.hash
+.env
+
+config.toml
