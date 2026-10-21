@@ -510,8 +510,47 @@ async fn handle_telemetry_errors(
     }
 }
 
-async fn handle_admin_ui() -> impl IntoResponse {
-    axum::response::Html(include_str!("../static/admin.html"))
+async fn handle_admin_ui(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let mut token = None;
+
+    if let Some(auth) = headers.get("authorization").and_then(|h| h.to_str().ok()) {
+        if let Some(bearer) = auth.strip_prefix("Bearer ") {
+            token = Some(bearer.trim().to_string());
+        }
+    }
+
+    if token.is_none() {
+        if let Some(cookie_hdr) = headers.get("cookie").and_then(|h| h.to_str().ok()) {
+            for part in cookie_hdr.split(';') {
+                let trimmed = part.trim();
+                if let Some(val) = trimmed.strip_prefix("hydra_admin_auth=") {
+                    token = Some(val.trim().to_string());
+                    break;
+                }
+            }
+        }
+    }
+
+    let is_admin = if let Some(ref t) = token {
+        if t == &state.config.read().server.api_key {
+            true
+        } else if let Ok(Some(k)) = state.db.get_key_by_token(t).await {
+            k.enabled && k.is_admin
+        } else {
+            false
+        }
+    } else {
+        false
+    };
+
+    if is_admin {
+        axum::response::Html(include_str!("../static/dashboard.html"))
+    } else {
+        axum::response::Html(include_str!("../static/login.html"))
+    }
 }
 
 #[derive(serde::Deserialize)]

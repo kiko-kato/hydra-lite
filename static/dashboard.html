@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Панель управления | HYDRA LITE</title>
+  <style>
+    :root {
+      --dark-bg: #0d0c16;
+      --darker-bg: #07060c;
+      --card-bg: rgba(22, 20, 36, 0.65);
+      --card-hover: rgba(30, 27, 48, 0.85);
+      --accent: #7c4dff;
+      --accent-light: #b388ff;
+      --accent-glow: rgba(124, 77, 255, 0.35);
+      --text: #f0f0f8;
+      --text-secondary: #9595b2;
+      --text-muted: #6b6a85;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-top: rgba(255, 255, 255, 0.18);
+      --border-accent: rgba(124, 77, 255, 0.35);
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --sidebar-w: 240px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+    body { background-color: var(--dark-bg); color: var(--text); min-height: 100vh; display: flex; position: relative; overflow-x: hidden; }
+
+    .ambient-bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .ambient-orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.18; }
+    .ambient-orb-1 { width: 500px; height: 500px; background: #7c4dff; top: -150px; left: -100px; }
+    .ambient-orb-2 { width: 450px; height: 450px; background: #651fff; bottom: -100px; right: -100px; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w);
+      height: 100vh;
+      height: 100dvh;
+      background: rgba(18, 16, 32, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-right: 1px solid var(--border);
+      padding: 24px 16px 24px 16px;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+    .sidebar-header { padding-bottom: 20px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .brand-text { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+    .brand-sub { color: var(--accent); margin-left: 4px; }
+    
+    .sidebar-nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      color: var(--text-secondary);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+      background: transparent;
+      text-align: left;
+    }
+    .nav-link:hover { color: #fff; background: var(--card-hover); }
+    .nav-link.active { color: #fff; background: rgba(124, 77, 255, 0.18); border-color: var(--border-accent); }
+
+    .sidebar-footer { padding-top: 16px; border-top: 1px solid var(--border); }
+    .btn-logout {
+      width: 100%;
+      padding: 10px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-logout:hover { background: rgba(239, 68, 68, 0.2); }
+
+    /* Main Content */
+    .main-wrapper { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; position: relative; z-index: 10; }
+    
+    /* Top Navbar */
+    .admin-top-navbar {
+      background: rgba(18, 16, 32, 0.6);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-status { font-size: 13px; color: var(--text-secondary); font-weight: 600; }
+    .nav-user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124, 77, 255, 0.12);
+      border: 1px solid var(--border-accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent-light);
+    }
+
+    .content-area { padding: 28px; max-width: 1400px; width: 100%; margin: 0 auto; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* KPI Cards */
+    .kpi-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .kpi-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-top: 1px solid var(--border-top);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .kpi-label { color: var(--text-secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+    .kpi-val { font-size: 26px; font-weight: 700; color: #fff; }
+
+    /* Glass Tables */
+    .glass-table-container {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-top: 1px solid var(--border-top);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+    }
+    .glass-table-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .glass-table-title { font-weight: 700; font-size: 15px; color: #fff; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+    th { background: rgba(14, 12, 24, 0.7); color: var(--text-secondary); font-weight: 600; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 20px; border-bottom: 1px solid var(--border); color: #cbd5e1; }
+    tr:hover td { background: var(--card-hover); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; }
+
+    /* Badges */
+    .badge { padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; display: inline-block; }
+    .badge-admin { background: rgba(124, 77, 255, 0.2); color: #c4b5fd; border: 1px solid rgba(124, 77, 255, 0.4); }
+    .badge-user { background: rgba(6, 182, 212, 0.2); color: #a5f3fc; border: 1px solid rgba(6, 182, 212, 0.4); }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    /* Switch */
+    .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #27273a; transition: .2s; border-radius: 18px; border: 1px solid var(--border); }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 2px; bottom: 2px; background-color: white; transition: .2s; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--accent); border-color: var(--accent-light); }
+    input:checked + .slider:before { transform: translateX(16px); }
+
+    /* Progress bar */
+    .progress-bar-bg { background: rgba(255,255,255,0.06); height: 7px; border-radius: 4px; overflow: hidden; width: 100%; margin-top: 4px; }
+    .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .fill-gemini { background: linear-gradient(90deg, #7c4dff, #b388ff); }
+    .fill-claude { background: linear-gradient(90deg, #06b6d4, #38bdf8); }
+
+    .btn-action {
+      background: rgba(124, 77, 255, 0.15);
+      border: 1px solid var(--border-accent);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-action:hover { background: var(--accent); }
+    .input-search {
+      background: rgba(10, 9, 18, 0.6);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+    }
+    .input-search:focus { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="ambient-bg-layer" aria-hidden="true">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-text">HYDRA<span class="brand-sub">LITE</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-link active" onclick="switchTab('quotas')">Квоты и пулы</button>
+      <button class="nav-link" onclick="switchTab('models')">Модели и алиасы</button>
+      <button class="nav-link" onclick="switchTab('requests')">Логи запросов</button>
+      <button class="nav-link" onclick="switchTab('errors')">Логи ошибок</button>
+      <button class="nav-link" onclick="switchTab('keys')">API Ключи</button>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="logout()">Выйти</button>
+    </div>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <!-- Top Navbar -->
+    <header class="admin-top-navbar">
+      <div class="nav-status">Direct Upstream: <span style="color:var(--success);">Онлайн</span></div>
+      <div class="nav-user-pill">
+        <span id="navUserName">ADMIN</span>
+      </div>
+    </header>
+
+    <div class="content-area">
+      <!-- Tab 1: Квоты & Аккаунты -->
+      <section id="pane-quotas" class="tab-pane active">
+        <div class="kpi-cards-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">Активных аккаунтов</div>
+            <div class="kpi-val" id="statActiveAccounts">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Всего запросов</div>
+            <div class="kpi-val" id="statTotalRequests">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Скорость генерации</div>
+            <div class="kpi-val" id="statAvgSpeed">-- т/с</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Средний TTFT</div>
+            <div class="kpi-val" id="statAvgTtft">-- мс</div>
+          </div>
+        </div>
+
+        <div class="glass-table-container">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Пул Google Cloud Code PA</div>
+            <button class="btn-action" onclick="loadQuotas()">Обновить</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email аккаунта</th>
+                <th>Gemini Квота</th>
+                <th>Claude Квота</th>
+                <th>Проверка</th>
+                <th>Активен</th>
+              </tr>
+            </thead>
+            <tbody id="accountsTableBody">
+              <tr><td colspan="6" style="text-align:center;">Загрузка пула...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 2: Модели & Алиасы -->
+      <section id="pane-models" class="tab-pane">
+        <div class="glass-table-container">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Модели и авто-алиасы</div>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="modelSearch" placeholder="Поиск модели..." class="input-search" oninput="filterModels()">
+              <button class="btn-action" onclick="loadModels()">Синхронизировать</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Имя из шлюза (Original ID)</th>
+                <th>Текущий алиас</th>
+                <th>Статус</th>
+                <th>Действие</th>
+              </tr>
+            </thead>
+            <tbody id="modelsTableBody">
+              <tr><td colspan="4" style="text-align:center;">Загрузка моделей...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 3: Логи запросов -->
+      <section id="pane-requests" class="tab-pane">
+        <div class="glass-table-container">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Последние 100 запросов</div>
+            <button class="btn-action" onclick="loadRequests()">Обновить</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Время (UTC)</th>
+                <th>Модель</th>
+                <th>Ключ</th>
+                <th>Статус</th>
+                <th>Токены</th>
+                <th>TTFT</th>
+                <th>Задержка</th>
+                <th>Скорость</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody">
+              <tr><td colspan="8" style="text-align:center;">Загрузка логов...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 4: Логи ошибок -->
+      <section id="pane-errors" class="tab-pane">
+        <div class="glass-table-container">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Журнал ошибок upstream</div>
+            <button class="btn-action" onclick="loadErrors()">Обновить</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Время (UTC)</th>
+                <th>Модель</th>
+                <th>Ключ</th>
+                <th>Код</th>
+                <th>Причина ошибки</th>
+                <th>Аккаунт</th>
+              </tr>
+            </thead>
+            <tbody id="errorsTableBody">
+              <tr><td colspan="6" style="text-align:center;">Загрузка журнала...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tab 5: API Ключи -->
+      <section id="pane-keys" class="tab-pane">
+        <div class="glass-table-container">
+          <div class="glass-table-header">
+            <div class="glass-table-title">API Ключи</div>
+            <button class="btn-action" onclick="createKeyPrompt()">+ Новый ключ</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Имя</th>
+                <th>Токен ключа</th>
+                <th>Роль</th>
+                <th>Токены</th>
+                <th>Запросов</th>
+                <th>RPM</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody id="keysTableBody">
+              <tr><td colspan="8" style="text-align:center;">Загрузка ключей...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    let allModels = [];
+
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+
+    const adminToken = getCookie('hydra_admin_auth') || localStorage.getItem('hydra_admin_auth') || '';
+
+    function authHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + adminToken
+      };
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('pane-' + tabId).classList.add('active');
+      if (tabId === 'quotas') loadQuotas();
+      if (tabId === 'models') loadModels();
+      if (tabId === 'requests') loadRequests();
+      if (tabId === 'errors') loadErrors();
+      if (tabId === 'keys') loadKeys();
+    }
+
+    function logout() {
+      document.cookie = 'hydra_admin_auth=; path=/; max-age=0;';
+      localStorage.removeItem('hydra_admin_auth');
+      window.location.reload();
+    }
+
+    async function loadQuotas() {
+      try {
+        const [accRes, sumRes] = await Promise.all([
+          fetch('/api/accounts', { headers: authHeaders() }),
+          fetch('/api/telemetry/summary', { headers: authHeaders() })
+        ]);
+        if (accRes.status === 401) return logout();
+        const accData = await accRes.json();
+        const summary = await sumRes.json() || {};
+        const accounts = accData.accounts || [];
+
+        document.getElementById('statActiveAccounts').innerText = accounts.filter(a => a.enabled).length;
+        document.getElementById('statTotalRequests').innerText = summary.total_requests || 0;
+        document.getElementById('statAvgSpeed').innerText = (summary.avg_tok_per_sec || 0).toFixed(1) + ' т/с';
+        document.getElementById('statAvgTtft').innerText = (summary.avg_ttft_ms || 0).toFixed(0) + ' мс';
+
+        const tbody = document.getElementById('accountsTableBody');
+        tbody.innerHTML = '';
+        accounts.forEach(a => {
+          const geminiPct = Math.round((a.gemini_remaining || 0) * 100);
+          const claudePct = Math.round((a.claude_remaining || 0) * 100);
+          const dt = a.last_quota_check ? new Date(a.last_quota_check * 1000).toLocaleTimeString() : 'Никогда';
+          tbody.innerHTML += `
+            <tr>
+              <td class="mono">#${a.id}</td>
+              <td class="mono" style="font-weight:600; color:#fff;">${a.email || 'anon'}</td>
+              <td style="width: 200px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px;"><span>Gemini</span><span>${geminiPct}%</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill fill-gemini" style="width:${geminiPct}%"></div></div>
+              </td>
+              <td style="width: 200px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px;"><span>Claude</span><span>${claudePct}%</span></div>
+                <div class="progress-bar-bg"><div class="progress-bar-fill fill-claude" style="width:${claudePct}%"></div></div>
+              </td>
+              <td>${dt}</td>
+              <td>
+                <label class="switch">
+                  <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
+                  <span class="slider"></span>
+                </label>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function toggleAccount(id) {
+      await fetch(`/api/accounts/${id}/toggle`, { method: 'PATCH', headers: authHeaders() });
+      loadQuotas();
+    }
+
+    async function loadModels() {
+      try {
+        const res = await fetch('/api/models/config', { headers: authHeaders() });
+        const data = await res.json();
+        allModels = data.models || [];
+        renderModels(allModels);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderModels(list) {
+      const tbody = document.getElementById('modelsTableBody');
+      tbody.innerHTML = '';
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Модели не найдены</td></tr>';
+        return;
+      }
+      list.forEach(m => {
+        tbody.innerHTML += `
+          <tr>
+            <td class="mono" style="font-weight:600; color:#fff;">${m.original_id}</td>
+            <td class="mono">${m.alias || '<i style="color:var(--text-muted);">(голое имя)</i>'}</td>
+            <td>
+              <label class="switch">
+                <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleModelStatus('${m.original_id}', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </td>
+            <td>
+              <button class="btn-action" style="padding:4px 10px; font-size:11px;" onclick="editAlias('${m.original_id}', '${m.alias || ''}')">Изменить</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function filterModels() {
+      const q = document.getElementById('modelSearch').value.toLowerCase();
+      renderModels(allModels.filter(m => m.original_id.toLowerCase().includes(q) || (m.alias && m.alias.toLowerCase().includes(q))));
+    }
+
+    async function toggleModelStatus(id, enabled) {
+      await fetch(`/api/models/config/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ enabled })
+      });
+    }
+
+    async function editAlias(id, current) {
+      const val = prompt(`Новый алиас для ${id}:`, current);
+      if (val === null) return;
+      await fetch(`/api/models/config/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({ alias: val })
+      });
+      loadModels();
+    }
+
+    async function loadRequests() {
+      try {
+        const res = await fetch('/api/telemetry/requests?limit=100', { headers: authHeaders() });
+        const list = await res.json() || [];
+        const tbody = document.getElementById('requestsTableBody');
+        tbody.innerHTML = '';
+        list.forEach(r => {
+          const isOk = r.status_code >= 200 && r.status_code < 300;
+          tbody.innerHTML += `
+            <tr>
+              <td class="mono">${r.created_at || ''}</td>
+              <td class="mono" style="font-weight:600; color:#fff;">${r.model}</td>
+              <td class="mono">${r.key_name || 'anon'}</td>
+              <td><span class="badge ${isOk ? 'badge-success' : 'badge-danger'}">${r.status_code}</span></td>
+              <td class="mono">${r.total_tokens || 0}</td>
+              <td class="mono">${r.ttft_ms || 0} ms</td>
+              <td class="mono">${r.total_latency_ms || 0} ms</td>
+              <td class="mono">${(r.clean_tok_per_sec || 0).toFixed(1)} т/с</td>
+            </tr>
+          `;
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadErrors() {
+      try {
+        const res = await fetch('/api/telemetry/errors?limit=100', { headers: authHeaders() });
+        const list = await res.json() || [];
+        const tbody = document.getElementById('errorsTableBody');
+        tbody.innerHTML = '';
+        if (!list.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--success);">Ошибок не зафиксировано</td></tr>';
+          return;
+        }
+        list.forEach(r => {
+          tbody.innerHTML += `
+            <tr>
+              <td class="mono">${r.created_at || ''}</td>
+              <td class="mono" style="color:#fff;">${r.model}</td>
+              <td class="mono">${r.key_name || 'anon'}</td>
+              <td><span class="badge badge-danger">${r.status_code}</span></td>
+              <td style="color:#f87171; font-size:12px; max-width:350px; overflow:hidden; text-overflow:ellipsis;">${r.error || 'Upstream error'}</td>
+              <td class="mono">${r.account_email || 'none'}</td>
+            </tr>
+          `;
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadKeys() {
+      try {
+        const res = await fetch('/api/keys', { headers: authHeaders() });
+        const data = await res.json();
+        const list = data.keys || [];
+        const tbody = document.getElementById('keysTableBody');
+        tbody.innerHTML = '';
+        list.forEach(k => {
+          tbody.innerHTML += `
+            <tr>
+              <td class="mono">#${k.id}</td>
+              <td style="font-weight:600; color:#fff;">${k.name}</td>
+              <td class="mono" style="color:var(--accent-light);">${k.key}</td>
+              <td><span class="badge ${k.is_admin ? 'badge-admin' : 'badge-user'}">${k.is_admin ? 'ADMIN' : 'USER'}</span></td>
+              <td class="mono">${(k.tokens_used || 0).toLocaleString()}</td>
+              <td class="mono">${k.requests_count || 0}</td>
+              <td class="mono">${k.rpm_limit > 0 ? k.rpm_limit : 'unlim'}</td>
+              <td><span class="badge ${k.enabled ? 'badge-success' : 'badge-danger'}">${k.enabled ? 'Активен' : 'Отключен'}</span></td>
+            </tr>
+          `;
+        });
+      } catch (e) { console.error(e); }
+    }
+
+    async function createKeyPrompt() {
+      const name = prompt('Имя ключа:');
+      if (!name) return;
+      const isAdmin = confirm('Назначить администратором?');
+      await fetch('/api/keys', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ name, is_admin: isAdmin })
+      });
+      loadKeys();
+    }
+
+    loadQuotas();
+  </script>
+</body>
+</html>

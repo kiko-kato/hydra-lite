@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Авторизация | HYDRA LITE</title>
+  <style>
+    :root {
+      --dark-bg: #0d0c16;
+      --darker-bg: #07060c;
+      --card-bg: rgba(22, 20, 36, 0.75);
+      --card-hover: rgba(30, 27, 48, 0.85);
+      --accent: #7c4dff;
+      --accent-light: #b388ff;
+      --accent-glow: rgba(124, 77, 255, 0.35);
+      --text: #f0f0f8;
+      --text-secondary: #9595b2;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-top: rgba(255, 255, 255, 0.18);
+      --border-accent: rgba(124, 77, 255, 0.35);
+      --error: #ef4444;
+      --radius-xl: 20px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+    body.login-body {
+      background-color: var(--dark-bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .ambient-bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    .ambient-orb { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.25; }
+    .ambient-orb-1 { width: 450px; height: 450px; background: #7c4dff; top: -100px; left: -100px; }
+    .ambient-orb-2 { width: 400px; height: 400px; background: #651fff; bottom: -80px; right: -80px; }
+    .ambient-orb-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 60%; }
+
+    .login-container { max-width: 440px; width: 100%; position: relative; z-index: 10; }
+    .login-card {
+      background: linear-gradient(135deg, rgba(28, 25, 48, 0.75) 0%, rgba(16, 14, 28, 0.9) 100%);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-radius: var(--radius-xl);
+      padding: 40px 32px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 1px var(--border-top);
+      border: 1px solid var(--border-accent);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .login-logo { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
+    .brand-text { font-size: 22px; font-weight: 800; letter-spacing: 0.5px; color: #fff; }
+    .brand-sub { color: var(--accent); margin-left: 4px; }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(10, 9, 18, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+    
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #7c4dff 0%, #651fff 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(124, 77, 255, 0.35);
+      transition: all 0.2s;
+    }
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(124, 77, 255, 0.5); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .login-alert {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .login-card.shake-error {
+      animation: loginShake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      border-color: rgba(239, 68, 68, 0.75) !important;
+      box-shadow: 0 0 35px rgba(239, 68, 68, 0.4), inset 0 0 15px rgba(239, 68, 68, 0.2) !important;
+    }
+    @keyframes loginShake {
+      10%, 90% { transform: translate3d(-3px, 0, 0); }
+      20%, 80% { transform: translate3d(5px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-7px, 0, 0); }
+      40%, 60% { transform: translate3d(7px, 0, 0); }
+    }
+
+    .login-card.success-flyout {
+      animation: loginFlyout 0.65s cubic-bezier(0.55, 0.055, 0.675, 0.19) forwards !important;
+      pointer-events: none;
+    }
+    @keyframes loginFlyout {
+      0% { transform: scale(1) translateY(0); opacity: 1; }
+      30% { transform: scale(1.04) translateY(10px); opacity: 1; box-shadow: 0 0 40px rgba(124, 77, 255, 0.8); }
+      100% { transform: scale(0.2) translateY(-250px); opacity: 0; filter: blur(20px); }
+    }
+  </style>
+</head>
+<body class="login-body">
+  <div class="ambient-bg-layer" aria-hidden="true">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+  </div>
+
+  <div class="login-container">
+    <div class="login-card" id="loginCard">
+      <div class="login-logo">
+        <span class="brand-text">HYDRA<span class="brand-sub">LITE</span></span>
+      </div>
+      <div id="loginAlert" class="login-alert"></div>
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="apiKey">API Ключ администратора</label>
+          <input type="password" id="apiKey" placeholder="••••••••" required autofocus autocomplete="current-password">
+        </div>
+        <button type="submit" id="submitBtn" class="btn-login">Войти в систему</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      const input = document.getElementById('apiKey');
+      const submitBtn = document.getElementById('submitBtn');
+      const loginCard = document.getElementById('loginCard');
+      const alertBox = document.getElementById('loginAlert');
+      const key = input.value.trim();
+
+      if (!key) return;
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Проверка...';
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ key })
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+          // Выставляем куку авторизации на 1 год
+          document.cookie = 'hydra_admin_auth=' + encodeURIComponent(key) + '; path=/; max-age=31536000; SameSite=Lax';
+          localStorage.setItem('hydra_admin_auth', key);
+          submitBtn.innerText = 'Доступ разрешен';
+          submitBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          loginCard.classList.add('success-flyout');
+          setTimeout(() => {
+            window.location.reload();
+          }, 600);
+        } else {
+          showError(data.message || 'Доступ запрещен');
+        }
+      } catch (err) {
+        showError('Ошибка связи со шлюзом');
+      }
+    }
+
+    function showError(msg) {
+      const submitBtn = document.getElementById('submitBtn');
+      const loginCard = document.getElementById('loginCard');
+      const alertBox = document.getElementById('loginAlert');
+      const input = document.getElementById('apiKey');
+
+      submitBtn.disabled = false;
+      submitBtn.innerText = 'Войти в систему';
+      alertBox.innerText = msg;
+      alertBox.style.display = 'block';
+
+      loginCard.classList.remove('shake-error');
+      void loginCard.offsetWidth;
+      loginCard.classList.add('shake-error');
+      input.value = '';
+      input.focus();
+    }
+  </script>
+</body>
+</html>
