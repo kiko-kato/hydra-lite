@@ -51,12 +51,13 @@ pub struct KeyDto {
     pub is_self: bool,
 }
 
-enum Caller {
-    Master,
-    Key(crate::db::ApiKey),
+pub struct CallerInfo {
+    pub key_id: Option<i64>,
+    pub key_token: String,
+    pub is_master: bool,
 }
 
-async fn extract_caller(headers: &HeaderMap, state: &AppState) -> Option<Caller> {
+async fn extract_caller(headers: &HeaderMap, state: &AppState) -> Option<CallerInfo> {
     let mut tok_str = None;
     if let Some(auth) = headers.get("authorization").and_then(|h| h.to_str().ok()) {
         if let Some(bearer) = auth.strip_prefix("Bearer ") {
@@ -76,15 +77,35 @@ async fn extract_caller(headers: &HeaderMap, state: &AppState) -> Option<Caller>
     }
 
     let tok = tok_str?;
-    if tok == state.config.read().server.api_key {
-        return Some(Caller::Master);
+    let is_master = tok == state.config.read().server.api_key;
+    let db_key = state.db.get_key_by_token(&tok).await.ok().flatten();
+
+    if !is_master && db_key.is_none() {
+        return None;
     }
 
-    if let Ok(Some(k)) = state.db.get_key_by_token(&tok).await {
-        if k.enabled && k.is_admin {
-            return Some(Caller::Key(k));
+    if let Some(ref k) = db_key {
+        if !k.enabled {
+            return None;
         }
+        if !k.is_admin && !is_master {
+            return None;
+        }
+        return Some(CallerInfo {
+            key_id: Some(k.id),
+            key_token: tok,
+            is_master,
+        });
     }
+
+    if is_master {
+        return Some(CallerInfo {
+            key_id: None,
+            key_token: tok,
+            is_master: true,
+        });
+    }
+
     None
 }
 
@@ -106,25 +127,15 @@ pub(crate) async fn handle_get_keys(
         Ok(keys) => {
             let mut dtos = Vec::with_capacity(keys.len());
             for k in keys {
-                let (can_edit, is_self) = match &caller {
-                    Caller::Master => (true, false),
-                    Caller::Key(my_key) => {
-                        if k.id == my_key.id {
-                            // Сам себе — запрет редактирования!
-                            (false, true)
-                        } else if my_key.id == 1 {
-                            // Root админ (Admin (Owner) ID=1) управляет всеми ниже него
-                            (true, false)
-                        } else {
-                            // Обычный админ управляет только своим поддеревом
-                            let in_tree = state
-                                .db
-                                .is_in_creator_tree(k.id, my_key.id)
-                                .await
-                                .unwrap_or(false);
-                            (in_tree, false)
-                        }
-                    }
+                let is_self = caller.key_id == Some(k.id) || caller.key_token == k.key;
+                let can_edit = if is_self {
+                    false
+                } else if caller.is_master || caller.key_id == Some(1) {
+                    true
+                } else if let Some(my_id) = caller.key_id {
+                    state.db.is_in_creator_tree(k.id, my_id).await.unwrap_or(false)
+                } else {
+                    false
                 };
 
                 dtos.push(KeyDto {
@@ -192,11 +203,7 @@ pub(crate) async fn handle_create_key(
         .unwrap()
         .as_secs_f64();
 
-    let created_by = match caller {
-        Caller::Master => Some(1),
-        Caller::Key(ref k) => Some(k.id),
-    };
-
+    let created_by = caller.key_id.or(Some(1));
     let limit_type = payload.limit_type.unwrap_or_else(|| "tokens".to_string());
 
     match state
@@ -240,31 +247,26 @@ pub(crate) async fn handle_update_key(
     };
 
     // Защита 1: Админ не может редактировать свой собственный ключ!
-    if let Caller::Key(ref my_key) = caller {
-        if my_key.id == id {
+    if caller.key_id == Some(id) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({
+                "error": "Запрещено редактировать собственный ключ во избежание случайной самоблокировки"
+            })),
+        );
+    }
+
+    // Защита 2: Дерево создателей (если не мастер и не root-админ ID=1)
+    if !caller.is_master && caller.key_id != Some(1) {
+        let my_id = caller.key_id.unwrap_or(0);
+        let in_tree = state.db.is_in_creator_tree(id, my_id).await.unwrap_or(false);
+        if !in_tree {
             return (
-                StatusCode::BAD_REQUEST,
+                StatusCode::FORBIDDEN,
                 Json(serde_json::json!({
-                    "error": "Запрещено редактировать собственный ключ во избежание случайной самоблокировки"
+                    "error": "Доступ запрещен: вы можете редактировать только ключи из своего дерева создателей"
                 })),
             );
-        }
-
-        // Защита 2: Дерево создателей — можно редактировать только свое поддерево!
-        if my_key.id != 1 {
-            let in_tree = state
-                .db
-                .is_in_creator_tree(id, my_key.id)
-                .await
-                .unwrap_or(false);
-            if !in_tree {
-                return (
-                    StatusCode::FORBIDDEN,
-                    Json(serde_json::json!({
-                        "error": "Доступ запрещен: вы можете редактировать только ключи из своего дерева создателей"
-                    })),
-                );
-            }
         }
     }
 
@@ -311,29 +313,24 @@ pub(crate) async fn handle_delete_key(
     };
 
     // Защита 1: Нельзя удалить себя
-    if let Caller::Key(ref my_key) = caller {
-        if my_key.id == id {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(serde_json::json!({ "error": "Запрещено удалять собственный ключ" })),
-            );
-        }
+    if caller.key_id == Some(id) {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "Запрещено удалять собственный ключ" })),
+        );
+    }
 
-        // Защита 2: Дерево создателей
-        if my_key.id != 1 {
-            let in_tree = state
-                .db
-                .is_in_creator_tree(id, my_key.id)
-                .await
-                .unwrap_or(false);
-            if !in_tree {
-                return (
-                    StatusCode::FORBIDDEN,
-                    Json(serde_json::json!({
-                        "error": "Доступ запрещен: вы можете удалять только ключи из своего дерева создателей"
-                    })),
-                );
-            }
+    // Защита 2: Дерево создателей
+    if !caller.is_master && caller.key_id != Some(1) {
+        let my_id = caller.key_id.unwrap_or(0);
+        let in_tree = state.db.is_in_creator_tree(id, my_id).await.unwrap_or(false);
+        if !in_tree {
+            return (
+                StatusCode::FORBIDDEN,
+                Json(serde_json::json!({
+                    "error": "Доступ запрещен: вы можете удалять только ключи из своего дерева создателей"
+                })),
+            );
         }
     }
 
