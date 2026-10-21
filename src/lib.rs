@@ -1647,9 +1647,10 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
 
     // Если токен совпадает с мастер-ключом из config.toml (например, "kiko")
     if token == state.config.read().server.api_key {
+        let db_key = state.db.get_key_by_token(token).await.ok().flatten();
         return AuthResult::Allowed {
-            key_name: "master_key".to_string(),
-            key_id: None,
+            key_name: db_key.as_ref().map(|k| k.name.clone()).unwrap_or_else(|| "master_key".to_string()),
+            key_id: db_key.as_ref().map(|k| k.id),
         };
     }
 

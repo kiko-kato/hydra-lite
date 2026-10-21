@@ -21,7 +21,7 @@
       --success: #10b981;
       --error: #ef4444;
       --warning: #f59e0b;
-      --sidebar-w: 260px;
+      --sidebar-w: 250px;
       --radius-sm: 8px;
       --radius-md: 12px;
       --radius-lg: 18px;
@@ -40,10 +40,10 @@
       width: var(--sidebar-w);
       height: 100vh;
       height: 100dvh;
-      background: rgba(16, 14, 28, 0.9);
+      background: rgba(16, 14, 28, 0.92);
       backdrop-filter: blur(28px);
       border-right: 1px solid var(--border);
-      padding: 28px 18px 24px 18px;
+      padding: 26px 16px 20px 16px;
       display: flex;
       flex-direction: column;
       position: fixed;
@@ -51,11 +51,11 @@
       left: 0;
       z-index: 100;
     }
-    .sidebar-header { padding-bottom: 24px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .sidebar-header { padding-bottom: 22px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
     .brand-link { display: flex; align-items: center; gap: 10px; text-decoration: none; }
     .brand-logo {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       background: linear-gradient(135deg, var(--accent) 0%, #06b6d4 100%);
       border-radius: 9px;
       display: flex;
@@ -63,18 +63,18 @@
       justify-content: center;
       box-shadow: 0 0 20px var(--accent-glow);
     }
-    .brand-text { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+    .brand-text { font-size: 19px; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
     .brand-sub { color: var(--accent-light); margin-left: 2px; }
 
-    .sidebar-nav { display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; }
+    .sidebar-nav { display: flex; flex-direction: column; gap: 6px; flex: 1; }
     .nav-link {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 12px 16px;
+      gap: 12px;
+      padding: 12px 14px;
       color: var(--text-secondary);
       border-radius: var(--radius-md);
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       border: 1px solid transparent;
@@ -82,7 +82,7 @@
       background: transparent;
       text-align: left;
     }
-    .nav-link svg { width: 20px; height: 20px; flex-shrink: 0; fill: currentColor; opacity: 0.75; }
+    .nav-link svg { width: 18px; height: 18px; flex-shrink: 0; fill: currentColor; opacity: 0.75; }
     .nav-link:hover { color: #fff; background: var(--card-hover); }
     .nav-link.active {
       color: #fff;
@@ -92,10 +92,10 @@
     }
     .nav-link.active svg { opacity: 1; fill: var(--accent-light); }
 
-    .sidebar-footer { padding-top: 18px; border-top: 1px solid var(--border); }
+    .sidebar-footer { padding-top: 16px; border-top: 1px solid var(--border); }
     .btn-logout {
       width: 100%;
-      padding: 12px;
+      padding: 10px;
       background: rgba(239, 68, 68, 0.08);
       border: 1px solid rgba(239, 68, 68, 0.2);
       color: #fca5a5;
@@ -109,51 +109,42 @@
       gap: 8px;
       transition: all 0.2s;
     }
-    .btn-logout svg {
-      width: 16px;
-      height: 16px;
-      min-width: 16px;
-      min-height: 16px;
-      max-width: 16px;
-      max-height: 16px;
-      flex-shrink: 0;
-      fill: currentColor;
-    }
+    .btn-logout svg { width: 16px; height: 16px; flex-shrink: 0; fill: currentColor; }
     .btn-logout:hover { background: rgba(239, 68, 68, 0.18); color: #fff; }
 
-    /* Main Wrapper */
+    /* Main */
     .main-wrapper { margin-left: var(--sidebar-w); flex: 1; min-height: 100vh; display: flex; flex-direction: column; position: relative; z-index: 10; }
     .top-navbar {
-      background: rgba(16, 14, 28, 0.65);
+      background: rgba(16, 14, 28, 0.7);
       backdrop-filter: blur(24px);
       border-bottom: 1px solid var(--border);
-      padding: 18px 36px;
+      padding: 16px 36px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .page-title { font-size: 20px; font-weight: 700; color: #fff; }
+    .page-title { font-size: 19px; font-weight: 800; color: #fff; }
 
-    .content-area { padding: 32px 36px; max-width: 1600px; width: 100%; margin: 0 auto; }
+    .content-area { padding: 28px 36px; max-width: 1600px; width: 100%; margin: 0 auto; }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
     /* KPI Cards */
-    .kpi-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 28px; }
+    .kpi-cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px; }
     .kpi-card {
       background: var(--card-bg);
       backdrop-filter: blur(24px);
       border: 1px solid var(--border);
       border-top: 1px solid var(--border-top);
       border-radius: var(--radius-lg);
-      padding: 22px 24px;
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45);
+      padding: 18px 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
-    .kpi-label { color: var(--text-secondary); font-size: 13px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px; }
-    .kpi-val { font-size: 32px; font-weight: 800; color: #fff; }
+    .kpi-label { color: var(--text-secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 6px; }
+    .kpi-val { font-size: 28px; font-weight: 800; color: #fff; }
 
-    /* Tables */
+    /* Tables & Glass Containers */
     .glass-table-container {
       background: var(--card-bg);
       backdrop-filter: blur(24px);
@@ -162,15 +153,36 @@
       border-radius: var(--radius-lg);
       overflow: hidden;
       box-shadow: 0 16px 45px rgba(0, 0, 0, 0.45);
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
-    .glass-table-header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-    .glass-table-title { font-weight: 700; font-size: 17px; color: #fff; }
+    .glass-table-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .glass-table-title { font-weight: 700; font-size: 16px; color: #fff; }
     table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    th { background: rgba(14, 12, 24, 0.75); color: var(--text-secondary); font-weight: 600; padding: 14px 24px; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
-    td { padding: 16px 24px; border-bottom: 1px solid var(--border); color: #cbd5e1; }
+    th { background: rgba(14, 12, 24, 0.75); color: var(--text-secondary); font-weight: 600; padding: 12px 20px; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; }
+    td { padding: 14px 20px; border-bottom: 1px solid var(--border); color: #cbd5e1; }
     tr:hover td { background: rgba(124, 77, 255, 0.05); }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; }
+
+    /* Sub-tabs pills */
+    .subtabs-pills { display: flex; gap: 8px; margin-bottom: 18px; }
+    .subtab-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: rgba(14, 12, 24, 0.6);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .subtab-btn:hover { color: #fff; background: var(--card-hover); }
+    .subtab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent-light);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
 
     /* Badges */
     .badge { padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-block; }
@@ -178,36 +190,35 @@
     .badge-user { background: rgba(6, 182, 212, 0.2); color: #a5f3fc; border: 1px solid rgba(6, 182, 212, 0.4); }
     .badge-success { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); }
     .badge-danger { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); }
-    .badge-warning { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.35); }
     .badge-banned {
       background: rgba(239, 68, 68, 0.25);
       color: #fca5a5;
       border: 1px solid #ef4444;
       font-weight: 800;
-      letter-spacing: 0.5px;
-      box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
     }
 
     /* Switch */
-    .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #242238; transition: .22s; border-radius: 22px; border: 1px solid rgba(255,255,255,0.12); }
-    .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .22s; border-radius: 50%; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #242238; transition: .22s; border-radius: 20px; border: 1px solid rgba(255,255,255,0.12); }
+    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 2px; bottom: 2px; background-color: white; transition: .22s; border-radius: 50%; }
     input:checked + .slider { background-color: var(--accent); border-color: var(--accent-light); }
     input:checked + .slider:before { transform: translateX(18px); }
 
     /* Progress bar */
-    .progress-bar-bg { background: rgba(255,255,255,0.08); height: 9px; border-radius: 5px; overflow: hidden; width: 100%; margin-top: 5px; }
-    .progress-bar-fill { height: 100%; border-radius: 5px; transition: width 0.3s; }
+    .progress-bar-bg { background: rgba(255,255,255,0.08); height: 8px; border-radius: 4px; overflow: hidden; width: 100%; margin-top: 5px; }
+    .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
     .fill-5h { background: linear-gradient(90deg, #7c4dff, #c084fc); }
     .fill-weekly { background: linear-gradient(90deg, #06b6d4, #38bdf8); }
     .fill-top { background: linear-gradient(90deg, #ec4899, #f43f5e); }
+    .fill-cache { background: linear-gradient(90deg, #10b981, #34d399); }
 
     .btn-action {
       background: rgba(124, 77, 255, 0.15);
       border: 1px solid var(--border-accent);
       color: #fff;
-      padding: 8px 16px;
+      padding: 7px 14px;
       border-radius: var(--radius-sm);
       font-size: 13px;
       font-weight: 600;
@@ -222,11 +233,11 @@
       background: rgba(12, 10, 22, 0.7);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 8px 14px;
+      padding: 7px 12px;
       color: #fff;
       font-size: 13px;
       outline: none;
-      width: 260px;
+      width: 240px;
     }
     .input-search:focus { border-color: var(--accent); }
 
@@ -238,120 +249,68 @@
       background: rgba(10, 8, 20, 0.7);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 5px 10px;
+      padding: 4px 10px;
       cursor: pointer;
       transition: all 0.2s;
-      position: relative;
     }
     .key-token-box:hover {
       border-color: var(--accent);
       background: rgba(124, 77, 255, 0.12);
       box-shadow: 0 0 12px var(--accent-glow);
     }
-    .key-token-text {
-      font-family: ui-monospace, SFMono-Regular, monospace;
-      font-size: 12px;
-      color: var(--accent-light);
-      letter-spacing: 0.5px;
-    }
+    .key-token-text { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 12px; color: var(--accent-light); }
     .key-token-icon { width: 14px; height: 14px; fill: currentColor; opacity: 0.6; }
     .key-token-box:hover .key-token-icon { opacity: 1; fill: #fff; }
 
     /* Toast */
     .toast-msg {
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
+      position: fixed; bottom: 24px; right: 24px;
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: var(--radius-md);
-      font-weight: 700;
-      font-size: 14px;
+      color: #fff; padding: 10px 18px; border-radius: var(--radius-md);
+      font-weight: 700; font-size: 13px;
       box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-      z-index: 9999;
-      opacity: 0;
-      transform: translateY(15px);
+      z-index: 9999; opacity: 0; transform: translateY(15px);
       transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
     }
     .toast-msg.show { opacity: 1; transform: translateY(0); }
 
-    /* Smooth Animated Modals */
+    /* Modals */
     .modal-backdrop {
       position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.75);
-      backdrop-filter: blur(14px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
+      background: rgba(0,0,0,0.75); backdrop-filter: blur(14px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; visibility: hidden;
       transition: opacity 0.22s ease-out, visibility 0.22s ease-out;
     }
-    .modal-backdrop.show {
-      opacity: 1;
-      visibility: visible;
-    }
+    .modal-backdrop.show { opacity: 1; visibility: visible; }
     .modal-box {
       background: linear-gradient(135deg, rgba(26, 23, 44, 0.96) 0%, rgba(14, 12, 24, 0.98) 100%);
-      border: 1px solid var(--border-accent);
-      border-top: 1px solid var(--border-top);
-      border-radius: var(--radius-lg);
-      padding: 30px 34px;
-      max-width: 540px;
-      width: 100%;
-      box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 35px var(--accent-glow);
-      transform: scale(0.92) translateY(20px);
-      transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid var(--border-accent); border-top: 1px solid var(--border-top);
+      border-radius: var(--radius-lg); padding: 28px 32px;
+      max-width: 520px; width: 100%; box-shadow: 0 30px 70px rgba(0,0,0,0.8), 0 0 35px var(--accent-glow);
+      transform: scale(0.92) translateY(20px); transition: transform 0.26s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .modal-backdrop.show .modal-box {
-      transform: scale(1) translateY(0);
-    }
-    .modal-head { font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 22px; display:flex; justify-content:space-between; align-items:center; }
-    .modal-field { margin-bottom: 20px; }
-    .modal-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+    .modal-backdrop.show .modal-box { transform: scale(1) translateY(0); }
+    .modal-head { font-size: 18px; font-weight: 800; color: #fff; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; }
+    .modal-field { margin-bottom: 18px; }
+    .modal-field label { display: block; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
     .modal-input {
-      width: 100%; padding: 12px 14px; background: rgba(10,9,18,0.85);
+      width: 100%; padding: 10px 14px; background: rgba(10,9,18,0.85);
       border: 1px solid var(--border); border-radius: var(--radius-sm); color: #fff; font-size: 14px; outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color 0.2s;
     }
-    .modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.2); }
+    .modal-input:focus { border-color: var(--accent); }
 
-    /* Segmented Control (Pill-кнопки) */
-    .segmented-control {
-      display: flex;
-      background: rgba(10, 8, 20, 0.85);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 4px;
-      gap: 4px;
-    }
-    .seg-btn {
-      flex: 1;
-      padding: 9px 12px;
-      border-radius: var(--radius-sm);
-      border: none;
-      background: transparent;
-      color: var(--text-secondary);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
+    .segmented-control { display: flex; background: rgba(10, 8, 20, 0.85); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; gap: 4px; }
+    .seg-btn { flex: 1; padding: 8px 12px; border-radius: var(--radius-sm); border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
     .seg-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .seg-btn.active {
-      background: var(--accent);
-      color: #fff;
-      box-shadow: 0 0 15px var(--accent-glow);
-    }
+    .seg-btn.active { background: var(--accent); color: #fff; box-shadow: 0 0 15px var(--accent-glow); }
 
-    .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 26px; }
-    .btn-secondary { background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 10px 18px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    .btn-secondary { background: rgba(255,255,255,0.08); border: 1px solid var(--border); color: #fff; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
     .btn-secondary:hover { background: rgba(255,255,255,0.14); }
-    .btn-danger-del { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; padding: 10px 18px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
+    .btn-danger-del { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
     .btn-danger-del:hover { background: rgba(239, 68, 68, 0.3); color: #fff; }
   </style>
 </head>
@@ -364,7 +323,7 @@
 
   <div id="toast" class="toast-msg">Токен скопирован в буфер!</div>
 
-  <!-- Sidebar -->
+  <!-- Sidebar (3 скомпонованные вкладки) -->
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="brand-link">
@@ -375,37 +334,17 @@
       </div>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-link active" onclick="switchTab('quotas', 'Квоты и пулы')">
+      <button class="nav-link active" onclick="switchMainTab('overview', 'Обзор и квоты')">
         <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
-        <span>Квоты и пулы</span>
+        <span>Обзор и квоты</span>
       </button>
-      <button class="nav-link" onclick="switchTab('top', 'Потребление ключей (Топ)')">
-        <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
-        <span>Топ потребления</span>
+      <button class="nav-link" onclick="switchMainTab('clients', 'Клиенты и ключи')">
+        <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6zM12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65z"/></svg>
+        <span>Клиенты и ключи</span>
       </button>
-      <button class="nav-link" onclick="switchTab('antidote', 'Антидот (База Знаний)')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        <span>Антидот (L1/L2)</span>
-      </button>
-      <button class="nav-link" onclick="switchTab('models', 'Каталог моделей и алиасов')">
-        <svg viewBox="0 0 24 24"><path d="M21 16.5l-9 5.2-9-5.2V7.5l9-5.2 9 5.2v9zM12 4.1L5.2 8 12 11.9 18.8 8 12 4.1zm-7 5.7v6.3l7 4v-6.3l-7-4zm14 0l-7 4v6.3l7-4V9.8z"/></svg>
-        <span>Модели и алиасы</span>
-      </button>
-      <button class="nav-link" onclick="switchTab('requests', 'Журнал запросов')">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-        <span>Логи запросов</span>
-      </button>
-      <button class="nav-link" onclick="switchTab('errors', 'Журнал ошибок upstream')">
-        <svg viewBox="0 0 24 24"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
-        <span>Логи ошибок</span>
-      </button>
-      <button class="nav-link" onclick="switchTab('keys', 'Управление API ключами')">
-        <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2 2z"/></svg>
-        <span>API Ключи</span>
-      </button>
-      <button class="nav-link" onclick="switchTab('my-limits', 'Мой баланс и лимиты')">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-        <span>Мой баланс</span>
+      <button class="nav-link" onclick="switchMainTab('events', 'События и Антидот')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
+        <span>События и Антидот</span>
       </button>
     </nav>
     <div class="sidebar-footer">
@@ -419,24 +358,35 @@
   <!-- Main Content -->
   <div class="main-wrapper">
     <header class="top-navbar">
-      <div class="page-title" id="activeSectionTitle">Квоты и пулы</div>
-      <div style="font-weight:600; color:var(--accent-light);">ADMIN</div>
+      <div class="page-title" id="activeSectionTitle">Обзор и квоты</div>
+      <div style="font-weight:700; color:var(--accent-light); font-size:13px; display:flex; align-items:center; gap:8px;">
+        <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--success); box-shadow:0 0 10px var(--success);"></span>
+        <span>ADMIN GATEWAY</span>
+      </div>
     </header>
 
     <div class="content-area">
-      <!-- Tab 1: Квоты & Пулы -->
-      <section id="pane-quotas" class="tab-pane active">
+      <!-- ==========================================
+           TAB 1: ОБЗОР И КВОТЫ (КОМАНДНЫЙ ЦЕНТР)
+      =========================================== -->
+      <section id="pane-overview" class="tab-pane active">
+        <!-- 5 KPI Карточек -->
         <div class="kpi-cards-grid">
           <div class="kpi-card">
             <div class="kpi-label">Удовлетворение пула</div>
             <div class="kpi-val" id="statPoolHeadroom" style="color:var(--accent-light);">--%</div>
           </div>
           <div class="kpi-card">
+            <div class="kpi-label">Экономия квоты кэшем</div>
+            <div class="kpi-val" id="statCacheSaved" style="color:var(--success);">--</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Hit Rate: <b id="statCacheHitrate" style="color:var(--text);">--%</b></div>
+          </div>
+          <div class="kpi-card">
             <div class="kpi-label">Активных аккаунтов</div>
             <div class="kpi-val" id="statActiveAccounts">--</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Запросов за все время</div>
+            <div class="kpi-label">Всего запросов (All time)</div>
             <div class="kpi-val" id="statTotalRequests">--</div>
           </div>
           <div class="kpi-card">
@@ -445,10 +395,52 @@
           </div>
         </div>
 
+        <!-- Виджет персонального баланса текущего админа -->
+        <div class="glass-table-container" style="padding: 20px 24px; margin-bottom: 22px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-weight:800; font-size:15px; color:#fff;">Мой текущий ключ и личный баланс</span>
+              <span class="badge badge-admin" id="myRoleBadge">ADMIN</span>
+            </div>
+            <div class="key-token-box" onclick="copyMyKey()" title="Кликните для копирования токена">
+              <span class="key-token-text" id="myKeyToken">--</span>
+              <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px; background:rgba(12,10,22,0.6); padding:14px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom:14px;">
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Выполнено запросов</div>
+              <div style="font-size:20px; font-weight:800; color:#fff;" id="myRequestsCount">0</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Сожрано токенов</div>
+              <div style="font-size:20px; font-weight:800; color:#fff;" id="myTokensUsed">0</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Ограничение RPM</div>
+              <div style="font-size:20px; font-weight:800; color:#fff;" id="myRpmLimit">Безлимит</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Срок действия</div>
+              <div style="font-size:16px; font-weight:700; color:#cbd5e1; margin-top:2px;" id="myExpiresAt">Бессрочно</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+              <span style="font-weight:700; color:#fff;" id="myUsageTitle">Расход токенов</span>
+              <span style="color:var(--text-secondary);" id="myUsageFraction">-- / --</span>
+            </div>
+            <div class="progress-bar-bg"><div id="myUsageBar" class="progress-bar-fill fill-top" style="width: 0%;"></div></div>
+          </div>
+        </div>
+
+        <!-- Сетка аккаунтов пула -->
         <div class="glass-table-container">
           <div class="glass-table-header">
             <div class="glass-table-title">Состояние пула аккаунтов Google (5-часовые и недельные окна)</div>
-            <button class="btn-action" onclick="loadQuotas()">Обновить данные</button>
+            <button class="btn-action" onclick="loadQuotas()">Обновить вручную</button>
           </div>
           <table>
             <thead>
@@ -457,7 +449,7 @@
                 <th>Email аккаунта</th>
                 <th>5-часовая квота & Сброс</th>
                 <th>Недельная квота & Дата сброса</th>
-                <th>Статус / Активность</th>
+                <th>Статус</th>
               </tr>
             </thead>
             <tbody id="accountsTableBody">
@@ -467,18 +459,20 @@
         </div>
       </section>
 
-      <!-- Tab 2: Топ потребления ключей -->
-      <section id="pane-top" class="tab-pane">
-        <div class="glass-table-container">
+      <!-- ==========================================
+           TAB 2: КЛИЕНТЫ И КЛЮЧИ (ТОП + УПРАВЛЕНИЕ)
+      =========================================== -->
+      <section id="pane-clients" class="tab-pane">
+        <!-- Топ потребления -->
+        <div class="glass-table-container" style="margin-bottom:24px;">
           <div class="glass-table-header">
-            <div class="glass-table-title">Рейтинг потребления ресурсов клиентами</div>
-            <button class="btn-action" onclick="loadTopConsumers()">Обновить рейтинг</button>
+            <div class="glass-table-title">Рейтинг потребления ресурсов клиентами (% доли трафика)</div>
           </div>
           <table>
             <thead>
               <tr>
                 <th>#</th>
-                <th>Имя клиента</th>
+                <th>Клиент</th>
                 <th>Токен ключа</th>
                 <th>Доля от общего трафика</th>
                 <th>Сожрано токенов</th>
@@ -491,134 +485,11 @@
             </tbody>
           </table>
         </div>
-      </section>
 
-      <!-- Tab 3: Антидот (База Знаний) -->
-      <section id="pane-antidote" class="tab-pane">
-        <div class="kpi-cards-grid">
-          <div class="kpi-card">
-            <div class="kpi-label">Решений в базе L1</div>
-            <div class="kpi-val" id="antidoteTotalSolutions" style="color:#06b6d4;">371</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Всего инжекций решений</div>
-            <div class="kpi-val" id="antidoteTotalInjections">--</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Движок самоисцеления</div>
-            <div class="kpi-val" style="font-size:22px; color:var(--success);">Активен (v2.0)</div>
-          </div>
-        </div>
-
+        <!-- Управление ключами -->
         <div class="glass-table-container">
           <div class="glass-table-header">
-            <div class="glass-table-title">Проверенные решения инженерных инцидентов</div>
-            <div style="display:flex; gap:12px;">
-              <input type="text" id="antidoteSearch" placeholder="FTS5 поиск по ошибкам..." class="input-search" oninput="searchAntidote()">
-              <button class="btn-action" onclick="showAddAntidoteModal()">+ Добавить решение</button>
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Issue ID</th>
-                <th>Суть ошибки / Заголовок</th>
-                <th>Сигнатура ошибки</th>
-                <th>Проверенное решение</th>
-                <th>Срабатываний</th>
-                <th>Теги</th>
-              </tr>
-            </thead>
-            <tbody id="antidoteTableBody">
-              <tr><td colspan="6" style="text-align:center;">Загрузка базы знаний...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Tab 4: Модели & Алиасы -->
-      <section id="pane-models" class="tab-pane">
-        <div class="glass-table-container">
-          <div class="glass-table-header">
-            <div class="glass-table-title">Каталог моделей и авто-алиасов</div>
-            <div style="display:flex; gap:12px;">
-              <input type="text" id="modelSearch" placeholder="Поиск модели..." class="input-search" oninput="filterModels()">
-              <button class="btn-action" onclick="loadModels()">Синхронизировать с Google</button>
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Имя из шлюза (Original ID)</th>
-                <th>Текущий алиас</th>
-                <th>Статус</th>
-                <th>Действие</th>
-              </tr>
-            </thead>
-            <tbody id="modelsTableBody">
-              <tr><td colspan="4" style="text-align:center;">Загрузка моделей...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Tab 5: Логи запросов -->
-      <section id="pane-requests" class="tab-pane">
-        <div class="glass-table-container">
-          <div class="glass-table-header">
-            <div class="glass-table-title">Последние 100 запросов</div>
-            <button class="btn-action" onclick="loadRequests()">Обновить журнал</button>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Время (UTC)</th>
-                <th>Модель</th>
-                <th>Ключ</th>
-                <th>Статус</th>
-                <th>Токены</th>
-                <th>TTFT</th>
-                <th>Задержка</th>
-                <th>Скорость</th>
-              </tr>
-            </thead>
-            <tbody id="requestsTableBody">
-              <tr><td colspan="8" style="text-align:center;">Загрузка логов...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Tab 6: Логи ошибок -->
-      <section id="pane-errors" class="tab-pane">
-        <div class="glass-table-container">
-          <div class="glass-table-header">
-            <div class="glass-table-title">Журнал сбоев и ошибок upstream</div>
-            <button class="btn-action" onclick="loadErrors()">Обновить</button>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Время (UTC)</th>
-                <th>Модель</th>
-                <th>Ключ</th>
-                <th>Код</th>
-                <th>Причина ошибки</th>
-                <th>Аккаунт</th>
-              </tr>
-            </thead>
-            <tbody id="errorsTableBody">
-              <tr><td colspan="6" style="text-align:center;">Загрузка журнала...</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <!-- Tab 7: API Ключи -->
-      <section id="pane-keys" class="tab-pane">
-        <div class="glass-table-container">
-          <div class="glass-table-header">
-            <div class="glass-table-title">API Ключи доступа</div>
+            <div class="glass-table-title">Реестр API ключей доступа</div>
             <button class="btn-action" onclick="openNewKeyModal()">+ Новый ключ</button>
           </div>
           <table>
@@ -643,50 +514,112 @@
         </div>
       </section>
 
-      <!-- Tab: Мой баланс и лимиты -->
-      <section id="pane-my-limits" class="tab-pane">
-        <div class="glass-table-container" style="padding: 32px;">
-          <div style="font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center;">
-            <span>Персональный баланс и потребление текущего ключа</span>
-            <span class="badge badge-admin" id="myRoleBadge">ADMIN</span>
-          </div>
+      <!-- ==========================================
+           TAB 3: СОБЫТИЯ И АНТИДОТ (ЛОГИ + КБ + МОДЕЛИ)
+      =========================================== -->
+      <section id="pane-events" class="tab-pane">
+        <!-- Sub-tabs pills -->
+        <div class="subtabs-pills">
+          <button class="subtab-btn active" onclick="switchEventSubTab('requests')">Логи запросов</button>
+          <button class="subtab-btn" onclick="switchEventSubTab('errors')">Логи ошибок</button>
+          <button class="subtab-btn" onclick="switchEventSubTab('antidote')">Антидот (База Знаний)</button>
+          <button class="subtab-btn" onclick="switchEventSubTab('models')">Активные модели</button>
+        </div>
 
-          <div class="kpi-cards-grid" style="margin-bottom: 28px;">
-            <div class="kpi-card">
-              <div class="kpi-label">Текущий ключ</div>
-              <div style="display:flex; align-items:center; gap:8px; margin-top:4px;">
-                <span class="mono" style="font-size:15px; color:var(--accent-light); font-weight:700;" id="myKeyToken">--</span>
-                <button class="btn-action" style="padding:4px 8px; font-size:11px;" onclick="copyMyKey()">Скопировать</button>
-              </div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label">Лимит RPM</div>
-              <div class="kpi-val" style="font-size:26px;" id="myRpmLimit">Безлимит</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label">Выполнено запросов</div>
-              <div class="kpi-val" style="font-size:26px;" id="myRequestsCount">0</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label">Срок действия ключа</div>
-              <div class="kpi-val" style="font-size:20px;" id="myExpiresAt">Бессрочно</div>
-            </div>
+        <!-- Sub 1: Запросы -->
+        <div id="subpane-requests" class="glass-table-container">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Последние 100 запросов шлюза</div>
+            <button class="btn-action" onclick="loadRequests()">Обновить</button>
           </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Время (UTC)</th>
+                <th>Модель</th>
+                <th>Ключ</th>
+                <th>Статус</th>
+                <th>Токены</th>
+                <th>TTFT</th>
+                <th>Задержка</th>
+                <th>Скорость</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody">
+              <tr><td colspan="8" style="text-align:center;">Загрузка логов...</td></tr>
+            </tbody>
+          </table>
+        </div>
 
-          <!-- Progress Block -->
-          <div style="background: rgba(14, 12, 24, 0.6); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; margin-bottom: 24px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-              <span style="font-weight:700; color:#fff; font-size:15px;" id="myUsageTitle">Расход токенов</span>
-              <span style="font-size:13px; color:var(--text-secondary);" id="myUsageFraction">-- / --</span>
+        <!-- Sub 2: Ошибки -->
+        <div id="subpane-errors" class="glass-table-container" style="display:none;">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Журнал сбоев и ошибок upstream</div>
+            <button class="btn-action" onclick="loadErrors()">Обновить</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Время (UTC)</th>
+                <th>Модель</th>
+                <th>Ключ</th>
+                <th>Код</th>
+                <th>Причина ошибки</th>
+                <th>Аккаунт</th>
+              </tr>
+            </thead>
+            <tbody id="errorsTableBody">
+              <tr><td colspan="6" style="text-align:center;">Загрузка журнала...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Sub 3: Антидот -->
+        <div id="subpane-antidote" class="glass-table-container" style="display:none;">
+          <div class="glass-table-header">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <div class="glass-table-title">Проверенные решения инженерных инцидентов (L1 SQLite)</div>
+              <span class="badge badge-user" id="antidoteStatsBadge">371 решений</span>
             </div>
-            <div class="progress-bar-bg" style="height:12px; border-radius:6px;">
-              <div id="myUsageBar" class="progress-bar-fill fill-top" style="width: 0%; border-radius:6px;"></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:12px; color:var(--text-muted);">
-              <span id="myPercentUsed">0% израсходовано</span>
-              <span id="myRemainingVal">Осталось: --</span>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="antidoteSearch" placeholder="FTS5 поиск..." class="input-search" oninput="searchAntidote()">
+              <button class="btn-action" onclick="showAddAntidoteModal()">+ Добавить решение</button>
             </div>
           </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Issue ID</th>
+                <th>Суть ошибки / Заголовок</th>
+                <th>Сигнатура ошибки</th>
+                <th>Проверенное решение</th>
+                <th>Хитов</th>
+                <th>Теги</th>
+              </tr>
+            </thead>
+            <tbody id="antidoteTableBody">
+              <tr><td colspan="6" style="text-align:center;">Загрузка базы знаний...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Sub 4: Модели -->
+        <div id="subpane-models" class="glass-table-container" style="display:none;">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Каталог моделей и алиасов</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Имя из шлюза (Original ID)</th>
+                <th>Публичный алиас</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody id="modelsTableBody">
+              <tr><td colspan="3" style="text-align:center;">Загрузка моделей...</td></tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -728,7 +661,7 @@
       </div>
 
       <div class="modal-field">
-        <label>Ограничение RPM (запросов в минуту)</label>
+        <label>Ограничение RPM</label>
         <div class="segmented-control" id="segRpm">
           <button class="seg-btn active" type="button" onclick="setSegment('segRpm', 'unlim')">Безлимит</button>
           <button class="seg-btn" type="button" onclick="setSegment('segRpm', 'custom')">Заданное число</button>
@@ -737,7 +670,7 @@
       </div>
 
       <div class="modal-field">
-        <label>Срок действия (тухлость ключа)</label>
+        <label>Срок действия</label>
         <div class="segmented-control" id="segExp">
           <button class="seg-btn active" type="button" onclick="setSegment('segExp', 'never')">Бессрочно</button>
           <button class="seg-btn" type="button" onclick="setSegment('segExp', 'date')">До даты</button>
@@ -807,7 +740,7 @@
       </div>
 
       <div class="modal-field">
-        <label>Срок действия (тухлость ключа)</label>
+        <label>Срок действия</label>
         <div class="segmented-control" id="editSegExp">
           <button class="seg-btn" type="button" onclick="setSegment('editSegExp', 'never')">Бессрочно</button>
           <button class="seg-btn" type="button" onclick="setSegment('editSegExp', 'date')">До даты</button>
@@ -825,7 +758,7 @@
 
       <div class="modal-footer" style="justify-content:space-between;">
         <button class="btn-danger-del" onclick="deleteCurrentKey()">Удалить ключ</button>
-        <div style="display:flex; gap:12px;">
+        <div style="display:flex; gap:10px;">
           <button class="btn-secondary" onclick="closeEditKeyModal()">Отмена</button>
           <button class="btn-action" onclick="submitEditKey()">Сохранить</button>
         </div>
@@ -835,7 +768,7 @@
 
   <!-- Modal: Добавление решения в Антидот -->
   <div id="addAntidoteModalBackdrop" class="modal-backdrop">
-    <div class="modal-box" style="max-width:620px;">
+    <div class="modal-box" style="max-width:600px;">
       <div class="modal-head">
         <span>Добавить решение в Антидот L1</span>
         <button onclick="closeAddAntidoteModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
@@ -848,12 +781,12 @@
 
       <div class="modal-field">
         <label>Сигнатура ошибки (текст из консоли)</label>
-        <textarea id="antidoteSignature" class="modal-input" style="height:70px; resize:vertical; font-family:monospace;" placeholder="error[E0599]: no method named `next` found..."></textarea>
+        <textarea id="antidoteSignature" class="modal-input" style="height:65px; resize:vertical; font-family:monospace;" placeholder="error[E0599]: no method named `next` found..."></textarea>
       </div>
 
       <div class="modal-field">
         <label>Проверенное пошаговое решение</label>
-        <textarea id="antidoteSolution" class="modal-input" style="height:120px; resize:vertical; font-family:monospace;" placeholder="Импортировать трейт: use futures::StreamExt; в файле..."></textarea>
+        <textarea id="antidoteSolution" class="modal-input" style="height:110px; resize:vertical; font-family:monospace;" placeholder="Импортировать трейт: use futures::StreamExt; в файле..."></textarea>
       </div>
 
       <div class="modal-field">
@@ -872,6 +805,7 @@
     let allModels = [];
     let allKeys = [];
     let fullKeyMap = {};
+    let activeMainTab = 'overview';
 
     function getCookie(name) {
       const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -906,9 +840,7 @@
       if (navigator.clipboard && window.isSecureContext) {
         navigator.clipboard.writeText(text).then(() => {
           showToast('Ключ скопирован в буфер!');
-        }).catch(() => {
-          fallbackCopy(text);
-        });
+        }).catch(() => fallbackCopy(text));
       } else {
         fallbackCopy(text);
       }
@@ -926,21 +858,15 @@
         textArea.style.padding = "0";
         textArea.style.border = "none";
         textArea.style.outline = "none";
-        textArea.style.boxShadow = "none";
         textArea.style.background = "transparent";
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        const successful = document.execCommand('copy');
+        const ok = document.execCommand('copy');
         document.body.removeChild(textArea);
-        if (successful) {
-          showToast('Ключ скопирован в буфер!');
-        } else {
-          prompt("Скопируйте ключ:", text);
-        }
-      } catch (err) {
-        prompt("Скопируйте ключ:", text);
-      }
+        if (ok) showToast('Ключ скопирован в буфер!');
+        else prompt("Скопируйте ключ:", text);
+      } catch (e) { prompt("Скопируйте ключ:", text); }
     }
 
     function copyFullKeyFromInput() {
@@ -948,62 +874,34 @@
       if (raw) copyToClipboard(raw);
     }
 
-    function switchTab(tabId, title) {
-      document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      document.getElementById('pane-' + tabId).classList.add('active');
-      document.getElementById('activeSectionTitle').innerText = title;
-      if (tabId === 'quotas') loadQuotas();
-      if (tabId === 'top') loadTopConsumers();
-      if (tabId === 'antidote') loadAntidote();
-      if (tabId === 'models') loadModels();
-      if (tabId === 'requests') loadRequests();
-      if (tabId === 'errors') loadErrors();
-      if (tabId === 'keys') loadKeys();
-      if (tabId === 'my-limits') loadMyLimits();
-    }
-
-    async function loadMyLimits() {
-      try {
-        const res = await fetch('/api/user/me', { headers: authHeaders() });
-        if (res.status === 401) return logout();
-        const k = await res.json();
-        
-        document.getElementById('myKeyToken').innerText = maskKey(k.key);
-        document.getElementById('myKeyToken').setAttribute('data-full', k.key);
-        document.getElementById('myRoleBadge').innerText = k.is_admin ? 'ADMIN' : 'USER';
-        document.getElementById('myRequestsCount').innerText = (k.requests_count || 0).toLocaleString();
-        document.getElementById('myRpmLimit').innerText = k.rpm_limit > 0 ? k.rpm_limit + ' req/min' : 'Безлимит';
-        document.getElementById('myExpiresAt').innerText = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
-
-        const isReq = k.limit_type === 'requests';
-        const used = isReq ? (k.requests_count || 0) : (k.tokens_used || 0);
-        const limit = isReq ? (k.request_limit || 0) : (k.token_limit || 0);
-        const unit = isReq ? 'запросов' : 'токенов';
-
-        document.getElementById('myUsageTitle').innerText = isReq ? 'Расход запросов' : 'Расход токенов';
-
-        if (limit > 0) {
-          const pct = Math.min(100, Math.round((used / limit) * 100));
-          const remaining = Math.max(0, limit - used);
-          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} / ${limit.toLocaleString()} ${unit}`;
-          document.getElementById('myUsageBar').style.width = pct + '%';
-          document.getElementById('myPercentUsed').innerText = `${pct}% израсходовано`;
-          document.getElementById('myRemainingVal').innerText = `Осталось: ${remaining.toLocaleString()} ${unit}`;
-        } else {
-          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} ${unit} (безлимит)`;
-          document.getElementById('myUsageBar').style.width = '100%';
-          document.getElementById('myUsageBar').className = 'progress-bar-fill fill-5h';
-          document.getElementById('myPercentUsed').innerText = 'Лимит не установлен';
-          document.getElementById('myRemainingVal').innerText = 'Неограниченный доступ';
-        }
-      } catch (e) { console.error(e); }
-    }
-
     function copyMyKey() {
       const full = document.getElementById('myKeyToken').getAttribute('data-full');
       if (full) copyToClipboard(full);
+    }
+
+    function switchMainTab(tabId, title) {
+      activeMainTab = tabId;
+      document.querySelectorAll('.sidebar .nav-link').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.content-area .tab-pane').forEach(p => p.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById('pane-' + tabId).classList.add('active');
+      document.getElementById('activeSectionTitle').innerText = title;
+      
+      if (tabId === 'overview') { loadQuotas(); loadMyLimits(); }
+      if (tabId === 'clients') { loadTopConsumers(); loadKeys(); }
+      if (tabId === 'events') { loadRequests(); }
+    }
+
+    function switchEventSubTab(subId) {
+      document.querySelectorAll('.subtab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      ['requests', 'errors', 'antidote', 'models'].forEach(id => {
+        document.getElementById('subpane-' + id).style.display = (id === subId) ? 'block' : 'none';
+      });
+      if (subId === 'requests') loadRequests();
+      if (subId === 'errors') loadErrors();
+      if (subId === 'antidote') loadAntidote();
+      if (subId === 'models') loadModels();
     }
 
     function logout() {
@@ -1014,9 +912,7 @@
 
     function formatTimeRemaining(isoDateStr) {
       if (!isoDateStr) return 'нет данных';
-      const target = new Date(isoDateStr).getTime();
-      const now = Date.now();
-      const diffMs = target - now;
+      const diffMs = new Date(isoDateStr).getTime() - Date.now();
       if (diffMs <= 0) return 'сброс прямо сейчас';
       const diffMins = Math.floor(diffMs / (1000 * 60));
       const hours = Math.floor(diffMins / 60);
@@ -1024,21 +920,17 @@
       const days = Math.floor(hours / 24);
       const remHours = hours % 24;
 
-      if (days > 0) {
-        return `через ${days} д ${remHours} ч`;
-      } else if (hours > 0) {
-        return `через ${hours} ч ${mins} мин`;
-      } else {
-        return `через ${mins} мин`;
-      }
+      if (days > 0) return `через ${days} д ${remHours} ч`;
+      if (hours > 0) return `через ${hours} ч ${mins} мин`;
+      return `через ${mins} мин`;
     }
 
     function formatDateShort(isoDateStr) {
       if (!isoDateStr) return '';
-      const d = new Date(isoDateStr);
-      return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+      return new Date(isoDateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
     }
 
+    // 1. Квоты и KPI
     async function loadQuotas() {
       try {
         const [accRes, sumRes] = await Promise.all([
@@ -1068,10 +960,15 @@
         else if (headroomPct >= 130) hrElem.style.color = '#10b981';
         else hrElem.style.color = '#f59e0b';
 
-        document.getElementById('statActiveAccounts').innerText = activeCount;
+        document.getElementById('statActiveAccounts').innerText = `${activeCount} / ${accounts.length}`;
         document.getElementById('statTotalRequests').innerText = (summary.total_requests || 0).toLocaleString();
+        
         const totalTok = (summary.total_prompt_tokens || 0) + (summary.total_completion_tokens || 0);
-        document.getElementById('statTotalTokens').innerText = (totalTok / 1_000_000).toFixed(1) + 'M токенов';
+        document.getElementById('statTotalTokens').innerText = (totalTok / 1_000_000).toFixed(1) + 'M';
+
+        const savedTok = summary.total_tokens_saved_by_cache || summary.total_cached_tokens || 0;
+        document.getElementById('statCacheSaved').innerText = (savedTok / 1_000).toFixed(1) + 'K';
+        document.getElementById('statCacheHitrate').innerText = (summary.global_hitrate_percent || 0).toFixed(1) + '%';
 
         const tbody = document.getElementById('accountsTableBody');
         tbody.innerHTML = '';
@@ -1102,19 +999,19 @@
               <td class="mono">#${a.id}</td>
               <td class="mono" style="font-weight:700; color:#fff;">
                 ${a.email || 'anon'}
-                ${a.is_banned ? '<span style="display:block; font-size:11px; color:#ef4444; font-weight:normal;">TOS PERMANENT BAN</span>' : ''}
+                ${a.is_banned ? '<span style="display:block; font-size:11px; color:#ef4444; font-weight:normal;">TOS BAN</span>' : ''}
               </td>
-              <td style="width: 280px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <td style="width: 260px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px;">
                   <span>Остаток: <b>${g5hPct}%</b></span>
-                  <span style="color:var(--text-secondary); font-size:11px;">сброс ${reset5hText}</span>
+                  <span style="color:var(--text-secondary);">${reset5hText}</span>
                 </div>
                 <div class="progress-bar-bg"><div class="progress-bar-fill fill-5h" style="width:${g5hPct}%"></div></div>
               </td>
-              <td style="width: 280px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <td style="width: 260px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px;">
                   <span>Остаток: <b>${gWkPct}%</b></span>
-                  <span style="color:var(--text-secondary); font-size:11px;">${resetWkText}</span>
+                  <span style="color:var(--text-secondary);">${resetWkText}</span>
                 </div>
                 <div class="progress-bar-bg"><div class="progress-bar-fill fill-weekly" style="width:${gWkPct}%"></div></div>
               </td>
@@ -1130,7 +1027,41 @@
       loadQuotas();
     }
 
-    // Топ потребления
+    // 2. Персональный баланс админа
+    async function loadMyLimits() {
+      try {
+        const res = await fetch('/api/user/me', { headers: authHeaders() });
+        if (res.status === 401) return logout();
+        const k = await res.json();
+        
+        document.getElementById('myKeyToken').innerText = maskKey(k.key);
+        document.getElementById('myKeyToken').setAttribute('data-full', k.key);
+        document.getElementById('myRoleBadge').innerText = k.is_admin ? 'ADMIN' : 'USER';
+        document.getElementById('myRequestsCount').innerText = (k.requests_count || 0).toLocaleString();
+        document.getElementById('myTokensUsed').innerText = (k.tokens_used || 0).toLocaleString();
+        document.getElementById('myRpmLimit').innerText = k.rpm_limit > 0 ? k.rpm_limit + ' req/min' : 'Безлимит';
+        document.getElementById('myExpiresAt').innerText = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
+
+        const isReq = k.limit_type === 'requests';
+        const used = isReq ? (k.requests_count || 0) : (k.tokens_used || 0);
+        const limit = isReq ? (k.request_limit || 0) : (k.token_limit || 0);
+        const unit = isReq ? 'запросов' : 'токенов';
+
+        document.getElementById('myUsageTitle').innerText = isReq ? 'Расход запросов' : 'Расход токенов';
+
+        if (limit > 0) {
+          const pct = Math.min(100, Math.round((used / limit) * 100));
+          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} / ${limit.toLocaleString()} ${unit} (${pct}%)`;
+          document.getElementById('myUsageBar').style.width = pct + '%';
+        } else {
+          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} ${unit} (безлимит)`;
+          document.getElementById('myUsageBar').style.width = '100%';
+          document.getElementById('myUsageBar').className = 'progress-bar-fill fill-5h';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    // 3. Топ потребления и ключи
     async function loadTopConsumers() {
       try {
         const res = await fetch('/api/keys/analytics', { headers: authHeaders() });
@@ -1145,21 +1076,20 @@
 
         topList.forEach((k, idx) => {
           const pct = k.token_percent || 0;
-          const masked = maskKey(k.key);
           tbody.innerHTML += `
             <tr>
               <td class="mono" style="font-weight:700;">#${idx + 1}</td>
               <td style="font-weight:700; color:#fff;">${k.name}</td>
               <td>
-                <div class="key-token-box" onclick="copyToClipboard('${k.key}')" title="Кликните, чтобы скопировать">
-                  <span class="key-token-text">${masked}</span>
+                <div class="key-token-box" onclick="copyToClipboard('${k.key}')" title="Кликните для копирования">
+                  <span class="key-token-text">${maskKey(k.key)}</span>
                   <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                 </div>
               </td>
-              <td style="width: 260px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px;">
+              <td style="width: 220px;">
+                <div style="display:flex; justify-content:space-between; font-size:11px;">
                   <span style="font-weight:700; color:#fff;">${pct}%</span>
-                  <span style="color:var(--text-secondary); font-size:11px;">доля потребления</span>
+                  <span style="color:var(--text-secondary);">доля</span>
                 </div>
                 <div class="progress-bar-bg"><div class="progress-bar-fill fill-top" style="width:${pct}%"></div></div>
               </td>
@@ -1172,142 +1102,61 @@
       } catch (e) { console.error(e); }
     }
 
-    // Антидот
-    async function loadAntidote() {
+    async function loadKeys() {
       try {
-        const [pRes, sRes] = await Promise.all([
-          fetch('/api/antidote/problems?limit=50', { headers: authHeaders() }),
-          fetch('/api/antidote/stats', { headers: authHeaders() })
-        ]);
-        const pData = await pRes.json();
-        const sData = await sRes.json();
-        
-        document.getElementById('antidoteTotalSolutions').innerText = sData.total_solutions || 371;
-        document.getElementById('antidoteTotalInjections').innerText = (sData.total_injections || 0).toLocaleString();
+        const res = await fetch('/api/keys', { headers: authHeaders() });
+        const data = await res.json();
+        allKeys = data.keys || [];
+        const tbody = document.getElementById('keysTableBody');
+        tbody.innerHTML = '';
+        allKeys.forEach(k => {
+          fullKeyMap[k.id] = k;
+          const limLabel = k.limit_type === 'requests' 
+            ? (k.request_limit > 0 ? k.request_limit.toLocaleString() + ' req' : 'unlim')
+            : (k.token_limit > 0 ? (k.token_limit / 1000).toFixed(0) + 'k tok' : 'unlim');
+          const usedLabel = k.limit_type === 'requests'
+            ? (k.requests_count || 0) + ' req'
+            : (k.tokens_used || 0).toLocaleString() + ' tok';
 
-        renderAntidoteProblems(pData.problems || []);
+          const expLabel = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
+
+          let actionHtml = '';
+          if (k.is_self) {
+            actionHtml = `<span class="badge badge-admin" style="opacity:0.85; font-size:11px;">Текущий ключ</span>`;
+          } else if (!k.can_edit) {
+            actionHtml = `<span class="badge" style="background:rgba(255,255,255,0.06); color:var(--text-muted); font-size:11px;">Только чтение</span>`;
+          } else {
+            actionHtml = `
+              <button class="btn-action" style="padding:5px 10px; font-size:12px;" onclick="openEditKeyModal(${k.id})">
+                <span>Настроить</span>
+              </button>
+            `;
+          }
+
+          tbody.innerHTML += `
+            <tr>
+              <td class="mono">#${k.id}</td>
+              <td style="font-weight:700; color:#fff;">${k.name}</td>
+              <td>
+                <div class="key-token-box" onclick="copyToClipboard('${k.key}')" title="Кликните для копирования">
+                  <span class="key-token-text">${maskKey(k.key)}</span>
+                  <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                </div>
+              </td>
+              <td><span class="badge ${k.is_admin ? 'badge-admin' : 'badge-user'}">${k.is_admin ? 'ADMIN' : 'USER'}</span></td>
+              <td class="mono">${limLabel}</td>
+              <td class="mono">${usedLabel}</td>
+              <td class="mono">${k.rpm_limit > 0 ? k.rpm_limit : 'unlim'}</td>
+              <td>${expLabel}</td>
+              <td><span class="badge ${k.enabled ? 'badge-success' : 'badge-danger'}">${k.enabled ? 'Активен' : 'Отключен'}</span></td>
+              <td>${actionHtml}</td>
+            </tr>
+          `;
+        });
       } catch (e) { console.error(e); }
     }
 
-    function renderAntidoteProblems(list) {
-      const tbody = document.getElementById('antidoteTableBody');
-      tbody.innerHTML = '';
-      if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Решений не найдено</td></tr>';
-        return;
-      }
-      list.forEach(p => {
-        tbody.innerHTML += `
-          <tr>
-            <td class="mono" style="color:var(--accent-light); font-weight:700;">${p.issue_id}</td>
-            <td style="font-weight:600; color:#fff;">${p.title}</td>
-            <td class="mono" style="font-size:12px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.error_signature}</td>
-            <td style="font-size:12px; color:#cbd5e1; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.solution_text}</td>
-            <td class="mono" style="font-weight:700;">${p.hit_count || 0}</td>
-            <td><span class="badge badge-user">${p.tags || 'core'}</span></td>
-          </tr>
-        `;
-      });
-    }
-
-    let searchTimer = null;
-    function searchAntidote() {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(async () => {
-        const q = document.getElementById('antidoteSearch').value.trim();
-        const res = await fetch('/api/antidote/problems?q=' + encodeURIComponent(q), { headers: authHeaders() });
-        const data = await res.json();
-        renderAntidoteProblems(data.problems || []);
-      }, 250);
-    }
-
-    function showAddAntidoteModal() {
-      document.getElementById('addAntidoteModalBackdrop').classList.add('show');
-    }
-    function closeAddAntidoteModal() {
-      document.getElementById('addAntidoteModalBackdrop').classList.remove('show');
-    }
-    async function submitAddAntidote() {
-      const title = document.getElementById('antidoteTitle').value.trim();
-      const error_signature = document.getElementById('antidoteSignature').value.trim();
-      const solution = document.getElementById('antidoteSolution').value.trim();
-      const tags = document.getElementById('antidoteTags').value.trim();
-
-      if (!title || !error_signature || !solution) {
-        alert('Заполните обязательные поля');
-        return;
-      }
-
-      await fetch('/api/antidote/problems', {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify({ title, error_signature, solution, tags })
-      });
-      closeAddAntidoteModal();
-      loadAntidote();
-    }
-
-    // Модели
-    async function loadModels() {
-      try {
-        const res = await fetch('/api/models/config', { headers: authHeaders() });
-        const data = await res.json();
-        allModels = data.models || [];
-        renderModels(allModels);
-      } catch (e) { console.error(e); }
-    }
-
-    function renderModels(list) {
-      const tbody = document.getElementById('modelsTableBody');
-      tbody.innerHTML = '';
-      if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Модели не найдены</td></tr>';
-        return;
-      }
-      list.forEach(m => {
-        tbody.innerHTML += `
-          <tr>
-            <td class="mono" style="font-weight:700; color:#fff;">${m.original_id}</td>
-            <td class="mono" style="color:var(--accent-light);">${m.alias || '<i style="color:var(--text-muted);">(голое имя)</i>'}</td>
-            <td>
-              <label class="switch">
-                <input type="checkbox" ${m.enabled ? 'checked' : ''} onchange="toggleModelStatus('${m.original_id}', this.checked)">
-                <span class="slider"></span>
-              </label>
-            </td>
-            <td>
-              <button class="btn-action" style="padding:6px 12px; font-size:12px;" onclick="editAlias('${m.original_id}', '${m.alias || ''}')">Изменить</button>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    function filterModels() {
-      const q = document.getElementById('modelSearch').value.toLowerCase();
-      renderModels(allModels.filter(m => m.original_id.toLowerCase().includes(q) || (m.alias && m.alias.toLowerCase().includes(q))));
-    }
-
-    async function toggleModelStatus(id, enabled) {
-      await fetch(`/api/models/config/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ enabled })
-      });
-    }
-
-    async function editAlias(id, current) {
-      const val = prompt(`Новый алиас для ${id}:`, current);
-      if (val === null) return;
-      await fetch(`/api/models/config/${encodeURIComponent(id)}`, {
-        method: 'PATCH',
-        headers: authHeaders(),
-        body: JSON.stringify({ alias: val })
-      });
-      loadModels();
-    }
-
-    // Логи запросов
+    // 4. Логи и Антидот
     async function loadRequests() {
       try {
         const res = await fetch('/api/telemetry/requests?limit=100', { headers: authHeaders() });
@@ -1332,7 +1181,6 @@
       } catch (e) { console.error(e); }
     }
 
-    // Логи ошибок
     async function loadErrors() {
       try {
         const res = await fetch('/api/telemetry/errors?limit=100', { headers: authHeaders() });
@@ -1340,7 +1188,7 @@
         const tbody = document.getElementById('errorsTableBody');
         tbody.innerHTML = '';
         if (!list.length) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--success); padding:30px;">Ошибок не зафиксировано. Все сервисы работают штатно.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--success); padding:24px;">Ошибок upstream не зафиксировано. Все сервисы стабильны.</td></tr>';
           return;
         }
         list.forEach(r => {
@@ -1350,7 +1198,7 @@
               <td class="mono" style="color:#fff; font-weight:700;">${r.model}</td>
               <td class="mono">${r.key_name || 'anon'}</td>
               <td><span class="badge badge-danger">${r.status_code}</span></td>
-              <td style="color:#f87171; font-size:13px; max-width:400px; overflow:hidden; text-overflow:ellipsis;">${r.error || 'Upstream error'}</td>
+              <td style="color:#f87171; font-size:13px; max-width:380px; overflow:hidden; text-overflow:ellipsis;">${r.error || 'Upstream error'}</td>
               <td class="mono">${r.account_email || 'none'}</td>
             </tr>
           `;
@@ -1358,218 +1206,179 @@
       } catch (e) { console.error(e); }
     }
 
-    // Ключи
-    async function loadKeys() {
+    async function loadAntidote() {
       try {
-        const res = await fetch('/api/keys', { headers: authHeaders() });
+        const [pRes, sRes] = await Promise.all([
+          fetch('/api/antidote/problems?limit=50', { headers: authHeaders() }),
+          fetch('/api/antidote/stats', { headers: authHeaders() })
+        ]);
+        const pData = await pRes.json();
+        const sData = await sRes.json();
+        document.getElementById('antidoteStatsBadge').innerText = `${sData.total_solutions || 371} решений L1`;
+        renderAntidoteProblems(pData.problems || []);
+      } catch (e) { console.error(e); }
+    }
+
+    function renderAntidoteProblems(list) {
+      const tbody = document.getElementById('antidoteTableBody');
+      tbody.innerHTML = '';
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Решений не найдено</td></tr>';
+        return;
+      }
+      list.forEach(p => {
+        tbody.innerHTML += `
+          <tr>
+            <td class="mono" style="color:var(--accent-light); font-weight:700;">${p.issue_id}</td>
+            <td style="font-weight:600; color:#fff;">${p.title}</td>
+            <td class="mono" style="font-size:12px; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.error_signature}</td>
+            <td style="font-size:12px; color:#cbd5e1; max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.solution_text}</td>
+            <td class="mono" style="font-weight:700;">${p.hit_count || 0}</td>
+            <td><span class="badge badge-user">${p.tags || 'core'}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    let searchTimer = null;
+    function searchAntidote() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(async () => {
+        const q = document.getElementById('antidoteSearch').value.trim();
+        const res = await fetch('/api/antidote/problems?q=' + encodeURIComponent(q), { headers: authHeaders() });
         const data = await res.json();
-        allKeys = data.keys || [];
-        const tbody = document.getElementById('keysTableBody');
+        renderAntidoteProblems(data.problems || []);
+      }, 220);
+    }
+
+    function showAddAntidoteModal() { document.getElementById('addAntidoteModalBackdrop').classList.add('show'); }
+    function closeAddAntidoteModal() { document.getElementById('addAntidoteModalBackdrop').classList.remove('show'); }
+
+    async function submitAddAntidote() {
+      const title = document.getElementById('antidoteTitle').value.trim();
+      const error_signature = document.getElementById('antidoteSignature').value.trim();
+      const solution = document.getElementById('antidoteSolution').value.trim();
+      const tags = document.getElementById('antidoteTags').value.trim();
+      if (!title || !error_signature || !solution) return alert('Заполните обязательные поля');
+
+      await fetch('/api/antidote/problems', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ title, error_signature, solution, tags })
+      });
+      closeAddAntidoteModal();
+      loadAntidote();
+    }
+
+    async function loadModels() {
+      try {
+        const res = await fetch('/api/models/config', { headers: authHeaders() });
+        const data = await res.json();
+        const tbody = document.getElementById('modelsTableBody');
         tbody.innerHTML = '';
-        allKeys.forEach(k => {
-          fullKeyMap[k.id] = k;
-          const limLabel = k.limit_type === 'requests' 
-            ? (k.request_limit > 0 ? k.request_limit.toLocaleString() + ' req' : 'unlim')
-            : (k.token_limit > 0 ? (k.token_limit / 1000).toFixed(0) + 'k tok' : 'unlim');
-          const usedLabel = k.limit_type === 'requests'
-            ? (k.requests_count || 0) + ' req'
-            : (k.tokens_used || 0).toLocaleString() + ' tok';
-
-          const expLabel = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
-          const masked = maskKey(k.key);
-
-          let actionHtml = '';
-          if (k.is_self) {
-            actionHtml = `<span class="badge badge-admin" style="opacity:0.85; font-size:11px;" title="Ваш текущий ключ (защищен от самоизменения)">Текущий ключ</span>`;
-          } else if (!k.can_edit) {
-            actionHtml = `<span class="badge" style="background:rgba(255,255,255,0.06); color:var(--text-muted); border:1px solid var(--border); font-size:11px;" title="Создан вышестоящим администратором">Только чтение</span>`;
-          } else {
-            actionHtml = `
-              <button class="btn-action" style="padding:6px 12px; font-size:12px;" onclick="openEditKeyModal(${k.id})">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-                <span>Настроить</span>
-              </button>
-            `;
-          }
-
+        (data.models || []).filter(m => m.enabled).forEach(m => {
           tbody.innerHTML += `
             <tr>
-              <td class="mono">#${k.id}</td>
-              <td style="font-weight:700; color:#fff;">${k.name}</td>
-              <td>
-                <div class="key-token-box" onclick="copyToClipboard('${k.key}')" title="Кликните, чтобы скопировать токен">
-                  <span class="key-token-text">${masked}</span>
-                  <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-                </div>
-              </td>
-              <td><span class="badge ${k.is_admin ? 'badge-admin' : 'badge-user'}">${k.is_admin ? 'ADMIN' : 'USER'}</span></td>
-              <td class="mono">${limLabel}</td>
-              <td class="mono">${usedLabel}</td>
-              <td class="mono">${k.rpm_limit > 0 ? k.rpm_limit : 'unlim'}</td>
-              <td>${expLabel}</td>
-              <td><span class="badge ${k.enabled ? 'badge-success' : 'badge-danger'}">${k.enabled ? 'Активен' : 'Отключен'}</span></td>
-              <td>${actionHtml}</td>
+              <td class="mono" style="font-weight:700; color:#fff;">${m.original_id}</td>
+              <td class="mono" style="color:var(--accent-light); font-weight:700;">${m.alias || m.original_id}</td>
+              <td><span class="badge badge-success">Активна</span></td>
             </tr>
           `;
         });
       } catch (e) { console.error(e); }
     }
 
-    // Segment helpers
+    // Modal Helpers
     function setSegment(groupId, value) {
       const container = document.getElementById(groupId);
-      const buttons = container.querySelectorAll('.seg-btn');
-      buttons.forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
       container.setAttribute('data-value', value);
 
-      // Trigger conditions
       if (groupId === 'segLimitType') {
         const grp = document.getElementById('modalLimitValueGroup');
         const lbl = document.getElementById('modalLimitValueLabel');
-        if (value === 'unlimited') grp.style.display = 'none';
-        else {
-          grp.style.display = 'block';
-          lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
-        }
+        grp.style.display = value === 'unlimited' ? 'none' : 'block';
+        lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
       }
-      if (groupId === 'segRpm') {
-        document.getElementById('modalRpmValue').style.display = value === 'custom' ? 'block' : 'none';
-      }
-      if (groupId === 'segExp') {
-        document.getElementById('modalExpDate').style.display = value === 'date' ? 'block' : 'none';
-      }
+      if (groupId === 'segRpm') document.getElementById('modalRpmValue').style.display = value === 'custom' ? 'block' : 'none';
+      if (groupId === 'segExp') document.getElementById('modalExpDate').style.display = value === 'date' ? 'block' : 'none';
 
       if (groupId === 'editSegLimitType') {
         const grp = document.getElementById('editLimitValueGroup');
         const lbl = document.getElementById('editLimitValueLabel');
-        if (value === 'unlimited') grp.style.display = 'none';
-        else {
-          grp.style.display = 'block';
-          lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
-        }
+        grp.style.display = value === 'unlimited' ? 'none' : 'block';
+        lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
       }
-      if (groupId === 'editSegRpm') {
-        document.getElementById('editRpmValue').style.display = value === 'custom' ? 'block' : 'none';
-      }
-      if (groupId === 'editSegExp') {
-        document.getElementById('editExpDate').style.display = value === 'date' ? 'block' : 'none';
-      }
+      if (groupId === 'editSegRpm') document.getElementById('editRpmValue').style.display = value === 'custom' ? 'block' : 'none';
+      if (groupId === 'editSegExp') document.getElementById('editExpDate').style.display = value === 'date' ? 'block' : 'none';
     }
 
-    function getSegmentValue(groupId) {
-      return document.getElementById(groupId).getAttribute('data-value') || 'tokens';
-    }
-
+    function getSegmentValue(groupId) { return document.getElementById(groupId).getAttribute('data-value') || 'tokens'; }
     function setSegmentActive(groupId, value) {
       const container = document.getElementById(groupId);
       container.setAttribute('data-value', value);
-      const buttons = container.querySelectorAll('.seg-btn');
-      buttons.forEach(b => {
-        const clickAttr = b.getAttribute('onclick') || '';
-        if (clickAttr.includes(`'${value}'`)) {
-          b.classList.add('active');
-        } else {
-          b.classList.remove('active');
-        }
+      container.querySelectorAll('.seg-btn').forEach(b => {
+        b.classList.toggle('active', (b.getAttribute('onclick') || '').includes(`'${value}'`));
       });
     }
 
-    // New Key Modal
     function openNewKeyModal() {
       document.getElementById('modalKeyName').value = '';
       document.getElementById('modalLimitValue').value = '';
       document.getElementById('modalRpmValue').value = '';
       document.getElementById('modalExpDate').value = '';
-      
       setSegmentActive('segRole', 'user');
       setSegmentActive('segLimitType', 'tokens');
       setSegmentActive('segRpm', 'unlim');
       setSegmentActive('segExp', 'never');
-
       document.getElementById('modalLimitValueGroup').style.display = 'block';
-      document.getElementById('modalLimitValueLabel').innerText = 'Количество токенов (0 = анлим)';
       document.getElementById('modalRpmValue').style.display = 'none';
       document.getElementById('modalExpDate').style.display = 'none';
-
       document.getElementById('newKeyModalBackdrop').classList.add('show');
     }
-    function closeNewKeyModal() {
-      document.getElementById('newKeyModalBackdrop').classList.remove('show');
-    }
+    function closeNewKeyModal() { document.getElementById('newKeyModalBackdrop').classList.remove('show'); }
 
     async function submitNewKey() {
       const name = document.getElementById('modalKeyName').value.trim();
-      if (!name) {
-        alert('Введите имя клиента');
-        return;
-      }
+      if (!name) return alert('Введите имя клиента');
       const role = getSegmentValue('segRole');
       const limitType = getSegmentValue('segLimitType');
-      let token_limit = 0;
-      let request_limit = 0;
-
-      if (limitType === 'tokens') {
-        token_limit = parseInt(document.getElementById('modalLimitValue').value, 10) || 0;
-      } else if (limitType === 'requests') {
-        request_limit = parseInt(document.getElementById('modalLimitValue').value, 10) || 0;
-      }
-
-      const rpmType = getSegmentValue('segRpm');
-      const rpm_limit = rpmType === 'custom' ? (parseInt(document.getElementById('modalRpmValue').value, 10) || 0) : 0;
-
-      const expType = getSegmentValue('segExp');
+      let token_limit = (limitType === 'tokens') ? (parseInt(document.getElementById('modalLimitValue').value, 10) || 0) : 0;
+      let request_limit = (limitType === 'requests') ? (parseInt(document.getElementById('modalLimitValue').value, 10) || 0) : 0;
+      const rpm_limit = (getSegmentValue('segRpm') === 'custom') ? (parseInt(document.getElementById('modalRpmValue').value, 10) || 0) : 0;
       let expires_at = null;
-      if (expType === 'date') {
+      if (getSegmentValue('segExp') === 'date') {
         const dVal = document.getElementById('modalExpDate').value;
-        if (dVal) {
-          expires_at = Math.floor(new Date(dVal + 'T23:59:59Z').getTime() / 1000);
-        }
+        if (dVal) expires_at = Math.floor(new Date(dVal + 'T23:59:59Z').getTime() / 1000);
       }
 
       await fetch('/api/keys', {
         method: 'POST',
         headers: authHeaders(),
         body: JSON.stringify({
-          name,
-          is_admin: role === 'admin',
+          name, is_admin: role === 'admin',
           limit_type: limitType === 'unlimited' ? 'tokens' : limitType,
-          token_limit,
-          request_limit,
-          rpm_limit,
-          expires_at
+          token_limit, request_limit, rpm_limit, expires_at
         })
       });
-
       closeNewKeyModal();
       loadKeys();
     }
 
-    // Edit Key Modal
     function openEditKeyModal(id) {
       const k = fullKeyMap[id];
       if (!k) return;
-
       document.getElementById('editKeyId').value = k.id;
       document.getElementById('editKeyName').value = k.name;
-      
-      const tokElem = document.getElementById('editKeyTokenText');
-      tokElem.innerText = maskKey(k.key);
-      tokElem.setAttribute('data-full', k.key);
-
+      document.getElementById('editKeyTokenText').innerText = maskKey(k.key);
+      document.getElementById('editKeyTokenText').setAttribute('data-full', k.key);
       setSegmentActive('editSegRole', k.is_admin ? 'admin' : 'user');
-      
       const limType = k.limit_type || 'tokens';
       setSegmentActive('editSegLimitType', limType);
-
-      const limValInput = document.getElementById('editLimitValue');
-      if (limType === 'requests') {
-        limValInput.value = k.request_limit || '';
-        document.getElementById('editLimitValueLabel').innerText = 'Количество запросов (0 = анлим)';
-      } else {
-        limValInput.value = k.token_limit || '';
-        document.getElementById('editLimitValueLabel').innerText = 'Количество токенов (0 = анлим)';
-      }
+      const limInput = document.getElementById('editLimitValue');
+      limInput.value = (limType === 'requests') ? (k.request_limit || '') : (k.token_limit || '');
+      document.getElementById('editLimitValueGroup').style.display = (limType === 'unlimited') ? 'none' : 'block';
 
       if (k.rpm_limit > 0) {
         setSegmentActive('editSegRpm', 'custom');
@@ -1578,71 +1387,48 @@
       } else {
         setSegmentActive('editSegRpm', 'unlim');
         document.getElementById('editRpmValue').style.display = 'none';
-        document.getElementById('editRpmValue').value = '';
       }
 
       if (k.expires_at) {
         setSegmentActive('editSegExp', 'date');
         document.getElementById('editExpDate').style.display = 'block';
-        const d = new Date(k.expires_at * 1000);
-        document.getElementById('editExpDate').value = d.toISOString().split('T')[0];
+        document.getElementById('editExpDate').value = new Date(k.expires_at * 1000).toISOString().split('T')[0];
       } else {
         setSegmentActive('editSegExp', 'never');
         document.getElementById('editExpDate').style.display = 'none';
-        document.getElementById('editExpDate').value = '';
       }
-
       document.getElementById('editKeyEnabled').checked = k.enabled;
       document.getElementById('editKeyModalBackdrop').classList.add('show');
     }
 
-    function closeEditKeyModal() {
-      document.getElementById('editKeyModalBackdrop').classList.remove('show');
-    }
+    function closeEditKeyModal() { document.getElementById('editKeyModalBackdrop').classList.remove('show'); }
 
     async function submitEditKey() {
       const id = document.getElementById('editKeyId').value;
       const name = document.getElementById('editKeyName').value.trim();
       const role = getSegmentValue('editSegRole');
       const limitType = getSegmentValue('editSegLimitType');
-      
-      let token_limit = 0;
-      let request_limit = 0;
-      if (limitType === 'tokens') {
-        token_limit = parseInt(document.getElementById('editLimitValue').value, 10) || 0;
-      } else if (limitType === 'requests') {
-        request_limit = parseInt(document.getElementById('editLimitValue').value, 10) || 0;
-      }
-
-      const rpmType = getSegmentValue('editSegRpm');
-      const rpm_limit = rpmType === 'custom' ? (parseInt(document.getElementById('editRpmValue').value, 10) || 0) : 0;
-
-      const expType = getSegmentValue('editSegExp');
+      let token_limit = (limitType === 'tokens') ? (parseInt(document.getElementById('editLimitValue').value, 10) || 0) : 0;
+      let request_limit = (limitType === 'requests') ? (parseInt(document.getElementById('editLimitValue').value, 10) || 0) : 0;
+      const rpm_limit = (getSegmentValue('editSegRpm') === 'custom') ? (parseInt(document.getElementById('editRpmValue').value, 10) || 0) : 0;
       let expires_at = null;
-      if (expType === 'date') {
+      if (getSegmentValue('editSegExp') === 'date') {
         const dVal = document.getElementById('editExpDate').value;
-        if (dVal) {
-          expires_at = Math.floor(new Date(dVal + 'T23:59:59Z').getTime() / 1000);
-        }
+        if (dVal) expires_at = Math.floor(new Date(dVal + 'T23:59:59Z').getTime() / 1000);
       }
 
-      const enabled = document.getElementById('editKeyEnabled').checked;
-
-      await fetch(`/api/keys/${id}`, {
+      const res = await fetch(`/api/keys/${id}`, {
         method: 'PATCH',
         headers: authHeaders(),
         body: JSON.stringify({
-          name,
-          is_admin: role === 'admin',
+          name, is_admin: role === 'admin',
           limit_type: limitType === 'unlimited' ? 'tokens' : limitType,
-          token_limit,
-          request_limit,
-          rpm_limit,
-          expires_at,
-          enabled
+          token_limit, request_limit, rpm_limit, expires_at,
+          enabled: document.getElementById('editKeyEnabled').checked
         })
       });
-
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'Ошибка');
       closeEditKeyModal();
       loadKeys();
     }
@@ -1650,18 +1436,29 @@
     async function deleteCurrentKey() {
       const id = document.getElementById('editKeyId').value;
       const name = document.getElementById('editKeyName').value;
-      if (!confirm(`Удалить ключ "${name}" безвозвратно?`)) return;
-
-      await fetch(`/api/keys/${id}`, {
-        method: 'DELETE',
-        headers: authHeaders()
-      });
-
+      if (!confirm(`Удалить ключ "${name}"?`)) return;
+      const res = await fetch(`/api/keys/${id}`, { method: 'DELETE', headers: authHeaders() });
+      const data = await res.json();
+      if (!res.ok) return alert(data.error || 'Ошибка');
       closeEditKeyModal();
       loadKeys();
     }
 
+    // Live AJAX Polling (Каждые 3.5 секунды тикают счетчики и квоты)
     loadQuotas();
+    loadMyLimits();
+
+    setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        if (activeMainTab === 'overview') {
+          loadQuotas();
+          loadMyLimits();
+        } else if (activeMainTab === 'clients') {
+          loadTopConsumers();
+          loadKeys();
+        }
+      }
+    }, 3500);
   </script>
 </body>
 </html>

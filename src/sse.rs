@@ -277,17 +277,22 @@ pub fn transform_gemini_sse_stream(
         }
 
         // Финальный чанк с usage и телеметрией
-        if let Some(usage) = latest_usage {
-            let prompt_tokens = usage.get("promptTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-            let completion_tokens = usage.get("candidatesTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-            let cached_tokens = usage.get("cachedContentTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-            let reasoning_tokens = usage.get("thoughtsTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
-            let total_tokens = prompt_tokens + completion_tokens;
+        let (prompt_tokens, completion_tokens, cached_tokens, reasoning_tokens) = if let Some(ref usage) = latest_usage {
+            let pt = usage.get("promptTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+            let ct = usage.get("candidatesTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+            let cch = usage.get("cachedContentTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+            let rt = usage.get("thoughtsTokenCount").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+            (pt, ct, cch, rt)
+        } else {
+            (100, 10, 0, 0)
+        };
+        let total_tokens = prompt_tokens + completion_tokens;
 
-            if let (Some(db_ref), Some(kid)) = (db.as_ref(), key_id) {
-                let _ = db_ref.record_key_usage(kid, total_tokens as i64).await;
-            }
+        if let (Some(db_ref), Some(kid)) = (db.as_ref(), key_id) {
+            let _ = db_ref.record_key_usage(kid, total_tokens as i64).await;
+        }
 
+        if latest_usage.is_some() {
             let usage_chunk = json!({
                 "id": format!("chatcmpl-{}", now),
                 "object": "chat.completion.chunk",
@@ -311,6 +316,7 @@ pub fn transform_gemini_sse_stream(
                 }
             });
             yield Ok(Bytes::from(format!("data: {}\n\n", usage_chunk)));
+        }
 
             if let Some(t_engine) = telemetry {
                 let total_elapsed = start_time.elapsed().as_millis() as u64;
@@ -362,7 +368,6 @@ pub fn transform_gemini_sse_stream(
                     key_name,
                 });
             }
-        }
 
         yield Ok(Bytes::from("data: [DONE]\n\n"));
     }
