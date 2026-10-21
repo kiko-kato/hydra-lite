@@ -83,6 +83,9 @@ impl Database {
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN request_limit INTEGER DEFAULT 0;", []);
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN limit_type TEXT DEFAULT 'tokens';", []);
         let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN created_by INTEGER DEFAULT NULL;", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN cached_tokens_used INTEGER DEFAULT 0;", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN prompt_tokens_used INTEGER DEFAULT 0;", []);
+        let _ = writer.execute("ALTER TABLE api_keys ADD COLUMN completion_tokens_used INTEGER DEFAULT 0;", []);
         let _ = writer.execute("ALTER TABLE accounts ADD COLUMN is_banned INTEGER DEFAULT 0;", []);
         let _ = writer.execute("ALTER TABLE accounts ADD COLUMN ban_reason TEXT DEFAULT NULL;", []);
 
@@ -212,7 +215,8 @@ impl Database {
             let mut stmt = conn.prepare(
                 r#"
                 SELECT id, name, key, rpm_limit, token_limit, COALESCE(request_limit, 0), COALESCE(limit_type, 'tokens'),
-                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at, created_by
+                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at, created_by,
+                       COALESCE(cached_tokens_used, 0), COALESCE(prompt_tokens_used, 0), COALESCE(completion_tokens_used, 0)
                 FROM api_keys
                 ORDER BY id ASC
                 "#,
@@ -220,6 +224,10 @@ impl Database {
             let rows = stmt.query_map([], |row| {
                 let enabled_int: i64 = row.get(9)?;
                 let is_adm_int: i64 = row.get(11)?;
+                let c_used: i64 = row.get(14)?;
+                let p_used: i64 = row.get(15)?;
+                let comp_used: i64 = row.get(16)?;
+                let billed = (p_used - c_used).max(0) + comp_used;
                 Ok(ApiKey {
                     id: row.get(0)?,
                     name: row.get(1)?,
@@ -235,6 +243,10 @@ impl Database {
                     is_admin: is_adm_int == 1,
                     expires_at: row.get(12)?,
                     created_by: row.get(13)?,
+                    cached_tokens_used: c_used,
+                    prompt_tokens_used: p_used,
+                    completion_tokens_used: comp_used,
+                    actual_billed_tokens: billed,
                 })
             })?;
             let mut list = Vec::new();
@@ -254,7 +266,8 @@ impl Database {
             let mut stmt = conn.prepare(
                 r#"
                 SELECT id, name, key, rpm_limit, token_limit, COALESCE(request_limit, 0), COALESCE(limit_type, 'tokens'),
-                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at, created_by
+                       tokens_used, requests_count, enabled, created_at, COALESCE(is_admin, 0), expires_at, created_by,
+                       COALESCE(cached_tokens_used, 0), COALESCE(prompt_tokens_used, 0), COALESCE(completion_tokens_used, 0)
                 FROM api_keys
                 WHERE key = ?1
                 LIMIT 1
@@ -263,6 +276,10 @@ impl Database {
             let mut rows = stmt.query_map(params![token_owned], |row| {
                 let enabled_int: i64 = row.get(9)?;
                 let is_adm_int: i64 = row.get(11)?;
+                let c_used: i64 = row.get(14)?;
+                let p_used: i64 = row.get(15)?;
+                let comp_used: i64 = row.get(16)?;
+                let billed = (p_used - c_used).max(0) + comp_used;
                 Ok(ApiKey {
                     id: row.get(0)?,
                     name: row.get(1)?,
@@ -278,6 +295,10 @@ impl Database {
                     is_admin: is_adm_int == 1,
                     expires_at: row.get(12)?,
                     created_by: row.get(13)?,
+                    cached_tokens_used: c_used,
+                    prompt_tokens_used: p_used,
+                    completion_tokens_used: comp_used,
+                    actual_billed_tokens: billed,
                 })
             })?;
             if let Some(res) = rows.next() {
@@ -476,6 +497,10 @@ impl Database {
             request_limit,
             limit_type: limit_type.to_string(),
             tokens_used: 0,
+            prompt_tokens_used: 0,
+            completion_tokens_used: 0,
+            cached_tokens_used: 0,
+            actual_billed_tokens: 0,
             requests_count: 0,
             enabled: true,
             created_at: now,
@@ -559,11 +584,26 @@ impl Database {
         Ok(rows > 0)
     }
 
-    pub async fn record_key_usage(&self, id: i64, tokens: i64) -> Result<()> {
+    pub async fn record_key_usage(
+        &self,
+        id: i64,
+        prompt_tokens: i64,
+        completion_tokens: i64,
+        cached_tokens: i64,
+    ) -> Result<()> {
         let conn = self.writer.lock().await;
+        let total_tokens = prompt_tokens + completion_tokens;
         conn.execute(
-            "UPDATE api_keys SET tokens_used = tokens_used + ?1, requests_count = requests_count + 1 WHERE id = ?2",
-            params![tokens, id],
+            r#"
+            UPDATE api_keys 
+            SET tokens_used = tokens_used + ?1,
+                prompt_tokens_used = prompt_tokens_used + ?2,
+                completion_tokens_used = completion_tokens_used + ?3,
+                cached_tokens_used = cached_tokens_used + ?4,
+                requests_count = requests_count + 1 
+            WHERE id = ?5
+            "#,
+            params![total_tokens, prompt_tokens, completion_tokens, cached_tokens, id],
         )?;
         Ok(())
     }
@@ -589,11 +629,24 @@ impl Database {
                 } else {
                     0.0
                 };
+                let billed = (k.prompt_tokens_used - k.cached_tokens_used).max(0) + k.completion_tokens_used;
+                let saved_pct = if k.prompt_tokens_used > 0 {
+                    ((k.cached_tokens_used as f64 / k.prompt_tokens_used as f64) * 100.0 * 100.0).round() / 100.0
+                } else if k.tokens_used > 0 {
+                    ((k.cached_tokens_used as f64 / k.tokens_used as f64) * 100.0 * 100.0).round() / 100.0
+                } else {
+                    0.0
+                };
                 serde_json::json!({
                     "id": k.id,
                     "name": k.name,
                     "key": k.key,
                     "tokens_used": k.tokens_used,
+                    "prompt_tokens_used": k.prompt_tokens_used,
+                    "completion_tokens_used": k.completion_tokens_used,
+                    "cached_tokens_used": k.cached_tokens_used,
+                    "actual_billed_tokens": billed,
+                    "cache_saved_percent": saved_pct,
                     "token_percent": (token_pct * 10.0).round() / 10.0,
                     "requests_count": k.requests_count,
                     "request_percent": (req_pct * 10.0).round() / 10.0,
@@ -654,4 +707,12 @@ pub struct ApiKey {
     pub is_admin: bool,
     pub expires_at: Option<f64>,
     pub created_by: Option<i64>,
+    #[serde(default)]
+    pub cached_tokens_used: i64,
+    #[serde(default)]
+    pub prompt_tokens_used: i64,
+    #[serde(default)]
+    pub completion_tokens_used: i64,
+    #[serde(default)]
+    pub actual_billed_tokens: i64,
 }

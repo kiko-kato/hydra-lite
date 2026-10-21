@@ -289,7 +289,7 @@ pub fn transform_gemini_sse_stream(
         let total_tokens = prompt_tokens + completion_tokens;
 
         if let (Some(db_ref), Some(kid)) = (db.as_ref(), key_id) {
-            let _ = db_ref.record_key_usage(kid, total_tokens as i64).await;
+            let _ = db_ref.record_key_usage(kid, prompt_tokens as i64, completion_tokens as i64, cached_tokens as i64).await;
         }
 
         if latest_usage.is_some() {

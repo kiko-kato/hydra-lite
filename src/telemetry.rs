@@ -51,9 +51,12 @@ pub struct TelemetrySummary {
     pub successful_requests: u64,
     pub failed_requests: u64,
     pub global_hitrate_percent: f64,
+    pub request_hitrate_percent: f64,
     pub total_tokens_saved_by_cache: u64,
     pub total_prompt_tokens: u64,
     pub total_completion_tokens: u64,
+    pub total_billed_tokens: u64,
+    pub total_context_tokens: u64,
     pub avg_ttft_ms: f64,
     pub avg_tok_per_sec: f64,
     pub model_breakdown: Vec<ModelMetricSummary>,
@@ -67,6 +70,8 @@ pub struct ModelMetricSummary {
     pub prompt_tokens: u64,
     pub completion_tokens: u64,
     pub cached_tokens: u64,
+    pub billed_tokens: u64,
+    pub hitrate_percent: f64,
     pub avg_tok_per_sec: f64,
 }
 
@@ -214,7 +219,7 @@ impl TelemetryEngine {
         let _ = self.tx.send(metric);
     }
 
-    pub fn get_recent_requests(&self, limit: usize) -> Result<Vec<RequestMetric>> {
+    pub fn get_recent_requests(&self, limit: usize, offset: usize) -> Result<Vec<RequestMetric>> {
         let conn = Connection::open(&self.db_path)?;
         let mut stmt = conn.prepare(
             r#"
@@ -226,11 +231,11 @@ impl TelemetryEngine {
                    max_chunk_gap_ms, fast_gate_us, cache_hit_type, error, key_name
             FROM request_analytics
             ORDER BY id DESC
-            LIMIT ?1
+            LIMIT ?1 OFFSET ?2
             "#,
         )?;
 
-        let rows = stmt.query_map(params![limit as i64], |row| {
+        let rows = stmt.query_map(params![limit as i64, offset as i64], |row| {
             Ok(RequestMetric {
                 timestamp_epoch: row.get(0)?,
                 created_at: row.get(1)?,
@@ -270,7 +275,7 @@ impl TelemetryEngine {
         Ok(res)
     }
 
-    pub fn get_recent_errors(&self, limit: usize) -> Result<Vec<RequestMetric>> {
+    pub fn get_recent_errors(&self, limit: usize, offset: usize) -> Result<Vec<RequestMetric>> {
         let conn = Connection::open(&self.db_path)?;
         let mut stmt = conn.prepare(
             r#"
@@ -283,11 +288,11 @@ impl TelemetryEngine {
             FROM request_analytics
             WHERE error IS NOT NULL OR status_code >= 400
             ORDER BY id DESC
-            LIMIT ?1
+            LIMIT ?1 OFFSET ?2
             "#,
         )?;
 
-        let rows = stmt.query_map(params![limit as i64], |row| {
+        let rows = stmt.query_map(params![limit as i64, offset as i64], |row| {
             Ok(RequestMetric {
                 timestamp_epoch: row.get(0)?,
                 created_at: row.get(1)?,
@@ -428,11 +433,12 @@ impl TelemetryEngine {
                 count(*),
                 sum(CASE WHEN status_code = 200 THEN 1 ELSE 0 END),
                 sum(CASE WHEN status_code != 200 THEN 1 ELSE 0 END),
-                sum(prompt_tokens),
-                sum(completion_tokens),
-                sum(cached_tokens),
+                sum(CASE WHEN status_code = 200 THEN prompt_tokens ELSE 0 END),
+                sum(CASE WHEN status_code = 200 THEN completion_tokens ELSE 0 END),
+                sum(CASE WHEN status_code = 200 THEN cached_tokens ELSE 0 END),
                 avg(CASE WHEN status_code = 200 THEN ttft_ms ELSE NULL END),
-                avg(CASE WHEN status_code = 200 AND tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END)
+                avg(CASE WHEN status_code = 200 AND tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END),
+                count(CASE WHEN status_code = 200 AND cached_tokens > 0 THEN 1 END)
             FROM request_analytics
             "#,
         )?;
@@ -446,21 +452,34 @@ impl TelemetryEngine {
             let cached_tok: i64 = row.get(5).unwrap_or(0);
             let avg_ttft: f64 = row.get(6).unwrap_or(0.0);
             let avg_speed: f64 = row.get(7).unwrap_or(0.0);
+            let cache_hits_cnt: i64 = row.get(8).unwrap_or(0);
 
-            let hitrate = if (p_tokens + cached_tok) > 0 {
-                (cached_tok as f64 / (p_tokens + cached_tok) as f64) * 100.0
+            let hitrate = if p_tokens > 0 {
+                (cached_tok as f64 / p_tokens as f64) * 100.0
             } else {
                 0.0
             };
+
+            let req_hitrate = if succ_req > 0 {
+                (cache_hits_cnt as f64 / succ_req as f64) * 100.0
+            } else {
+                0.0
+            };
+
+            let billed = (p_tokens - cached_tok).max(0) + c_tokens;
+            let total_context = p_tokens + c_tokens;
 
             Ok(TelemetrySummary {
                 total_requests: total_req as u64,
                 successful_requests: succ_req as u64,
                 failed_requests: fail_req as u64,
-                global_hitrate_percent: (hitrate * 10.0).round() / 10.0,
+                global_hitrate_percent: (hitrate * 100.0).round() / 100.0,
+                request_hitrate_percent: (req_hitrate * 100.0).round() / 100.0,
                 total_tokens_saved_by_cache: cached_tok as u64,
                 total_prompt_tokens: p_tokens as u64,
                 total_completion_tokens: c_tokens as u64,
+                total_billed_tokens: billed as u64,
+                total_context_tokens: total_context as u64,
                 avg_ttft_ms: (avg_ttft * 10.0).round() / 10.0,
                 avg_tok_per_sec: ((avg_speed.min(500.0)) * 10.0).round() / 10.0,
                 model_breakdown: Vec::new(),
@@ -470,19 +489,32 @@ impl TelemetryEngine {
 
         let mut model_stmt = conn.prepare(
             r#"
-            SELECT model, count(*), sum(prompt_tokens), sum(completion_tokens), sum(cached_tokens), avg(CASE WHEN tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END)
+            SELECT 
+                model, 
+                count(*), 
+                sum(CASE WHEN status_code = 200 THEN prompt_tokens ELSE 0 END), 
+                sum(CASE WHEN status_code = 200 THEN completion_tokens ELSE 0 END), 
+                sum(CASE WHEN status_code = 200 THEN cached_tokens ELSE 0 END), 
+                avg(CASE WHEN status_code = 200 AND tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END)
             FROM request_analytics
             GROUP BY model
             ORDER BY count(*) DESC
             "#,
         )?;
         let model_rows = model_stmt.query_map([], |row| {
+            let p = row.get::<_, i64>(2).unwrap_or(0);
+            let c = row.get::<_, i64>(3).unwrap_or(0);
+            let ch = row.get::<_, i64>(4).unwrap_or(0);
+            let hr = if p > 0 { (ch as f64 / p as f64) * 100.0 } else { 0.0 };
+            let billed = (p - ch).max(0) + c;
             Ok(ModelMetricSummary {
                 model: row.get(0)?,
                 request_count: row.get::<_, i64>(1)? as u64,
-                prompt_tokens: row.get::<_, i64>(2)? as u64,
-                completion_tokens: row.get::<_, i64>(3)? as u64,
-                cached_tokens: row.get::<_, i64>(4)? as u64,
+                prompt_tokens: p as u64,
+                completion_tokens: c as u64,
+                cached_tokens: ch as u64,
+                billed_tokens: billed as u64,
+                hitrate_percent: (hr * 100.0).round() / 100.0,
                 avg_tok_per_sec: (row.get::<_, f64>(5).unwrap_or(0.0) * 10.0).round() / 10.0,
             })
         })?;
@@ -524,6 +556,40 @@ impl TelemetryEngine {
         final_summary.account_breakdown = accounts;
 
         Ok(final_summary)
+    }
+
+    pub fn get_hourly_sparkline(&self) -> Result<Vec<serde_json::Value>> {
+        let conn = Connection::open(&self.db_path)?;
+        let mut stmt = conn.prepare(
+            r#"
+            SELECT 
+                strftime('%H:00', datetime(timestamp_epoch, 'unixepoch')) as hour_slot,
+                count(*) as req_cnt,
+                sum(total_tokens) as tok_sum,
+                sum(cached_tokens) as cached_sum
+            FROM request_analytics
+            WHERE timestamp_epoch >= (strftime('%s', 'now') - 86400)
+            GROUP BY hour_slot
+            ORDER BY timestamp_epoch ASC
+            "#,
+        )?;
+
+        let rows = stmt.query_map([], |row| {
+            Ok(serde_json::json!({
+                "hour": row.get::<_, String>(0)?,
+                "requests": row.get::<_, i64>(1).unwrap_or(0),
+                "tokens": row.get::<_, i64>(2).unwrap_or(0),
+                "cached": row.get::<_, i64>(3).unwrap_or(0),
+            }))
+        })?;
+
+        let mut res = Vec::new();
+        for r in rows {
+            if let Ok(v) = r {
+                res.push(v);
+            }
+        }
+        Ok(res)
     }
 }
 

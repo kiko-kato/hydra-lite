@@ -312,6 +312,53 @@
     .btn-secondary:hover { background: rgba(255,255,255,0.14); }
     .btn-danger-del { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; padding: 8px 16px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
     .btn-danger-del:hover { background: rgba(239, 68, 68, 0.3); color: #fff; }
+
+    /* Sparkline & Charts */
+    .spark-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; cursor: pointer; position: relative; }
+    .spark-bar { width: 100%; max-width: 18px; min-width: 6px; background: linear-gradient(180deg, var(--accent) 0%, rgba(124, 77, 255, 0.35) 100%); border-radius: 4px 4px 0 0; transition: all 0.2s; }
+    .spark-bar-wrap:hover .spark-bar { background: var(--accent-light); filter: drop-shadow(0 0 8px var(--accent-glow)); transform: scaleY(1.05); }
+    .spark-label { font-size: 10px; color: var(--text-muted); margin-top: 6px; font-family: monospace; }
+
+    /* Quick Date Chips */
+    .quick-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .quick-chip {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: var(--text-secondary); padding: 4px 10px; border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .quick-chip:hover { background: var(--accent); color: #fff; border-color: var(--accent-light); }
+
+    /* Pagination controls */
+    .pagination-bar { display: flex; align-items: center; gap: 8px; }
+    .btn-page {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      color: #fff; padding: 4px 10px; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-page:hover:not(:disabled) { background: var(--accent); border-color: var(--accent-light); }
+    .btn-page:disabled { opacity: 0.35; cursor: not-allowed; }
+    .page-indicator { font-size: 12px; color: var(--text-secondary); font-family: monospace; }
+
+    /* Mobile Responsive */
+    @media (max-width: 820px) {
+      body { flex-direction: column; }
+      .sidebar {
+        position: relative; width: 100%; height: auto;
+        padding: 14px 16px; border-right: none; border-bottom: 1px solid var(--border);
+      }
+      .sidebar-header { margin-bottom: 10px; padding-bottom: 10px; }
+      .sidebar-nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+      .nav-link { padding: 8px 12px; font-size: 13px; }
+      .sidebar-footer { margin-top: 10px; padding-top: 10px; }
+      .main-wrapper { margin-left: 0 !important; width: 100% !important; }
+      .top-navbar { padding: 12px 16px; }
+      .content-area { padding: 16px 12px; }
+      .kpi-cards-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+      .glass-table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 14px !important; margin-bottom: 16px; }
+      table { min-width: 650px; }
+      .modal-box { width: 95% !important; padding: 20px 16px !important; margin: 10px; }
+      .subtabs-pills { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    }
   </style>
 </head>
 <body>
@@ -366,29 +413,47 @@
            TAB 1: ОБЗОР И КВОТЫ (КОМАНДНЫЙ ЦЕНТР)
       =========================================== -->
       <section id="pane-overview" class="tab-pane active">
-        <!-- 5 KPI Карточек -->
-        <div class="kpi-cards-grid">
+        <!-- 7 KPI Карточек с полным разделением Вход / Выход / Кэш / Факт -->
+        <div class="kpi-cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
           <div class="kpi-card">
             <div class="kpi-label">Удовлетворение пула</div>
             <div class="kpi-val" id="statPoolHeadroom" style="color:var(--accent-light);">--%</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Экономия квоты кэшем</div>
-            <div class="kpi-val" id="statCacheSaved" style="color:var(--success);">--</div>
-            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Hit Rate: <b id="statCacheHitrate" style="color:var(--text);">--%</b></div>
+            <div class="kpi-label">Hit Rate кэша</div>
+            <div class="kpi-val" id="statCacheHitrate" style="color:var(--success);">--%</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="statCacheSubtext">Спас: --</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Активных аккаунтов</div>
-            <div class="kpi-val" id="statActiveAccounts">--</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Всего запросов (All time)</div>
+            <div class="kpi-label">Всего запросов</div>
             <div class="kpi-val" id="statTotalRequests">--</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;" id="statActiveAccounts">Акк: --</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Сожрано токенов (All time)</div>
-            <div class="kpi-val" id="statTotalTokens">--</div>
+            <div class="kpi-label">Вход (Prompt)</div>
+            <div class="kpi-val" id="statPromptTokens" style="color:#cbd5e1;">--</div>
           </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Выход (Completion)</div>
+            <div class="kpi-val" id="statCompletionTokens" style="color:#cbd5e1;">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Кэшировано</div>
+            <div class="kpi-val" id="statCachedTokens" style="color:var(--success);">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Фактически (Billed)</div>
+            <div class="kpi-val" id="statBilledTokens" style="color:#fff;">--</div>
+          </div>
+        </div>
+
+        <!-- Виджет почасовой динамики трафика за 24 часа -->
+        <div class="glass-table-container" style="padding: 18px 22px; margin-bottom: 22px;">
+          <div class="glass-table-header" style="padding:0 0 12px 0; border-bottom: 1px solid var(--border);">
+            <div class="glass-table-title" style="font-size:15px;">Динамика нагрузки шлюза (последние 24 часа)</div>
+            <div style="font-size:12px; color:var(--text-secondary);" id="sparklineSummary">Почасовой срез запросов</div>
+          </div>
+          <div id="sparklineChart" style="width: 100%; height: 95px; display: flex; align-items: flex-end; gap: 6px; padding-top: 12px;"></div>
         </div>
 
         <!-- Виджет персонального баланса текущего админа -->
@@ -404,22 +469,34 @@
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px; background:rgba(12,10,22,0.6); padding:14px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom:14px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:12px; background:rgba(12,10,22,0.6); padding:14px; border-radius:var(--radius-md); border:1px solid var(--border); margin-bottom:14px;">
             <div>
-              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Выполнено запросов</div>
-              <div style="font-size:20px; font-weight:800; color:#fff;" id="myRequestsCount">0</div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Запросов</div>
+              <div style="font-size:18px; font-weight:800; color:#fff;" id="myRequestsCount">0</div>
             </div>
             <div>
-              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Сожрано токенов</div>
-              <div style="font-size:20px; font-weight:800; color:#fff;" id="myTokensUsed">0</div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Вход (Prompt)</div>
+              <div style="font-size:18px; font-weight:800; color:#cbd5e1;" id="myPromptTokens">0</div>
             </div>
             <div>
-              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Ограничение RPM</div>
-              <div style="font-size:20px; font-weight:800; color:#fff;" id="myRpmLimit">Безлимит</div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Выход (Compl)</div>
+              <div style="font-size:18px; font-weight:800; color:#cbd5e1;" id="myCompletionTokens">0</div>
             </div>
             <div>
-              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Срок действия</div>
-              <div style="font-size:16px; font-weight:700; color:#cbd5e1; margin-top:2px;" id="myExpiresAt">Бессрочно</div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Кэшировано</div>
+              <div style="font-size:18px; font-weight:800; color:var(--success);" id="myCachedTokens">0</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Фактически</div>
+              <div style="font-size:18px; font-weight:800; color:#fff;" id="myBilledTokens">0</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Лимит RPM</div>
+              <div style="font-size:18px; font-weight:800; color:#fff;" id="myRpmLimit">Безлимит</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Срок</div>
+              <div style="font-size:15px; font-weight:700; color:#cbd5e1; margin-top:2px;" id="myExpiresAt">Бессрочно</div>
             </div>
           </div>
 
@@ -477,16 +554,19 @@
                 <th>Имя</th>
                 <th>Токен ключа</th>
                 <th>Роль</th>
-                <th>Лимит баланса</th>
-                <th>Использовано</th>
+                <th>Лимит</th>
+                <th>Вход</th>
+                <th>Выход</th>
+                <th>Кэш</th>
+                <th>Фактически</th>
                 <th>RPM</th>
-                <th>Срок действия</th>
+                <th>Срок</th>
                 <th>Статус</th>
                 <th>Действия</th>
               </tr>
             </thead>
             <tbody id="keysTableBody">
-              <tr><td colspan="10" style="text-align:center;">Загрузка ключей...</td></tr>
+              <tr><td colspan="13" style="text-align:center;">Загрузка ключей...</td></tr>
             </tbody>
           </table>
         </div>
@@ -502,14 +582,17 @@
                 <th>#</th>
                 <th>Клиент</th>
                 <th>Токен ключа</th>
-                <th>Доля от общего трафика</th>
-                <th>Сожрано токенов</th>
-                <th>Всего запросов</th>
+                <th>Доля трафика</th>
+                <th>Вход</th>
+                <th>Выход</th>
+                <th>Кэш (% спас)</th>
+                <th>Фактически</th>
+                <th>Запросов</th>
                 <th>Роль</th>
               </tr>
             </thead>
             <tbody id="topConsumersTableBody">
-              <tr><td colspan="7" style="text-align:center;">Загрузка аналитики...</td></tr>
+              <tr><td colspan="10" style="text-align:center;">Загрузка аналитики...</td></tr>
             </tbody>
           </table>
         </div>
@@ -530,8 +613,13 @@
         <!-- Sub 1: Запросы -->
         <div id="subpane-requests" class="glass-table-container">
           <div class="glass-table-header">
-            <div class="glass-table-title">Последние 100 запросов шлюза</div>
-            <button class="btn-action" onclick="loadRequests()">Обновить</button>
+            <div class="glass-table-title">Журнал запросов шлюза</div>
+            <div class="pagination-bar">
+              <button class="btn-page" id="btnPrevReq" onclick="changePage('requests', -1)">◀</button>
+              <span class="page-indicator" id="pageIndicator-requests">Стр. 1</span>
+              <button class="btn-page" id="btnNextReq" onclick="changePage('requests', 1)">▶</button>
+              <button class="btn-action" style="padding:4px 10px; font-size:12px;" onclick="loadRequests()">Обновить</button>
+            </div>
           </div>
           <table>
             <thead>
@@ -556,7 +644,12 @@
         <div id="subpane-errors" class="glass-table-container" style="display:none;">
           <div class="glass-table-header">
             <div class="glass-table-title">Журнал сбоев и ошибок upstream</div>
-            <button class="btn-action" onclick="loadErrors()">Обновить</button>
+            <div class="pagination-bar">
+              <button class="btn-page" id="btnPrevErr" onclick="changePage('errors', -1)">◀</button>
+              <span class="page-indicator" id="pageIndicator-errors">Стр. 1</span>
+              <button class="btn-page" id="btnNextErr" onclick="changePage('errors', 1)">▶</button>
+              <button class="btn-action" style="padding:4px 10px; font-size:12px;" onclick="loadErrors()">Обновить</button>
+            </div>
           </div>
           <table>
             <thead>
@@ -582,9 +675,14 @@
               <div class="glass-table-title">Проверенные решения инженерных инцидентов (L1 SQLite)</div>
               <span class="badge badge-user" id="antidoteStatsBadge">371 решений</span>
             </div>
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; align-items:center; gap:10px;">
               <input type="text" id="antidoteSearch" placeholder="FTS5 поиск..." class="input-search" oninput="searchAntidote()">
-              <button class="btn-action" onclick="showAddAntidoteModal()">+ Добавить решение</button>
+              <div class="pagination-bar">
+                <button class="btn-page" id="btnPrevAnti" onclick="changePage('antidote', -1)">◀</button>
+                <span class="page-indicator" id="pageIndicator-antidote">Стр. 1</span>
+                <button class="btn-page" id="btnNextAnti" onclick="changePage('antidote', 1)">▶</button>
+              </div>
+              <button class="btn-action" onclick="openAddAntidoteModal()">+ Добавить</button>
             </div>
           </div>
           <table>
@@ -676,7 +774,15 @@
           <button class="seg-btn active" type="button" onclick="setSegment('segExp', 'never')">Бессрочно</button>
           <button class="seg-btn" type="button" onclick="setSegment('segExp', 'date')">До даты</button>
         </div>
-        <input type="date" id="modalExpDate" class="modal-input" style="display:none; margin-top:8px;">
+        <div id="modalExpDateGroup" style="display:none; margin-top:8px;">
+          <input type="date" id="modalExpDate" class="modal-input">
+          <div class="quick-chips">
+            <button type="button" class="quick-chip" onclick="addDaysToExp('modalExpDate', 7)">+7 дн</button>
+            <button type="button" class="quick-chip" onclick="addDaysToExp('modalExpDate', 30)">+30 дн</button>
+            <button type="button" class="quick-chip" onclick="addDaysToExp('modalExpDate', 90)">+90 дн</button>
+            <button type="button" class="quick-chip" onclick="addDaysToExp('modalExpDate', 365)">+1 год</button>
+          </div>
+        </div>
       </div>
 
       <div class="modal-footer">
@@ -746,7 +852,15 @@
           <button class="seg-btn" type="button" onclick="setSegment('editSegExp', 'never')">Бессрочно</button>
           <button class="seg-btn" type="button" onclick="setSegment('editSegExp', 'date')">До даты</button>
         </div>
-        <input type="date" id="editExpDate" class="modal-input" style="display:none; margin-top:8px;">
+        <div id="editExpDateGroup" style="display:none; margin-top:8px;">
+          <input type="date" id="editExpDate" class="modal-input">
+          <div class="quick-chips">
+            <button type="button" class="quick-chip" onclick="addDaysToExp('editExpDate', 7)">+7 дн</button>
+            <button type="button" class="quick-chip" onclick="addDaysToExp('editExpDate', 30)">+30 дн</button>
+            <button type="button" class="quick-chip" onclick="addDaysToExp('editExpDate', 90)">+90 дн</button>
+            <button type="button" class="quick-chip" onclick="addDaysToExp('editExpDate', 365)">+1 год</button>
+          </div>
+        </div>
       </div>
 
       <div class="modal-field" style="display:flex; align-items:center; justify-content:space-between;">
@@ -827,6 +941,81 @@
       toast.innerText = text;
       toast.classList.add('show');
       setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    function formatCompactNumber(num) {
+      if (num === null || num === undefined || isNaN(num)) return '0';
+      const n = Number(num);
+      const abs = Math.abs(n);
+      if (abs >= 1_000_000_000) {
+        return (n / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
+      }
+      if (abs >= 1_000_000) {
+        return (n / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
+      }
+      if (abs >= 1_000) {
+        return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+      }
+      return n.toLocaleString('ru-RU');
+    }
+
+    const paginationState = {
+      requests: { page: 0, limit: 50 },
+      errors: { page: 0, limit: 50 },
+      antidote: { page: 0, limit: 30 }
+    };
+
+    function changePage(type, delta) {
+      const st = paginationState[type];
+      if (!st) return;
+      const newPage = st.page + delta;
+      if (newPage < 0) return;
+      st.page = newPage;
+      const ind = document.getElementById('pageIndicator-' + type);
+      if (ind) ind.innerText = `Стр. ${st.page + 1}`;
+      if (type === 'requests') loadRequests();
+      if (type === 'errors') loadErrors();
+      if (type === 'antidote') loadAntidote();
+    }
+
+    function addDaysToExp(inputId, days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      const str = d.toISOString().split('T')[0];
+      const el = document.getElementById(inputId);
+      if (el) el.value = str;
+    }
+
+    async function loadSparkline() {
+      try {
+        const res = await fetch('/api/telemetry/sparkline', { headers: authHeaders() });
+        const data = await res.json();
+        const list = data.sparkline || [];
+        const container = document.getElementById('sparklineChart');
+        if (!container) return;
+        if (!list.length) {
+          container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); align-self:center; margin:0 auto;">Нет активности за последние 24 часа</div>';
+          return;
+        }
+        const maxReq = Math.max(...list.map(x => x.requests || 0), 1);
+        let total24hReq = list.reduce((acc, x) => acc + (x.requests || 0), 0);
+        let total24hTok = list.reduce((acc, x) => acc + (x.tokens || 0), 0);
+        const sumEl = document.getElementById('sparklineSummary');
+        if (sumEl) sumEl.innerText = `${formatCompactNumber(total24hReq)} запр. / ${formatCompactNumber(total24hTok)} ток. за сутки`;
+
+        let html = '';
+        list.forEach(slot => {
+          const h = Math.max(8, Math.round(((slot.requests || 0) / maxReq) * 65));
+          const title = `${slot.hour}: ${slot.requests} запр., ${formatCompactNumber(slot.tokens)} ток. (кэш: ${formatCompactNumber(slot.cached)})`;
+          html += `
+            <div class="spark-bar-wrap" title="${title}">
+              <div class="spark-bar" style="height:${h}px;"></div>
+              <div class="spark-label">${slot.hour.split(':')[0]}</div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      } catch (e) { console.error('sparkline error', e); }
     }
 
     function maskKey(keyStr) {
@@ -970,15 +1159,32 @@
         else if (headroomPct >= 130) hrElem.style.color = '#10b981';
         else hrElem.style.color = '#f59e0b';
 
-        document.getElementById('statActiveAccounts').innerText = `${activeCount} / ${accounts.length}`;
-        document.getElementById('statTotalRequests').innerText = (summary.total_requests || 0).toLocaleString();
-        
-        const totalTok = (summary.total_prompt_tokens || 0) + (summary.total_completion_tokens || 0);
-        document.getElementById('statTotalTokens').innerText = (totalTok / 1_000_000).toFixed(1) + 'M';
+        document.getElementById('statActiveAccounts').innerText = `Акк: ${activeCount} / ${accounts.length}`;
+        const totalReq = summary.total_requests || 0;
+        document.getElementById('statTotalRequests').innerText = formatCompactNumber(totalReq);
+        document.getElementById('statTotalRequests').setAttribute('title', totalReq.toLocaleString() + ' запросов');
 
-        const savedTok = summary.total_tokens_saved_by_cache || summary.total_cached_tokens || 0;
-        document.getElementById('statCacheSaved').innerText = (savedTok / 1_000).toFixed(1) + 'K';
-        document.getElementById('statCacheHitrate').innerText = (summary.global_hitrate_percent || 0).toFixed(1) + '%';
+        const hitrateVal = (summary.global_hitrate_percent !== undefined) ? summary.global_hitrate_percent : 0;
+        document.getElementById('statCacheHitrate').innerText = hitrateVal.toFixed(2) + '%';
+        const reqHrVal = summary.request_hitrate_percent ? ` • Запр: ${summary.request_hitrate_percent.toFixed(1)}%` : '';
+        const savedTok = summary.total_tokens_saved_by_cache || 0;
+        document.getElementById('statCacheSubtext').innerText = `Спас: ${formatCompactNumber(savedTok)}${reqHrVal}`;
+        document.getElementById('statCacheSubtext').setAttribute('title', `Сэкономлено: ${savedTok.toLocaleString()} токенов`);
+
+        const pTok = summary.total_prompt_tokens || 0;
+        const cTok = summary.total_completion_tokens || 0;
+        const bTok = summary.total_billed_tokens || ((pTok - savedTok > 0 ? pTok - savedTok : 0) + cTok);
+
+        document.getElementById('statPromptTokens').innerText = formatCompactNumber(pTok);
+        document.getElementById('statPromptTokens').setAttribute('title', pTok.toLocaleString() + ' токенов');
+        document.getElementById('statCompletionTokens').innerText = formatCompactNumber(cTok);
+        document.getElementById('statCompletionTokens').setAttribute('title', cTok.toLocaleString() + ' токенов');
+        document.getElementById('statCachedTokens').innerText = formatCompactNumber(savedTok);
+        document.getElementById('statCachedTokens').setAttribute('title', savedTok.toLocaleString() + ' токенов');
+        document.getElementById('statBilledTokens').innerText = formatCompactNumber(bTok);
+        document.getElementById('statBilledTokens').setAttribute('title', bTok.toLocaleString() + ' токенов');
+
+        loadSparkline();
 
         const tbody = document.getElementById('accountsTableBody');
         tbody.innerHTML = '';
@@ -1047,8 +1253,27 @@
         document.getElementById('myKeyToken').innerText = maskKey(k.key);
         document.getElementById('myKeyToken').setAttribute('data-full', k.key);
         document.getElementById('myRoleBadge').innerText = k.is_admin ? 'ADMIN' : 'USER';
-        document.getElementById('myRequestsCount').innerText = (k.requests_count || 0).toLocaleString();
-        document.getElementById('myTokensUsed').innerText = (k.tokens_used || 0).toLocaleString();
+        
+        document.getElementById('myRequestsCount').innerText = formatCompactNumber(k.requests_count || 0);
+        document.getElementById('myRequestsCount').setAttribute('title', (k.requests_count || 0).toLocaleString() + ' запросов');
+
+        const pTok = k.prompt_tokens_used || 0;
+        const cTok = k.completion_tokens_used || 0;
+        const chTok = k.cached_tokens_used || 0;
+        const bTok = k.actual_billed_tokens || ((pTok - chTok > 0 ? pTok - chTok : 0) + cTok);
+
+        document.getElementById('myPromptTokens').innerText = formatCompactNumber(pTok);
+        document.getElementById('myPromptTokens').setAttribute('title', pTok.toLocaleString() + ' токенов');
+
+        document.getElementById('myCompletionTokens').innerText = formatCompactNumber(cTok);
+        document.getElementById('myCompletionTokens').setAttribute('title', cTok.toLocaleString() + ' токенов');
+
+        document.getElementById('myCachedTokens').innerText = formatCompactNumber(chTok);
+        document.getElementById('myCachedTokens').setAttribute('title', chTok.toLocaleString() + ' токенов');
+
+        document.getElementById('myBilledTokens').innerText = formatCompactNumber(bTok);
+        document.getElementById('myBilledTokens').setAttribute('title', bTok.toLocaleString() + ' токенов');
+
         document.getElementById('myRpmLimit').innerText = k.rpm_limit > 0 ? k.rpm_limit + ' req/min' : 'Безлимит';
         document.getElementById('myExpiresAt').innerText = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
 
@@ -1057,14 +1282,14 @@
         const limit = isReq ? (k.request_limit || 0) : (k.token_limit || 0);
         const unit = isReq ? 'запросов' : 'токенов';
 
-        document.getElementById('myUsageTitle').innerText = isReq ? 'Расход запросов' : 'Расход токенов';
+        document.getElementById('myUsageTitle').innerText = isReq ? 'Расход запросов' : 'Расход токенов (контекст)';
 
         if (limit > 0) {
           const pct = Math.min(100, Math.round((used / limit) * 100));
-          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} / ${limit.toLocaleString()} ${unit} (${pct}%)`;
+          document.getElementById('myUsageFraction').innerText = `${formatCompactNumber(used)} / ${formatCompactNumber(limit)} ${unit} (${pct}%)`;
           document.getElementById('myUsageBar').style.width = pct + '%';
         } else {
-          document.getElementById('myUsageFraction').innerText = `${used.toLocaleString()} ${unit} (безлимит)`;
+          document.getElementById('myUsageFraction').innerText = `${formatCompactNumber(used)} ${unit} (безлимит)`;
           document.getElementById('myUsageBar').style.width = '100%';
           document.getElementById('myUsageBar').className = 'progress-bar-fill fill-5h';
         }
@@ -1080,12 +1305,18 @@
         const tbody = document.getElementById('topConsumersTableBody');
         tbody.innerHTML = '';
         if (!topList.length) {
-          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Ключи не найдены</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Ключи не найдены</td></tr>';
           return;
         }
 
         topList.forEach((k, idx) => {
           const pct = k.token_percent || 0;
+          const pTok = k.prompt_tokens_used || 0;
+          const cTok = k.completion_tokens_used || 0;
+          const chTok = k.cached_tokens_used || 0;
+          const bTok = k.actual_billed_tokens || ((pTok - chTok > 0 ? pTok - chTok : 0) + cTok);
+          const savedPct = k.cache_saved_percent !== undefined ? k.cache_saved_percent : 0;
+
           tbody.innerHTML += `
             <tr>
               <td class="mono" style="font-weight:700;">#${idx + 1}</td>
@@ -1096,15 +1327,18 @@
                   <svg viewBox="0 0 24 24" class="key-token-icon"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
                 </div>
               </td>
-              <td style="width: 220px;">
+              <td style="width: 170px;">
                 <div style="display:flex; justify-content:space-between; font-size:11px;">
                   <span style="font-weight:700; color:#fff;">${pct}%</span>
                   <span style="color:var(--text-secondary);">доля</span>
                 </div>
                 <div class="progress-bar-bg"><div class="progress-bar-fill fill-top" style="width:${pct}%"></div></div>
               </td>
-              <td class="mono" style="font-weight:700; color:#fff;">${(k.tokens_used || 0).toLocaleString()}</td>
-              <td class="mono">${(k.requests_count || 0).toLocaleString()}</td>
+              <td class="mono" title="${pTok.toLocaleString()} токенов">${formatCompactNumber(pTok)}</td>
+              <td class="mono" title="${cTok.toLocaleString()} токенов">${formatCompactNumber(cTok)}</td>
+              <td class="mono" style="color:var(--success);" title="${chTok.toLocaleString()} токенов">${formatCompactNumber(chTok)} (${savedPct.toFixed(1)}%)</td>
+              <td class="mono" style="font-weight:700; color:#fff;" title="${bTok.toLocaleString()} токенов">${formatCompactNumber(bTok)}</td>
+              <td class="mono" title="${(k.requests_count || 0).toLocaleString()}">${formatCompactNumber(k.requests_count || 0)}</td>
               <td><span class="badge ${k.is_admin ? 'badge-admin' : 'badge-user'}">${k.is_admin ? 'ADMIN' : 'USER'}</span></td>
             </tr>
           `;
@@ -1122,17 +1356,14 @@
         allKeys.forEach(k => {
           fullKeyMap[k.id] = k;
           const limLabel = k.limit_type === 'requests' 
-            ? (k.request_limit > 0 ? k.request_limit.toLocaleString() + ' req' : 'unlim')
-            : (k.token_limit > 0 ? (k.token_limit / 1000).toFixed(0) + 'k tok' : 'unlim');
-          const usedLabel = k.limit_type === 'requests'
-            ? (k.requests_count || 0) + ' req'
-            : (k.tokens_used || 0).toLocaleString() + ' tok';
+            ? (k.request_limit > 0 ? formatCompactNumber(k.request_limit) + ' req' : 'unlim')
+            : (k.token_limit > 0 ? formatCompactNumber(k.token_limit) + ' tok' : 'unlim');
 
           const expLabel = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
 
           let actionHtml = '';
           if (k.is_self) {
-            actionHtml = `<span class="badge badge-admin" style="opacity:0.85; font-size:11px;">Текущий ключ</span>`;
+            actionHtml = `<span class="badge badge-admin" style="opacity:0.85; font-size:11px;">Текущий</span>`;
           } else if (!k.can_edit) {
             actionHtml = `<span class="badge" style="background:rgba(255,255,255,0.06); color:var(--text-muted); font-size:11px;">Только чтение</span>`;
           } else {
@@ -1142,6 +1373,11 @@
               </button>
             `;
           }
+
+          const pTok = k.prompt_tokens_used || 0;
+          const cTok = k.completion_tokens_used || 0;
+          const chTok = k.cached_tokens_used || 0;
+          const bTok = k.actual_billed_tokens || ((pTok - chTok > 0 ? pTok - chTok : 0) + cTok);
 
           tbody.innerHTML += `
             <tr>
@@ -1155,7 +1391,10 @@
               </td>
               <td><span class="badge ${k.is_admin ? 'badge-admin' : 'badge-user'}">${k.is_admin ? 'ADMIN' : 'USER'}</span></td>
               <td class="mono">${limLabel}</td>
-              <td class="mono">${usedLabel}</td>
+              <td class="mono" title="${pTok.toLocaleString()} токенов">${formatCompactNumber(pTok)}</td>
+              <td class="mono" title="${cTok.toLocaleString()} токенов">${formatCompactNumber(cTok)}</td>
+              <td class="mono" style="color:var(--success);" title="${chTok.toLocaleString()} токенов">${formatCompactNumber(chTok)}</td>
+              <td class="mono" style="font-weight:700; color:#fff;" title="${bTok.toLocaleString()} токенов">${formatCompactNumber(bTok)}</td>
               <td class="mono">${k.rpm_limit > 0 ? k.rpm_limit : 'unlim'}</td>
               <td>${expLabel}</td>
               <td><span class="badge ${k.enabled ? 'badge-success' : 'badge-danger'}">${k.enabled ? 'Активен' : 'Отключен'}</span></td>
@@ -1169,10 +1408,15 @@
     // 4. Логи и Антидот
     async function loadRequests() {
       try {
-        const res = await fetch('/api/telemetry/requests?limit=100', { headers: authHeaders() });
+        const offset = paginationState.requests.page * paginationState.requests.limit;
+        const res = await fetch(`/api/telemetry/requests?limit=${paginationState.requests.limit}&offset=${offset}`, { headers: authHeaders() });
         const list = await res.json() || [];
         const tbody = document.getElementById('requestsTableBody');
         tbody.innerHTML = '';
+        if (!list.length && paginationState.requests.page > 0) {
+          paginationState.requests.page--;
+          return loadRequests();
+        }
         list.forEach(r => {
           const isOk = r.status_code >= 200 && r.status_code < 300;
           tbody.innerHTML += `
@@ -1181,7 +1425,7 @@
               <td class="mono" style="font-weight:700; color:#fff;">${r.model}</td>
               <td class="mono">${r.key_name || 'anon'}</td>
               <td><span class="badge ${isOk ? 'badge-success' : 'badge-danger'}">${r.status_code}</span></td>
-              <td class="mono">${r.total_tokens || 0}</td>
+              <td class="mono" title="Всего: ${(r.total_tokens || 0).toLocaleString()}, Кэш: ${(r.cached_tokens || 0).toLocaleString()}">${formatCompactNumber(r.total_tokens || 0)}</td>
               <td class="mono">${r.ttft_ms || 0} ms</td>
               <td class="mono">${r.total_latency_ms || 0} ms</td>
               <td class="mono" style="font-weight:600; color:var(--accent-light);">${(r.clean_tok_per_sec || 0).toFixed(1)} т/с</td>
@@ -1193,7 +1437,8 @@
 
     async function loadErrors() {
       try {
-        const res = await fetch('/api/telemetry/errors?limit=100', { headers: authHeaders() });
+        const offset = paginationState.errors.page * paginationState.errors.limit;
+        const res = await fetch(`/api/telemetry/errors?limit=${paginationState.errors.limit}&offset=${offset}`, { headers: authHeaders() });
         const list = await res.json() || [];
         const tbody = document.getElementById('errorsTableBody');
         tbody.innerHTML = '';
@@ -1218,8 +1463,9 @@
 
     async function loadAntidote() {
       try {
+        const offset = paginationState.antidote.page * paginationState.antidote.limit;
         const [pRes, sRes] = await Promise.all([
-          fetch('/api/antidote/problems?limit=50', { headers: authHeaders() }),
+          fetch(`/api/antidote/problems?limit=${paginationState.antidote.limit}&offset=${offset}`, { headers: authHeaders() }),
           fetch('/api/antidote/stats', { headers: authHeaders() })
         ]);
         const pData = await pRes.json();
@@ -1312,7 +1558,7 @@
         lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
       }
       if (groupId === 'segRpm') document.getElementById('modalRpmValue').style.display = value === 'custom' ? 'block' : 'none';
-      if (groupId === 'segExp') document.getElementById('modalExpDate').style.display = value === 'date' ? 'block' : 'none';
+      if (groupId === 'segExp') document.getElementById('modalExpDateGroup').style.display = value === 'date' ? 'block' : 'none';
 
       if (groupId === 'editSegLimitType') {
         const grp = document.getElementById('editLimitValueGroup');
@@ -1321,7 +1567,7 @@
         lbl.innerText = value === 'requests' ? 'Количество запросов (0 = анлим)' : 'Количество токенов (0 = анлим)';
       }
       if (groupId === 'editSegRpm') document.getElementById('editRpmValue').style.display = value === 'custom' ? 'block' : 'none';
-      if (groupId === 'editSegExp') document.getElementById('editExpDate').style.display = value === 'date' ? 'block' : 'none';
+      if (groupId === 'editSegExp') document.getElementById('editExpDateGroup').style.display = value === 'date' ? 'block' : 'none';
     }
 
     function getSegmentValue(groupId) { return document.getElementById(groupId).getAttribute('data-value') || 'tokens'; }
@@ -1344,7 +1590,7 @@
       setSegmentActive('segExp', 'never');
       document.getElementById('modalLimitValueGroup').style.display = 'block';
       document.getElementById('modalRpmValue').style.display = 'none';
-      document.getElementById('modalExpDate').style.display = 'none';
+      document.getElementById('modalExpDateGroup').style.display = 'none';
       document.getElementById('newKeyModalBackdrop').classList.add('show');
     }
     function closeNewKeyModal() { document.getElementById('newKeyModalBackdrop').classList.remove('show'); }
@@ -1401,11 +1647,11 @@
 
       if (k.expires_at) {
         setSegmentActive('editSegExp', 'date');
-        document.getElementById('editExpDate').style.display = 'block';
+        document.getElementById('editExpDateGroup').style.display = 'block';
         document.getElementById('editExpDate').value = new Date(k.expires_at * 1000).toISOString().split('T')[0];
       } else {
         setSegmentActive('editSegExp', 'never');
-        document.getElementById('editExpDate').style.display = 'none';
+        document.getElementById('editExpDateGroup').style.display = 'none';
       }
       document.getElementById('editKeyEnabled').checked = k.enabled;
       document.getElementById('editKeyModalBackdrop').classList.add('show');

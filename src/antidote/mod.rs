@@ -545,17 +545,17 @@ impl AntidoteEngine {
         None
     }
 
-    pub fn get_recent_problems(&self, limit: usize) -> anyhow::Result<Vec<serde_json::Value>> {
+    pub fn get_recent_problems(&self, limit: usize, offset: usize) -> anyhow::Result<Vec<serde_json::Value>> {
         let conn = self.db.lock().unwrap();
         let mut stmt = conn.prepare(
             r#"
             SELECT issue_id, title, error_signature, problem_text, solution_text, source, hit_count, created_at, COALESCE(tags, '')
             FROM problems
             ORDER BY id DESC
-            LIMIT ?1
+            LIMIT ?1 OFFSET ?2
             "#,
         )?;
-        let rows = stmt.query_map(params![limit as i64], |row| {
+        let rows = stmt.query_map(params![limit as i64, offset as i64], |row| {
             Ok(serde_json::json!({
                 "issue_id": row.get::<_, String>(0)?,
                 "title": row.get::<_, String>(1)?,

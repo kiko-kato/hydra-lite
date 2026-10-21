@@ -120,6 +120,11 @@
       30% { transform: scale(1.04) translateY(10px); opacity: 1; box-shadow: 0 0 40px rgba(124, 77, 255, 0.8); }
       100% { transform: scale(0.2) translateY(-250px); opacity: 0; filter: blur(20px); }
     }
+
+    @media (max-width: 480px) {
+      body.login-body { padding: 12px; }
+      .login-card { padding: 28px 20px; border-radius: 16px; }
+    }
   </style>
 </head>
 <body class="login-body">

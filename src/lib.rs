@@ -327,6 +327,7 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
             get(handle_get_config).post(handle_update_config),
         )
         .route("/api/telemetry/summary", get(handle_telemetry_summary))
+        .route("/api/telemetry/sparkline", get(handle_telemetry_sparkline))
         .route("/api/telemetry/requests", get(handle_telemetry_requests))
         .route("/api/telemetry/errors", get(handle_telemetry_errors))
         .route("/api/keys/analytics", get(handle_keys_analytics))
@@ -508,9 +509,23 @@ async fn handle_telemetry_summary(State(state): State<AppState>) -> impl IntoRes
     }
 }
 
+async fn handle_telemetry_sparkline(State(state): State<AppState>) -> impl IntoResponse {
+    match state.telemetry.get_hourly_sparkline() {
+        Ok(data) => (
+            StatusCode::OK,
+            Json(serde_json::json!({ "sparkline": data })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
 #[derive(serde::Deserialize)]
 struct TelemetryQuery {
     limit: Option<usize>,
+    offset: Option<usize>,
 }
 
 async fn handle_telemetry_requests(
@@ -518,7 +533,8 @@ async fn handle_telemetry_requests(
     axum::extract::Query(query): axum::extract::Query<TelemetryQuery>,
 ) -> impl IntoResponse {
     let limit = query.limit.unwrap_or(50).min(500);
-    match state.telemetry.get_recent_requests(limit) {
+    let offset = query.offset.unwrap_or(0);
+    match state.telemetry.get_recent_requests(limit, offset) {
         Ok(reqs) => (
             StatusCode::OK,
             Json(serde_json::to_value(reqs).unwrap_or_default()),
@@ -535,7 +551,8 @@ async fn handle_telemetry_errors(
     axum::extract::Query(query): axum::extract::Query<TelemetryQuery>,
 ) -> impl IntoResponse {
     let limit = query.limit.unwrap_or(50).min(500);
-    match state.telemetry.get_recent_errors(limit) {
+    let offset = query.offset.unwrap_or(0);
+    match state.telemetry.get_recent_errors(limit, offset) {
         Ok(errs) => (
             StatusCode::OK,
             Json(serde_json::to_value(errs).unwrap_or_default()),
@@ -764,6 +781,7 @@ async fn handle_user_requests(
 struct AntidoteQuery {
     q: Option<String>,
     limit: Option<usize>,
+    offset: Option<usize>,
 }
 
 async fn handle_antidote_problems(
@@ -771,15 +789,16 @@ async fn handle_antidote_problems(
     axum::extract::Query(query): axum::extract::Query<AntidoteQuery>,
 ) -> impl IntoResponse {
     let limit = query.limit.unwrap_or(50).min(200);
+    let offset = query.offset.unwrap_or(0);
     let res = if let Some(ref q) = query.q {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
             state.antidote.search_problems(trimmed, limit)
         } else {
-            state.antidote.get_recent_problems(limit)
+            state.antidote.get_recent_problems(limit, offset)
         }
     } else {
-        state.antidote.get_recent_problems(limit)
+        state.antidote.get_recent_problems(limit, offset)
     };
 
     match res {
@@ -1434,7 +1453,12 @@ async fn handle_chat_completions(
                             if let Some(kid) = auth_key_id {
                                 let _ = state
                                     .db
-                                    .record_key_usage(kid, oai_resp.usage.total_tokens as i64)
+                                    .record_key_usage(
+                                        kid,
+                                        oai_resp.usage.prompt_tokens as i64,
+                                        oai_resp.usage.completion_tokens as i64,
+                                        cached_tok as i64,
+                                    )
                                     .await;
                             }
 

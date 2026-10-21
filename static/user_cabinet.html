@@ -165,6 +165,25 @@
     .badge-danger { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); }
 
     .code-box { background: #07060c; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; font-family: monospace; font-size: 13px; color: #a5f3fc; overflow-x: auto; line-height: 1.6; }
+
+    /* Mobile Responsive */
+    @media (max-width: 820px) {
+      body { flex-direction: column; }
+      .sidebar {
+        position: relative; width: 100%; height: auto;
+        padding: 14px 16px; border-right: none; border-bottom: 1px solid var(--border);
+      }
+      .sidebar-header { margin-bottom: 10px; padding-bottom: 10px; }
+      .sidebar-nav { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+      .nav-link { padding: 8px 12px; font-size: 13px; }
+      .sidebar-footer { margin-top: 10px; padding-top: 10px; }
+      .main-wrapper { margin-left: 0 !important; width: 100% !important; }
+      .top-navbar { padding: 12px 16px; }
+      .content-area { padding: 16px 12px; }
+      .info-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
+      .glass-card { overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 16px !important; margin-bottom: 16px; }
+      table { min-width: 600px; }
+    }
   </style>
 </head>
 <body>
@@ -225,12 +244,28 @@
               <div class="info-val" id="userRpmLimit">--</div>
             </div>
             <div class="info-item">
-              <div class="info-label">Всего выполнено запросов</div>
+              <div class="info-label">Выполнено запросов</div>
               <div class="info-val" id="userRequestsCount">--</div>
             </div>
             <div class="info-item">
-              <div class="info-label">Срок действия ключа</div>
+              <div class="info-label">Срок действия</div>
               <div class="info-val" style="font-size:18px;" id="userExpiresAt">Бессрочно</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Вход (Prompt)</div>
+              <div class="info-val" style="color:#cbd5e1;" id="userPromptTokens">--</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Выход (Completion)</div>
+              <div class="info-val" style="color:#cbd5e1;" id="userCompletionTokens">--</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Кэшировано</div>
+              <div class="info-val" style="color:var(--success);" id="userCachedTokens">--</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Фактически (Billed)</div>
+              <div class="info-val" style="color:#fff;" id="userBilledTokens">--</div>
             </div>
           </div>
 
@@ -339,6 +374,22 @@ print(response.choices[0].message.content)</div>
       window.location.reload();
     }
 
+    function formatCompactNumber(num) {
+      if (num === null || num === undefined || isNaN(num)) return '0';
+      const n = Number(num);
+      const abs = Math.abs(n);
+      if (abs >= 1_000_000_000) {
+        return (n / 1_000_000_000).toFixed(2).replace(/\.00$/, '') + 'B';
+      }
+      if (abs >= 1_000_000) {
+        return (n / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
+      }
+      if (abs >= 1_000) {
+        return (n / 1_000).toFixed(1).replace(/\.0$/, '') + 'k';
+      }
+      return n.toLocaleString('ru-RU');
+    }
+
     async function loadLimits() {
       try {
         const res = await fetch('/api/user/me', {
@@ -350,7 +401,23 @@ print(response.choices[0].message.content)</div>
         document.getElementById('userKeyNameDisplay').innerText = k.name;
         document.getElementById('userKeyToken').innerText = k.key;
         document.getElementById('userRpmLimit').innerText = k.rpm_limit > 0 ? k.rpm_limit + ' req/min' : 'Безлимит';
-        document.getElementById('userRequestsCount').innerText = k.requests_count || 0;
+        
+        document.getElementById('userRequestsCount').innerText = formatCompactNumber(k.requests_count || 0);
+        document.getElementById('userRequestsCount').setAttribute('title', (k.requests_count || 0).toLocaleString() + ' запросов');
+
+        const pTok = k.prompt_tokens_used || 0;
+        const cTok = k.completion_tokens_used || 0;
+        const chTok = k.cached_tokens_used || 0;
+        const bTok = k.actual_billed_tokens || ((pTok - chTok > 0 ? pTok - chTok : 0) + cTok);
+
+        document.getElementById('userPromptTokens').innerText = formatCompactNumber(pTok);
+        document.getElementById('userPromptTokens').setAttribute('title', pTok.toLocaleString() + ' токенов');
+        document.getElementById('userCompletionTokens').innerText = formatCompactNumber(cTok);
+        document.getElementById('userCompletionTokens').setAttribute('title', cTok.toLocaleString() + ' токенов');
+        document.getElementById('userCachedTokens').innerText = formatCompactNumber(chTok);
+        document.getElementById('userCachedTokens').setAttribute('title', chTok.toLocaleString() + ' токенов');
+        document.getElementById('userBilledTokens').innerText = formatCompactNumber(bTok);
+        document.getElementById('userBilledTokens').setAttribute('title', bTok.toLocaleString() + ' токенов');
 
         if (k.expires_at) {
           const expDate = new Date(k.expires_at * 1000);
@@ -367,11 +434,11 @@ print(response.choices[0].message.content)</div>
           if (max > 0) {
             const pct = Math.min(100, Math.round((used / max) * 100));
             bar.style.width = pct + '%';
-            document.getElementById('limitProgressNumbers').innerText = used + ' / ' + max + ' запросов (' + pct + '%)';
+            document.getElementById('limitProgressNumbers').innerText = formatCompactNumber(used) + ' / ' + formatCompactNumber(max) + ' запросов (' + pct + '%)';
             document.getElementById('limitRemainingText').innerText = 'Осталось: ' + Math.max(0, max - used) + ' запросов';
           } else {
             bar.style.width = '100%';
-            document.getElementById('limitProgressNumbers').innerText = used + ' запросов (Безлимит)';
+            document.getElementById('limitProgressNumbers').innerText = formatCompactNumber(used) + ' запросов (Безлимит)';
             document.getElementById('limitRemainingText').innerText = 'Лимит запросов не ограничен';
           }
         } else {
@@ -382,11 +449,11 @@ print(response.choices[0].message.content)</div>
           if (max > 0) {
             const pct = Math.min(100, Math.round((used / max) * 100));
             bar.style.width = pct + '%';
-            document.getElementById('limitProgressNumbers').innerText = used.toLocaleString() + ' / ' + max.toLocaleString() + ' токенов (' + pct + '%)';
+            document.getElementById('limitProgressNumbers').innerText = formatCompactNumber(used) + ' / ' + formatCompactNumber(max) + ' токенов (' + pct + '%)';
             document.getElementById('limitRemainingText').innerText = 'Осталось: ' + Math.max(0, max - used).toLocaleString() + ' токенов';
           } else {
             bar.style.width = '100%';
-            document.getElementById('limitProgressNumbers').innerText = used.toLocaleString() + ' токенов (Безлимит)';
+            document.getElementById('limitProgressNumbers').innerText = formatCompactNumber(used) + ' токенов (Безлимит)';
             document.getElementById('limitRemainingText').innerText = 'Лимит токенов не ограничен';
           }
         }
@@ -412,7 +479,7 @@ print(response.choices[0].message.content)</div>
               <td class="mono">${r.created_at || ''}</td>
               <td class="mono" style="font-weight:700; color:#fff;">${r.model}</td>
               <td><span class="badge ${isOk ? 'badge-success' : 'badge-danger'}">${r.status_code}</span></td>
-              <td class="mono">${r.total_tokens || 0}</td>
+              <td class="mono" title="${(r.total_tokens || 0).toLocaleString()} токенов">${formatCompactNumber(r.total_tokens || 0)}</td>
               <td class="mono">${r.ttft_ms || 0} ms</td>
               <td class="mono">${r.total_latency_ms || 0} ms</td>
               <td class="mono" style="color:var(--accent-light); font-weight:600;">${(r.clean_tok_per_sec || 0).toFixed(1)} т/с</td>
