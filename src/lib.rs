@@ -1207,17 +1207,28 @@ async fn handle_chat_completions(
     inner_req["safetySettings"] = serde_json::json!(safety_settings);
 
     let upstream_model = match req.model.as_str() {
-        "nano-banana" | "nano-banana-pro" | "nano-banana-2" => "gemini-3.1-flash-image",
-        "gemini-3.8-flash"
-        | "gemini-3.8-flash-high"
-        | "gemini-3.8-flash-medium"
-        | "gemini-3.8-flash-low" => "gemini-3.8-flash-tiered",
+        "nano-banana" | "nano-banana-pro" | "nano-banana-2" | "gemini-3.1-flash-image" => "gemini-3.1-flash-image",
+        "gemini-3.8" | "gemini-3.8-flash" | "gemini-3.8-flash-tiered" => "gemini-3.8-flash-tiered",
+        "gemini-3.8-flash-high" => "gemini-3.8-flash-high",
+        "gemini-3.8-flash-medium" => "gemini-3.8-flash-medium",
+        "gemini-3.8-flash-low" => "gemini-3.8-flash-low",
         "gemini-2.5-flash-high" => "gemini-2.5-flash",
-        m if m.contains("sonnet-5-5") || m.contains("sonnet-5.5") => "claude-sonnet-5-5",
-        m if m.contains("opus-5-5") || m.contains("opus-5.5") => "claude-opus-5-5",
-        m if m.contains("sonnet") => "claude-sonnet-4-6",
-        m if m.contains("opus") => "claude-opus-4-6-thinking",
-        m if m.contains("argon") => "gemini-4-argon",
+
+        "claude-opus-5-5-high" => "claude-opus-5-5-high",
+        "claude-opus-5-5-medium" => "claude-opus-5-5-medium",
+        "claude-opus-5-5-low" => "claude-opus-5-5-low",
+        m if m.contains("opus-5-5") || m.contains("opus-5.5") || m == "claude-opus" || m == "opus" => "claude-opus-5-5-high",
+
+        "claude-sonnet-5-5-high" => "claude-sonnet-5-5-high",
+        "claude-sonnet-5-5-medium" => "claude-sonnet-5-5-medium",
+        "claude-sonnet-5-5-low" => "claude-sonnet-5-5-low",
+        m if m.contains("sonnet-5-5") || m.contains("sonnet-5.5") || m == "claude-sonnet" || m == "sonnet" => "claude-sonnet-5-5-high",
+
+        "gemini-4-argon-high" => "gemini-4-argon-high",
+        "gemini-4-argon-medium" => "gemini-4-argon-medium",
+        "gemini-4-argon-low" => "gemini-4-argon-low",
+        m if m.contains("argon") => "gemini-4-argon-high",
+
         other => other,
     };
 

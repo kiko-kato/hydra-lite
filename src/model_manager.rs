@@ -7,6 +7,41 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::RwLock;
 
+pub const STANDARD_MODELS: &[&str] = &[
+    "gemini-3.8",
+    "gemini-3.8-flash",
+    "gemini-3.8-flash-high",
+    "gemini-3.8-flash-medium",
+    "gemini-3.8-flash-low",
+    "gemini-3.8-flash-tiered",
+    "nano-banana",
+    "nano-banana-pro",
+    "nano-banana-2",
+    "gemini-3.1-flash-image",
+    "claude-opus-5-5",
+    "claude-opus-5-5-high",
+    "claude-opus-5-5-medium",
+    "claude-opus-5-5-low",
+    "claude-sonnet-5-5",
+    "claude-sonnet-5-5-high",
+    "claude-sonnet-5-5-medium",
+    "claude-sonnet-5-5-low",
+    "gemini-4-argon",
+    "gemini-4-argon-high",
+    "gemini-4-argon-medium",
+    "gemini-4-argon-low",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-thinking",
+    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3-flash",
+    "gemini-3.1-flash-lite",
+    "gpt-oss-120b-medium",
+    "tab_flash_lite_preview",
+    "tab_jump_flash_lite_preview",
+];
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredModel {
     pub original_id: String,
@@ -183,7 +218,41 @@ impl ModelManager {
             return self.default_model.clone();
         }
 
-        // 1. Поиск по in-memory алиасам
+        // 1. Быстрый каноничный маппинг разновидностей
+        match req_trim {
+            // Nano Banana
+            "nano-banana" | "nano-banana-pro" | "nano-banana-2" | "gemini-3.1-flash-image" => {
+                return "gemini-3.1-flash-image".to_string();
+            }
+            // Gemini 3.8 Flash
+            "gemini-3.8" | "gemini-3.8-flash" | "gemini-3.8-flash-tiered" => {
+                return "gemini-3.8-flash-tiered".to_string();
+            }
+            "gemini-3.8-flash-high" => return "gemini-3.8-flash-high".to_string(),
+            "gemini-3.8-flash-medium" => return "gemini-3.8-flash-medium".to_string(),
+            "gemini-3.8-flash-low" => return "gemini-3.8-flash-low".to_string(),
+
+            // Claude 5.5
+            "claude-opus-5-5-high" => return "claude-opus-5-5-high".to_string(),
+            "claude-opus-5-5-medium" => return "claude-opus-5-5-medium".to_string(),
+            "claude-opus-5-5-low" => return "claude-opus-5-5-low".to_string(),
+            "claude-opus-5-5" | "claude-opus" | "opus" => return "claude-opus-5-5-high".to_string(),
+
+            "claude-sonnet-5-5-high" => return "claude-sonnet-5-5-high".to_string(),
+            "claude-sonnet-5-5-medium" => return "claude-sonnet-5-5-medium".to_string(),
+            "claude-sonnet-5-5-low" => return "claude-sonnet-5-5-low".to_string(),
+            "claude-sonnet-5-5" | "claude-sonnet" | "sonnet" => return "claude-sonnet-5-5-high".to_string(),
+
+            // Gemini 4 Argon
+            "gemini-4-argon-high" => return "gemini-4-argon-high".to_string(),
+            "gemini-4-argon-medium" => return "gemini-4-argon-medium".to_string(),
+            "gemini-4-argon-low" => return "gemini-4-argon-low".to_string(),
+            "gemini-4-argon" | "argon" => return "gemini-4-argon-high".to_string(),
+
+            _ => {}
+        }
+
+        // 2. Поиск по in-memory алиасам
         {
             let map = self.alias_map.read().await;
             if let Some(target) = map.get(req_trim) {
@@ -191,17 +260,18 @@ impl ModelManager {
             }
         }
 
-        // 2. Поиск в SQLite (на случай ручного апдейта через API)
+        // 3. Поиск в SQLite (на случай ручного апдейта через API)
         if let Ok(Some(db_target)) = self.db.resolve_model_alias(req_trim).await {
             return db_target;
         }
 
-        // 3. Главное правило: если не найдено — отдаем голое название
+        // 4. Главное правило: если не найдено — отдаем голое название
         req_trim.to_string()
     }
 
     /// Список всех доступных моделей для /v1/models
     pub async fn get_model_items(&self) -> Vec<serde_json::Value> {
+        let saved_configs = self.db.get_all_model_configs().await.unwrap_or_default();
         let catalog = self.catalog.read().await;
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -211,14 +281,14 @@ impl ModelManager {
         let mut list = Vec::new();
         let mut seen = std::collections::HashSet::new();
 
-        for m in catalog.values() {
-            if !m.enabled {
+        // 1. Стандартный каталог моделей (как в гидре на ноуте)
+        for orig in STANDARD_MODELS {
+            let (custom_alias, enabled) = saved_configs.get(*orig).cloned().unwrap_or((None, true));
+            if !enabled {
                 continue;
             }
-
-            // Добавляем строго основной публичный алиас (gemini-3.8 или nano-banana-2)
-            let public_id = m.primary_alias.as_deref().unwrap_or(&m.original_id);
-            if seen.insert(public_id.to_string()) {
+            let public_id = custom_alias.unwrap_or_else(|| orig.to_string());
+            if seen.insert(public_id.clone()) {
                 list.push(serde_json::json!({
                     "id": public_id,
                     "object": "model",
@@ -228,20 +298,20 @@ impl ModelManager {
             }
         }
 
-        // Если каталог еще пуст (первые секунды после старта), добавляем базовые две
-        if list.is_empty() {
-            list.push(serde_json::json!({
-                "id": "gemini-3.8",
-                "object": "model",
-                "created": now,
-                "owned_by": "google",
-            }));
-            list.push(serde_json::json!({
-                "id": "nano-banana",
-                "object": "model",
-                "created": now,
-                "owned_by": "google",
-            }));
+        // 2. Дополнительные динамически обнаруженные модели Upstream
+        for m in catalog.values() {
+            if !m.enabled {
+                continue;
+            }
+            let public_id = m.primary_alias.as_deref().unwrap_or(&m.original_id);
+            if seen.insert(public_id.to_string()) {
+                list.push(serde_json::json!({
+                    "id": public_id,
+                    "object": "model",
+                    "created": now,
+                    "owned_by": "google",
+                }));
+            }
         }
 
         list
