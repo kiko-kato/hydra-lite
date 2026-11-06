@@ -20,10 +20,12 @@ pub mod sse;
 pub mod telemetry;
 pub mod translator;
 pub mod types;
+pub mod vault_logger;
 
 pub use config::Config;
 pub use logger::{AuditLogger, RequestLog};
 pub use telemetry::TelemetryEngine;
+pub use vault_logger::{VaultEvent, VaultLogger};
 
 use anyhow::Result;
 use futures::StreamExt;
@@ -115,6 +117,7 @@ pub(crate) struct AppState {
     pub(crate) model_manager: Arc<model_manager::ModelManager>,
     pub(crate) active_streams: Arc<parking_lot::RwLock<std::collections::HashMap<i64, usize>>>,
     pub(crate) account_prober: Arc<account_prober::AccountProber>,
+    pub(crate) vault: Arc<VaultLogger>,
 }
 
 pub async fn run_router(config: Arc<Config>) -> Result<()> {
@@ -225,6 +228,14 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
     ));
     account_prober.clone().start();
 
+    let vault = match VaultLogger::init(&config.vault) {
+        Ok(v) => Arc::new(v),
+        Err(e) => {
+            log::error!("[VAULT:INIT_ERROR] Failed to init VaultLogger: {}", e);
+            Arc::new(VaultLogger::disabled())
+        }
+    };
+
     let state = AppState {
         config: config_lock,
         db: db.clone(),
@@ -238,6 +249,7 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
         model_manager,
         active_streams,
         account_prober,
+        vault,
     };
 
     // Фоновый демон обновления токенов Google OAuth (за 5 мин до истечения)
@@ -1347,6 +1359,8 @@ async fn handle_chat_completions(
                         Some(auth_key_name.clone()),
                         auth_key_id,
                         Some(state.db.clone()),
+                        Some(state.vault.clone()),
+                        serde_json::to_value(&req).ok(),
                     );
 
                     let lease = StreamLease::new(chosen_acc.id, state.active_streams.clone());
@@ -1499,6 +1513,24 @@ async fn handle_chat_completions(
                             } else if debug {
                                 log::info!("[CACHE:MISS:UPSTREAM] Full prefill. Prompt: {} tok, Compl: {} tok", oai_resp.usage.prompt_tokens, oai_resp.usage.completion_tokens);
                             }
+
+                            state.vault.log(crate::vault_logger::VaultEvent {
+                                timestamp: chrono::Utc::now().to_rfc3339(),
+                                endpoint: "openai".to_string(),
+                                api_key_name: auth_key_name.clone(),
+                                model: req.model.clone(),
+                                stream: false,
+                                status_code: 200,
+                                request_payload: serde_json::to_value(&req).unwrap_or(serde_json::Value::Null),
+                                response_payload: serde_json::to_value(&oai_resp).unwrap_or(serde_json::Value::Null),
+                                usage: Some(crate::vault_logger::VaultUsage {
+                                    prompt_tokens: oai_resp.usage.prompt_tokens,
+                                    completion_tokens: oai_resp.usage.completion_tokens,
+                                    cached_tokens: cached_tok,
+                                    total_tokens: oai_resp.usage.total_tokens,
+                                    latency_ms: total_elapsed,
+                                }),
+                            });
 
                             return Json(oai_resp).into_response();
                         }

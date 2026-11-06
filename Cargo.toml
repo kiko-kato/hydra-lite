@@ -33,3 +33,6 @@ toml = "0.8"
 uuid = { version = "1.10", features = ["v4", "fast-rng"] }
 sha2 = "0.10"
 regex = "1.10"
+chrono = { version = "0.4", features = ["serde"] }
+zstd = "0.13"
+age = { version = "0.10", default-features = false }

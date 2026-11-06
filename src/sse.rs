@@ -20,10 +20,15 @@ pub fn transform_gemini_sse_stream(
     key_name: Option<String>,
     key_id: Option<i64>,
     db: Option<crate::db::Database>,
+    vault: Option<std::sync::Arc<crate::vault_logger::VaultLogger>>,
+    raw_req: Option<serde_json::Value>,
 ) -> impl Stream<Item = Result<Bytes, std::io::Error>> {
     async_stream::stream! {
         // Буфер сырых байтов для защиты от порчи UTF-8 при фрагментации сетевых чанков
         let mut buffer: Vec<u8> = Vec::with_capacity(16384);
+        let mut accumulated_thought = String::new();
+        let mut accumulated_text = String::new();
+        let mut accumulated_tool_calls: Vec<Value> = Vec::new();
         let mut first = true;
         let mut first_token_time: Option<Instant> = None;
         let mut first_content_token_time: Option<Instant> = None;
@@ -205,7 +210,8 @@ pub fn transform_gemini_sse_stream(
                     last_chunk_instant = Instant::now();
 
                     // 1. Стриминг рассуждений модели (Reasoning / Thinking)
-                    if let Some(th) = thought_part {
+                    if let Some(ref th) = thought_part {
+                        accumulated_thought.push_str(th);
                         let chunk = json!({
                             "id": format!("chatcmpl-{}", now),
                             "object": "chat.completion.chunk",
@@ -222,6 +228,7 @@ pub fn transform_gemini_sse_stream(
 
                     // 2. Стриминг вызовов тулов (Tool calls)
                     if !tool_calls.is_empty() {
+                        accumulated_tool_calls.extend(tool_calls.clone());
                         let chunk = json!({
                             "id": format!("chatcmpl-{}", now),
                             "object": "chat.completion.chunk",
@@ -234,7 +241,8 @@ pub fn transform_gemini_sse_stream(
                             }]
                         });
                         yield Ok(Bytes::from(format!("data: {}\n\n", chunk)));
-                    } else if let Some(t) = text_part {
+                    } else if let Some(ref t) = text_part {
+                        accumulated_text.push_str(t);
                         if first_content_token_time.is_none() {
                             first_content_token_time = Some(Instant::now());
                         }
@@ -365,7 +373,34 @@ pub fn transform_gemini_sse_stream(
                     fast_gate_us: 0,
                     cache_hit_type: if cached_tokens > 0 { "upstream_prefix".to_string() } else { "miss".to_string() },
                     error: None,
-                    key_name,
+                    key_name: key_name.clone(),
+                });
+            }
+
+            if let Some(ref v_logger) = vault {
+                let total_elapsed = start_time.elapsed().as_millis() as u64;
+                let resp_payload = json!({
+                    "content": accumulated_text,
+                    "reasoning_content": accumulated_thought,
+                    "tool_calls": accumulated_tool_calls,
+                });
+                let v_usage = crate::vault_logger::VaultUsage {
+                    prompt_tokens,
+                    completion_tokens,
+                    cached_tokens,
+                    total_tokens,
+                    latency_ms: total_elapsed,
+                };
+                v_logger.log(crate::vault_logger::VaultEvent {
+                    timestamp: chrono::Utc::now().to_rfc3339(),
+                    endpoint: "openai".to_string(),
+                    api_key_name: key_name.unwrap_or_else(|| "anonymous".to_string()),
+                    model: model.clone(),
+                    stream: true,
+                    status_code: 200,
+                    request_payload: raw_req.unwrap_or(Value::Null),
+                    response_payload: resp_payload,
+                    usage: Some(v_usage),
                 });
             }
 

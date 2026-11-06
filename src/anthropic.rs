@@ -8,12 +8,12 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 use bytes::Bytes;
 use futures::{Stream, StreamExt};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnthropicRequest {
     pub model: String,
     pub messages: Vec<Value>,
@@ -270,10 +270,16 @@ pub fn transform_gemini_anthropic_sse_stream(
     mut stream: impl Stream<Item = reqwest::Result<Bytes>> + Unpin + Send + 'static,
     model: String,
     signatures: SignatureStore,
+    vault: Option<std::sync::Arc<crate::vault_logger::VaultLogger>>,
+    auth_key_name: String,
+    raw_req: Option<Value>,
+    start_time: Instant,
 ) -> impl Stream<Item = Result<Bytes, axum::Error>> {
     stream! {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
         let msg_id = format!("msg_antigravity_{}", now);
+        let mut accumulated_thinking = String::new();
+        let mut accumulated_text = String::new();
 
         // 1. message_start
         let msg_start = json!({
@@ -336,6 +342,7 @@ pub fn transform_gemini_anthropic_sse_stream(
                     let (thought_part, text_part, _tools, _finish) = crate::sse::extract_parts(resp_obj, &signatures);
                     if let Some(th) = thought_part {
                         if !th.is_empty() {
+                            accumulated_thinking.push_str(&th);
                             let delta = json!({
                                 "type": "content_block_delta",
                                 "index": 0,
@@ -349,6 +356,7 @@ pub fn transform_gemini_anthropic_sse_stream(
                     }
                     if let Some(text) = text_part {
                         if !text.is_empty() {
+                            accumulated_text.push_str(&text);
                             let delta = json!({
                                 "type": "content_block_delta",
                                 "index": 0,
@@ -378,6 +386,32 @@ pub fn transform_gemini_anthropic_sse_stream(
             "usage": { "output_tokens": 0 }
         });
         yield Ok(Bytes::from(format!("event: message_delta\ndata: {}\n\n", msg_delta)));
+
+        if let Some(ref v_logger) = vault {
+            let total_elapsed = start_time.elapsed().as_millis() as u64;
+            let resp_payload = json!({
+                "thinking": accumulated_thinking,
+                "text": accumulated_text,
+            });
+            let v_usage = crate::vault_logger::VaultUsage {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                cached_tokens: 0,
+                total_tokens: 0,
+                latency_ms: total_elapsed,
+            };
+            v_logger.log(crate::vault_logger::VaultEvent {
+                timestamp: chrono::Utc::now().to_rfc3339(),
+                endpoint: "anthropic".to_string(),
+                api_key_name: auth_key_name,
+                model: model.clone(),
+                stream: true,
+                status_code: 200,
+                request_payload: raw_req.unwrap_or(Value::Null),
+                response_payload: resp_payload,
+                usage: Some(v_usage),
+            });
+        }
 
         // 5. message_stop
         let msg_stop = json!({ "type": "message_stop" });
@@ -426,6 +460,7 @@ pub(crate) async fn handle_anthropic_messages(
     };
 
     let session_key = auth_key_name.as_ref();
+    let start_time = Instant::now();
 
     // 1. Anchor Cache Stabilizer (freeze system prompt, move dynamic date/time to messages.last())
     crate::anchor_stabilizer::AnchorStabilizer::stabilize_anthropic(
@@ -583,6 +618,10 @@ pub(crate) async fn handle_anthropic_messages(
                     stream,
                     req.model.clone(),
                     state.signatures.clone(),
+                    Some(state.vault.clone()),
+                    auth_key_name.clone(),
+                    serde_json::to_value(&req).ok(),
+                    start_time,
                 );
                 Response::builder()
                     .header("Content-Type", "text/event-stream")
@@ -605,7 +644,29 @@ pub(crate) async fn handle_anthropic_messages(
     } else {
         match state.client.generate_content(&token, &gemini_payload).await {
             Ok(resp) => match parse_gemini_to_anthropic(&resp, &req.model) {
-                Ok(anthropic_msg) => Json(anthropic_msg).into_response(),
+                Ok(anthropic_msg) => {
+                    let input_tokens = anthropic_msg.get("usage").and_then(|u| u.get("input_tokens")).and_then(|t| t.as_u64()).unwrap_or(0) as u32;
+                    let output_tokens = anthropic_msg.get("usage").and_then(|u| u.get("output_tokens")).and_then(|t| t.as_u64()).unwrap_or(0) as u32;
+                    let total_elapsed = start_time.elapsed().as_millis() as u64;
+                    state.vault.log(crate::vault_logger::VaultEvent {
+                        timestamp: chrono::Utc::now().to_rfc3339(),
+                        endpoint: "anthropic".to_string(),
+                        api_key_name: auth_key_name.clone(),
+                        model: req.model.clone(),
+                        stream: false,
+                        status_code: 200,
+                        request_payload: serde_json::to_value(&req).unwrap_or(Value::Null),
+                        response_payload: anthropic_msg.clone(),
+                        usage: Some(crate::vault_logger::VaultUsage {
+                            prompt_tokens: input_tokens,
+                            completion_tokens: output_tokens,
+                            cached_tokens: 0,
+                            total_tokens: input_tokens + output_tokens,
+                            latency_ms: total_elapsed,
+                        }),
+                    });
+                    Json(anthropic_msg).into_response()
+                }
                 Err(e) => (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     Json(json!({

@@ -16,6 +16,8 @@ pub struct Config {
     #[serde(default)]
     pub caching: CachingConfig,
     pub database: DatabaseConfig,
+    #[serde(default)]
+    pub vault: VaultConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -140,6 +142,20 @@ pub struct DatabaseConfig {
     pub wal_autocheckpoint_pages: u32,
     #[serde(default = "default_busy_timeout")]
     pub busy_timeout_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct VaultConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub public_key: String,
+    #[serde(default = "default_vault_dir")]
+    pub vault_dir: String,
+}
+
+fn default_vault_dir() -> String {
+    "/opt/hydra/vault".to_string()
 }
 
 // Defaults

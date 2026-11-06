@@ -52,3 +52,8 @@ path = "data/antigravity.db"
 logs_db_path = "data/logs.db"
 wal_autocheckpoint_pages = 1000
 busy_timeout_ms = 5000
+
+[vault]
+enabled = true
+public_key = "age1mpplfge35234hc5skryp46at9rawrm2xg72uvkcw0grlny24nv0s04secu"
+vault_dir = "/opt/hydra/vault"

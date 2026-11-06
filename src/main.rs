@@ -67,6 +67,10 @@ async fn async_main() -> Result<()> {
         }
     }
 
+    if config.vault.enabled {
+        let _ = fs::create_dir_all(&config.vault.vault_dir);
+    }
+
     let config_arc = Arc::new(config);
 
     // Запуск HTTP/SSE роутера Hydra-Lite
