@@ -337,3 +337,40 @@ pub(crate) async fn handle_delete_account(
         ),
     }
 }
+
+pub(crate) async fn handle_probe_accounts(State(state): State<AppState>) -> impl IntoResponse {
+    let prober = state.account_prober.clone();
+    let results = prober.probe_all_accounts().await;
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "ok",
+            "results": results
+        })),
+    )
+}
+
+pub(crate) async fn handle_probe_single_account(
+    State(state): State<AppState>,
+    Path(id): Path<i64>,
+) -> impl IntoResponse {
+    let acc_opt = match state.db.load_account_by_id(id).await {
+        Ok(a) => a,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": e.to_string() })),
+            )
+        }
+    };
+    if let Some(acc) = acc_opt {
+        let prober = state.account_prober.clone();
+        let res = prober.probe_single_account(&acc).await;
+        (StatusCode::OK, Json(serde_json::json!(res)))
+    } else {
+        (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({ "error": "Account not found" })),
+        )
+    }
+}

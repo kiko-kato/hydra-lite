@@ -1,3 +1,4 @@
+pub mod account_prober;
 pub mod anchor_stabilizer;
 pub mod anthropic;
 pub mod antidote;
@@ -113,6 +114,7 @@ pub(crate) struct AppState {
     pub(crate) circuit_breaker: Arc<circuit_breaker::CircuitBreakerManager>,
     pub(crate) model_manager: Arc<model_manager::ModelManager>,
     pub(crate) active_streams: Arc<parking_lot::RwLock<std::collections::HashMap<i64, usize>>>,
+    pub(crate) account_prober: Arc<account_prober::AccountProber>,
 }
 
 pub async fn run_router(config: Arc<Config>) -> Result<()> {
@@ -213,6 +215,16 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
 
     let active_streams = Arc::new(parking_lot::RwLock::new(std::collections::HashMap::new()));
 
+    // Фоновый демон регулярного опроса/проверки аккаунтов на бан и разбан (каждые 3 минуты)
+    let account_prober = Arc::new(account_prober::AccountProber::new(
+        db.clone(),
+        client.clone(),
+        config.oauth.client_id.clone(),
+        config.oauth.client_secret.clone(),
+        180,
+    ));
+    account_prober.clone().start();
+
     let state = AppState {
         config: config_lock,
         db: db.clone(),
@@ -225,6 +237,7 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
         circuit_breaker,
         model_manager,
         active_streams,
+        account_prober,
     };
 
     // Фоновый демон обновления токенов Google OAuth (за 5 мин до истечения)
@@ -340,8 +353,16 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
             get(api_accounts::handle_get_accounts).post(api_accounts::handle_add_account),
         )
         .route(
+            "/api/accounts/probe",
+            post(api_accounts::handle_probe_accounts),
+        )
+        .route(
             "/api/accounts/:id",
             delete(api_accounts::handle_delete_account),
+        )
+        .route(
+            "/api/accounts/:id/probe",
+            post(api_accounts::handle_probe_single_account),
         )
         .route(
             "/api/accounts/:id/toggle",

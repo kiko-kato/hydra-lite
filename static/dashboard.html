@@ -198,6 +198,95 @@
       box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
     }
 
+    /* Плашка сигнализации о забаненных аккаунтах */
+    .banned-alert-banner {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.18) 0%, rgba(185, 28, 28, 0.08) 100%);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-left: 4px solid #ef4444;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.15);
+      animation: pulseAlert 3s infinite alternate;
+    }
+    @keyframes pulseAlert {
+      0% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.15); }
+      100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.35); }
+    }
+    .banned-alert-icon {
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .banned-alert-content { flex: 1; }
+    .banned-alert-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: #fca5a5;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .banned-alert-desc { font-size: 12px; color: #cbd5e1; line-height: 1.4; }
+    .banned-alert-actions { flex-shrink: 0; }
+    
+    .row-banned {
+      background: rgba(239, 68, 68, 0.05) !important;
+      border-left: 3px solid #ef4444 !important;
+    }
+    .ban-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      margin-top: 4px;
+      background: rgba(239, 68, 68, 0.22);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fca5a5;
+      max-width: 100%;
+    }
+    .ban-pill-dot {
+      width: 6px;
+      height: 6px;
+      background: #ef4444;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #ef4444;
+      display: inline-block;
+    }
+    .btn-probe-single {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      border-radius: var(--radius-sm);
+      padding: 3px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-probe-single:hover {
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      border-color: var(--accent-light);
+    }
+    .btn-probe-header {
+      background: linear-gradient(135deg, #7c4dff, #6366f1);
+      color: #fff;
+      border: none;
+    }
+    .btn-probe-header:hover {
+      background: linear-gradient(135deg, #9066ff, #7579f3);
+    }
+
     /* Switch */
     .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -509,11 +598,30 @@
           </div>
         </div>
 
+        <!-- Плашка сигнализации о заблокированных аккаунтах Google -->
+        <div id="bannedAccountsAlert" class="banned-alert-banner" style="display: none;">
+          <div class="banned-alert-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+          </div>
+          <div class="banned-alert-content">
+            <div class="banned-alert-title">Внимание: обнаружен бан аккаунтов Google (<span id="bannedCount">0</span> из <span id="totalAccountsCount">0</span> в бане)</div>
+            <div class="banned-alert-desc">Google заблокировал доступ (TOS / Suspended / invalid_grant). Hydra-Lite непрерывно опрашивает их каждые 3 мин в ожидании разбана по апелляциям.</div>
+          </div>
+          <div class="banned-alert-actions">
+            <button class="btn-action btn-probe-header" id="btnProbeAll" onclick="probeAllAccounts()">
+              <span id="probeBtnText">⚡ Дёрнуть все аккаунты</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Сетка аккаунтов пула -->
         <div class="glass-table-container">
           <div class="glass-table-header">
             <div class="glass-table-title">Состояние пула аккаунтов Google (5-часовые и недельные окна)</div>
-            <button class="btn-action" onclick="loadQuotas()">Обновить вручную</button>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-action btn-probe-header" onclick="probeAllAccounts()" title="Принудительно дёрнуть все аккаунты Google прямо сейчас">⚡ Дёрнуть аккаунты</button>
+              <button class="btn-action" onclick="loadQuotas()">Обновить</button>
+            </div>
           </div>
           <table>
             <thead>
@@ -1143,7 +1251,11 @@
 
         let totalRemSum = 0;
         let activeCount = 0;
+        let bannedCount = 0;
         accounts.forEach(a => {
+          if (a.is_banned || (!a.enabled && a.ban_reason)) {
+            bannedCount++;
+          }
           if (a.enabled && !a.is_banned) {
             totalRemSum += (a.gemini_5h !== undefined ? a.gemini_5h : a.gemini_remaining || 1.0);
             activeCount++;
@@ -1159,7 +1271,25 @@
         else if (headroomPct >= 130) hrElem.style.color = '#10b981';
         else hrElem.style.color = '#f59e0b';
 
-        document.getElementById('statActiveAccounts').innerText = `Акк: ${activeCount} / ${accounts.length}`;
+        const activeElem = document.getElementById('statActiveAccounts');
+        if (bannedCount > 0) {
+          activeElem.innerHTML = `Акк: <b>${activeCount}</b> / ${accounts.length} <span style="color:#ef4444; font-weight:700;">(⛔ ${bannedCount} в бане)</span>`;
+        } else {
+          activeElem.innerText = `Акк: ${activeCount} / ${accounts.length}`;
+        }
+
+        // Обновление плашки бана над таблицей
+        const alertBanner = document.getElementById('bannedAccountsAlert');
+        if (alertBanner) {
+          if (bannedCount > 0) {
+            alertBanner.style.display = 'flex';
+            document.getElementById('bannedCount').innerText = bannedCount;
+            document.getElementById('totalAccountsCount').innerText = accounts.length;
+          } else {
+            alertBanner.style.display = 'none';
+          }
+        }
+
         const totalReq = summary.total_requests || 0;
         document.getElementById('statTotalRequests').innerText = formatCompactNumber(totalReq);
         document.getElementById('statTotalRequests').setAttribute('title', totalReq.toLocaleString() + ' запросов');
@@ -1189,6 +1319,7 @@
         const tbody = document.getElementById('accountsTableBody');
         tbody.innerHTML = '';
         accounts.forEach(a => {
+          const isBanned = a.is_banned || (!a.enabled && a.ban_reason);
           const g5h = a.gemini_5h !== undefined ? a.gemini_5h : a.gemini_remaining;
           const g5hPct = Math.round((g5h || 0) * 100);
           const gWk = a.gemini_weekly !== undefined ? a.gemini_weekly : a.gemini_remaining;
@@ -1199,23 +1330,39 @@
           const resetWkText = a.gemini_weekly_reset ? `${wkDateStr} (${formatTimeRemaining(a.gemini_weekly_reset)})` : 'нет данных';
 
           let statusHtml = '';
-          if (a.is_banned || (!a.enabled && a.ban_reason)) {
-            statusHtml = `<span class="badge badge-banned" title="${a.ban_reason || 'TOS Violation'}">ЗАБАНЕН</span>`;
+          if (isBanned) {
+            statusHtml = `
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="badge badge-banned" title="${a.ban_reason || 'Google TOS Violation'}">⛔ В БАНЕ</span>
+                <button class="btn-probe-single" onclick="probeSingleAccount(${a.id})" title="Дёрнуть этот аккаунт прямо сейчас">🔄 Дёрнуть</button>
+              </div>
+            `;
           } else {
             statusHtml = `
-              <label class="switch">
-                <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
-                <span class="slider"></span>
-              </label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <label class="switch">
+                  <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
+                  <span class="slider"></span>
+                </label>
+                <button class="btn-probe-single" onclick="probeSingleAccount(${a.id})" title="Проверить статус">🔄</button>
+              </div>
             `;
           }
 
+          const rowClass = isBanned ? 'row-banned' : '';
+          const emailBadge = isBanned ? `
+            <div class="ban-pill-badge" title="${a.ban_reason || 'TOS Violation'}">
+              <span class="ban-pill-dot"></span>
+              <span>⛔ В БАНЕ${a.ban_reason ? ': ' + a.ban_reason.substring(0, 32) + '...' : ''}</span>
+            </div>
+          ` : '';
+
           tbody.innerHTML += `
-            <tr>
+            <tr class="${rowClass}">
               <td class="mono">#${a.id}</td>
               <td class="mono" style="font-weight:700; color:#fff;">
-                ${a.email || 'anon'}
-                ${a.is_banned ? '<span style="display:block; font-size:11px; color:#ef4444; font-weight:normal;">TOS BAN</span>' : ''}
+                <div>${a.email || 'anon'}</div>
+                ${emailBadge}
               </td>
               <td style="width: 260px;">
                 <div style="display:flex; justify-content:space-between; font-size:11px;">
@@ -1236,6 +1383,28 @@
           `;
         });
       } catch (e) { console.error(e); }
+    }
+
+    async function probeAllAccounts() {
+      const btn = document.getElementById('probeBtnText');
+      if (btn) btn.innerText = '⏳ Опрашиваю...';
+      try {
+        await fetch('/api/accounts/probe', { method: 'POST', headers: authHeaders() });
+        await loadQuotas();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (btn) btn.innerText = '⚡ Дёрнуть все аккаунты';
+      }
+    }
+
+    async function probeSingleAccount(id) {
+      try {
+        await fetch(`/api/accounts/${id}/probe`, { method: 'POST', headers: authHeaders() });
+        await loadQuotas();
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     async function toggleAccount(id) {

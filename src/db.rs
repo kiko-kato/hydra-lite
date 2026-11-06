@@ -208,6 +208,47 @@ impl Database {
         .await?
     }
 
+    pub async fn load_account_by_id(&self, id: i64) -> Result<Option<Account>> {
+        let r = self.reader();
+        tokio::task::spawn_blocking(move || {
+            let conn = r.lock();
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT id, email, refresh_token, access_token, expires_at, quota_json,
+                       gemini_remaining, claude_remaining, last_quota_check, cooldown_until, enabled,
+                       COALESCE(is_banned, 0), ban_reason
+                FROM accounts
+                WHERE id = ?1
+                "#,
+            )?;
+            let mut rows = stmt.query_map(params![id], |row| {
+                let enabled_int: i64 = row.get(10)?;
+                let banned_int: i64 = row.get(11)?;
+                Ok(Account {
+                    id: row.get(0)?,
+                    email: row.get(1)?,
+                    refresh_token: row.get(2)?,
+                    access_token: row.get(3)?,
+                    expires_at: row.get(4)?,
+                    quota_json: row.get(5)?,
+                    gemini_remaining: row.get(6)?,
+                    claude_remaining: row.get(7)?,
+                    last_quota_check: row.get(8)?,
+                    cooldown_until: row.get(9)?,
+                    enabled: enabled_int == 1,
+                    is_banned: banned_int == 1,
+                    ban_reason: row.get(12)?,
+                })
+            })?;
+            if let Some(res) = rows.next() {
+                Ok(Some(res?))
+            } else {
+                Ok(None)
+            }
+        })
+        .await?
+    }
+
     pub async fn list_keys(&self) -> Result<Vec<ApiKey>> {
         let r = self.reader();
         tokio::task::spawn_blocking(move || {
@@ -381,7 +422,13 @@ impl Database {
     pub async fn toggle_account(&self, id: i64) -> Result<bool> {
         let conn = self.writer.lock().await;
         conn.execute(
-            "UPDATE accounts SET enabled = 1 - enabled WHERE id = ?1",
+            r#"
+            UPDATE accounts 
+            SET enabled = 1 - enabled,
+                is_banned = CASE WHEN enabled = 0 THEN 0 ELSE is_banned END,
+                ban_reason = CASE WHEN enabled = 0 THEN NULL ELSE ban_reason END
+            WHERE id = ?1
+            "#,
             params![id],
         )?;
         let mut stmt = conn.prepare("SELECT enabled FROM accounts WHERE id = ?1")?;
@@ -403,6 +450,15 @@ impl Database {
         conn.execute(
             "UPDATE accounts SET enabled = 0, is_banned = 1, ban_reason = ?1 WHERE id = ?2",
             params![reason, id],
+        )?;
+        Ok(())
+    }
+
+    pub async fn mark_account_unbanned(&self, id: i64) -> Result<()> {
+        let conn = self.writer.lock().await;
+        conn.execute(
+            "UPDATE accounts SET is_banned = 0, ban_reason = NULL, enabled = 1 WHERE id = ?1",
+            params![id],
         )?;
         Ok(())
     }
