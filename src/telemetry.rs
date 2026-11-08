@@ -599,9 +599,10 @@ pub fn now_epoch_and_string() -> (f64, String) {
         .unwrap()
         .as_secs_f64();
     let secs = now as u64;
-    let tm_hour = (secs / 3600) % 24;
-    let tm_min = (secs / 60) % 60;
-    let tm_sec = secs % 60;
-    let str_val = format!("{:02}:{:02}:{:02} UTC", tm_hour, tm_min, tm_sec);
+    let secs_utc5 = secs + 5 * 3600;
+    let tm_hour = (secs_utc5 / 3600) % 24;
+    let tm_min = (secs_utc5 / 60) % 60;
+    let tm_sec = secs_utc5 % 60;
+    let str_val = format!("{:02}:{:02}:{:02} (UTC+5)", tm_hour, tm_min, tm_sec);
     (now, str_val)
 }

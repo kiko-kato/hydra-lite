@@ -43,6 +43,7 @@ pub async fn fetch_quota_summary(client: &Client, access_token: &str) -> Result<
                 for group in groups {
                     let name = group
                         .get("displayName")
+                        .or_else(|| group.get("description"))
                         .and_then(|n| n.as_str())
                         .unwrap_or("");
                     if let Some(buckets) = group.get("buckets").and_then(|b| b.as_array()) {
@@ -73,7 +74,9 @@ pub async fn fetch_quota_summary(client: &Client, access_token: &str) -> Result<
                 claude_fraction: claude_frac,
             });
         } else {
-            last_err = anyhow::anyhow!("Endpoint {} returned HTTP {}", ep, resp.status());
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            last_err = anyhow::anyhow!("Endpoint {} returned HTTP {}: {}", ep, status, body);
         }
     }
 

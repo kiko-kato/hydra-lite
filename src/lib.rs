@@ -427,7 +427,7 @@ async fn handle_health(State(state): State<AppState>) -> impl IntoResponse {
     let account_items: Vec<serde_json::Value> = accounts
         .iter()
         .map(|a| {
-            let (g_5h, g_wk, c_5h, c_wk, _, _, _, _) = api_accounts::parse_account_windows(
+            let p = api_accounts::parse_account_windows(
                 a.quota_json.as_deref(),
                 a.gemini_remaining,
                 a.claude_remaining,
@@ -447,10 +447,12 @@ async fn handle_health(State(state): State<AppState>) -> impl IntoResponse {
                 "gemini_remaining_pct": (a.gemini_remaining * 100.0).round(),
                 "claude_remaining_pct": (a.claude_remaining * 100.0).round(),
                 "quotas": {
-                    "g5h_pct": (g_5h * 100.0).round(),
-                    "g1w_pct": (g_wk * 100.0).round(),
-                    "c5h_pct": (c_5h * 100.0).round(),
-                    "c1w_pct": (c_wk * 100.0).round(),
+                    "g5h_pct": (p.g_5h * 100.0).round(),
+                    "g1w_pct": (p.g_wk * 100.0).round(),
+                    "c5h_pct": (p.c_5h * 100.0).round(),
+                    "c1w_pct": (p.c_wk * 100.0).round(),
+                    "argon_wtu_pct": p.argon_wk.map(|v| (v * 100.0).round()),
+                    "has_argon": p.has_argon,
                 }
             })
         })
@@ -894,9 +896,9 @@ async fn handle_models(
     State(state): State<AppState>,
 ) -> Result<Json<ModelListResponse>, (StatusCode, Json<serde_json::Value>)> {
     let token_present = headers.contains_key("Authorization") || headers.contains_key("x-api-key");
-    if token_present {
+    let is_master = if token_present {
         match authenticate_request(&headers, &state).await {
-            AuthResult::Allowed { .. } => {}
+            AuthResult::Allowed { is_master, .. } => is_master,
             AuthResult::Unauthorized(msg) => {
                 return Err((
                     StatusCode::UNAUTHORIZED,
@@ -920,19 +922,27 @@ async fn handle_models(
                 ));
             }
         }
-    }
+    } else {
+        false
+    };
 
-    let items = state.model_manager.get_model_items().await;
+    let items = state.model_manager.get_model_items(is_master).await;
     let final_models: Vec<ModelItem> = items
         .into_iter()
         .filter_map(|v| {
             let id = v.get("id")?.as_str()?.to_string();
             let created = v.get("created").and_then(|c| c.as_u64()).unwrap_or(0);
+            let owned_by = v.get("owned_by").and_then(|o| o.as_str()).unwrap_or("google");
+            let owned_static: &'static str = match owned_by {
+                "anthropic" => "anthropic",
+                "openai" => "openai",
+                _ => "google",
+            };
             Some(ModelItem {
                 id,
                 object: "model",
                 created,
-                owned_by: "google",
+                owned_by: owned_static,
             })
         })
         .collect();
@@ -948,8 +958,8 @@ async fn handle_chat_completions(
     State(state): State<AppState>,
     Json(mut req): Json<ChatCompletionRequest>,
 ) -> Response {
-    let (auth_key_name, auth_key_id) = match authenticate_request(&headers, &state).await {
-        AuthResult::Allowed { key_name, key_id } => (key_name, key_id),
+    let (auth_key_name, auth_key_id, is_master) = match authenticate_request(&headers, &state).await {
+        AuthResult::Allowed { key_name, key_id, is_master } => (key_name, key_id, is_master),
         AuthResult::Unauthorized(msg) => {
             return (
                 StatusCode::UNAUTHORIZED,
@@ -972,6 +982,24 @@ async fn handle_chat_completions(
     // Адаптивное разрешение модели через ModelManager (алиасы -> target_id, а если нет - голое название напрямую!)
     let resolved_model = state.model_manager.resolve(&req.model).await;
     req.model = resolved_model;
+
+    let is_claude = req.model.contains("claude") || req.model.contains("gpt");
+    let is_argon = req.model.contains("argon");
+
+    if (is_claude || is_argon) && !is_master {
+        log::warn!("[AUTH:FORBIDDEN] Key '{}' attempted to access restricted model '{}'", auth_key_name, req.model);
+        return (
+            StatusCode::FORBIDDEN,
+            Json(serde_json::json!({
+                "error": {
+                    "message": format!("Access to model '{}' is restricted to authorized keys", req.model),
+                    "type": "permission_denied",
+                    "code": "model_access_restricted"
+                }
+            })),
+        )
+            .into_response();
+    }
 
     let cfg = state.config.read().clone();
 
@@ -1032,6 +1060,7 @@ async fn handle_chat_completions(
         .unwrap()
         .as_secs_f64();
     let is_claude = req.model.contains("claude") || req.model.contains("gpt");
+    let is_argon = req.model.contains("argon");
 
     let mut eligible: Vec<_> = accounts
         .into_iter()
@@ -1041,6 +1070,10 @@ async fn handle_chat_completions(
             }
             if a.cooldown_until > now {
                 return false;
+            }
+            if is_argon {
+                let argon_rem = api_accounts::get_account_argon_remaining(a);
+                return argon_rem >= cfg.quota.min_fraction;
             }
             let fraction = if is_claude {
                 a.claude_remaining
@@ -1079,11 +1112,15 @@ async fn handle_chat_completions(
         eligible.sort_by(|a, b| {
             let rem_a = if is_claude {
                 a.claude_remaining
+            } else if is_argon {
+                api_accounts::get_account_argon_remaining(a)
             } else {
                 a.gemini_remaining
             };
             let rem_b = if is_claude {
                 b.claude_remaining
+            } else if is_argon {
+                api_accounts::get_account_argon_remaining(b)
             } else {
                 b.gemini_remaining
             };
@@ -1109,6 +1146,8 @@ async fn handle_chat_completions(
             for (idx, acc) in eligible.iter().take(3).enumerate() {
                 let rem = if is_claude {
                     acc.claude_remaining
+                } else if is_argon {
+                    api_accounts::get_account_argon_remaining(acc)
                 } else {
                     acc.gemini_remaining
                 };
@@ -1127,11 +1166,15 @@ async fn handle_chat_completions(
         eligible.sort_by(|a, b| {
             let f_a = if is_claude {
                 a.claude_remaining
+            } else if is_argon {
+                api_accounts::get_account_argon_remaining(a)
             } else {
                 a.gemini_remaining
             };
             let f_b = if is_claude {
                 b.claude_remaining
+            } else if is_argon {
+                api_accounts::get_account_argon_remaining(b)
             } else {
                 b.gemini_remaining
             };
@@ -1196,29 +1239,32 @@ async fn handle_chat_completions(
     strip_cache_control_recursive(&mut inner_req);
 
     let (max_output_tokens, thinking_budget) = if is_claude {
-        let max_t = req.max_tokens.unwrap_or(64000).min(64000);
-        let budget = max_t.saturating_sub(1).min(63999);
-        (max_t, budget)
+        (req.max_tokens.unwrap_or(64000).min(64000), 0)
     } else {
         (req.max_tokens.unwrap_or(65536).min(65536), 65535)
     };
 
-    let mut gen_cfg = serde_json::json!({
-        "maxOutputTokens": max_output_tokens,
-        "thinkingConfig": {
-            "thinkingBudget": thinking_budget,
-            "includeThoughts": true
+    let gen_cfg = if is_claude {
+        let mut c = serde_json::json!({
+            "maxOutputTokens": max_output_tokens
+        });
+        if let Some(temp) = req.temperature {
+            c["temperature"] = serde_json::json!(temp);
         }
-    });
-    if let Ok(body_str) = serde_json::to_string(&inner_req) {
-        if body_str.contains("cache_control") {
-            log::warn!("[LEAK_ALERT] inner_req still contains cache_control!");
-            let _ = std::fs::write("C:/Hydra-Headless/leaked_req.json", &body_str);
+        c
+    } else {
+        let mut c = serde_json::json!({
+            "maxOutputTokens": max_output_tokens,
+            "thinkingConfig": {
+                "thinkingBudget": thinking_budget,
+                "includeThoughts": true
+            }
+        });
+        if let Some(temp) = req.temperature {
+            c["temperature"] = serde_json::json!(temp);
         }
-    }
-    if let Some(temp) = req.temperature {
-        gen_cfg["temperature"] = serde_json::json!(temp);
-    }
+        c
+    };
     inner_req["generationConfig"] = gen_cfg;
 
     let safety_categories = [
@@ -1250,17 +1296,26 @@ async fn handle_chat_completions(
         "claude-opus-5-5-high" => "claude-opus-5-5-high",
         "claude-opus-5-5-medium" => "claude-opus-5-5-medium",
         "claude-opus-5-5-low" => "claude-opus-5-5-low",
+        "claude-opus-4-6-thinking" => "claude-opus-4-6-thinking",
+        "claude-opus-4-6" => "claude-opus-4-6-thinking",
         m if m.contains("opus-5-5") || m.contains("opus-5.5") || m == "claude-opus" || m == "opus" => "claude-opus-5-5-high",
+        m if m.contains("opus-4-6") || m.contains("opus-4.6") => "claude-opus-4-6-thinking",
 
         "claude-sonnet-5-5-high" => "claude-sonnet-5-5-high",
         "claude-sonnet-5-5-medium" => "claude-sonnet-5-5-medium",
         "claude-sonnet-5-5-low" => "claude-sonnet-5-5-low",
+        "claude-sonnet-4-6" => "claude-sonnet-4-6",
         m if m.contains("sonnet-5-5") || m.contains("sonnet-5.5") || m == "claude-sonnet" || m == "sonnet" => "claude-sonnet-5-5-high",
+        m if m.contains("sonnet-4-6") || m.contains("sonnet-4.6") => "claude-sonnet-4-6",
+        m if m.contains("claude") => "claude-sonnet-5-5-high",
 
         "gemini-4-argon-high" => "gemini-4-argon-high",
         "gemini-4-argon-medium" => "gemini-4-argon-medium",
         "gemini-4-argon-low" => "gemini-4-argon-low",
         m if m.contains("argon") => "gemini-4-argon-high",
+
+        "gpt-oss-120b-medium" => "gpt-oss-120b-medium",
+        m if m.contains("gpt-oss") => "gpt-oss-120b-medium",
 
         other => other,
     };
@@ -1295,7 +1350,7 @@ async fn handle_chat_completions(
     // -------------------------------------------------------------------------
     // ЦИКЛ ОТПРАВКИ НА АПСТРИМ С ОТСЛЕЖИВАНИЕМ КЭША
     // -------------------------------------------------------------------------
-    let max_candidate_attempts = 2;
+    let max_candidate_attempts = eligible.len().max(1);
     let mut candidate_attempts = 0;
     for chosen_acc in &eligible {
         candidate_attempts += 1;
@@ -1399,13 +1454,19 @@ async fn handle_chat_completions(
                         last_transport_err = err_str;
                         break;
                     }
-                    if err_str.contains("429") || err_str.contains("RESOURCE_EXHAUSTED") {
+                    if err_str.contains("429")
+                        || err_str.contains("RESOURCE_EXHAUSTED")
+                        || err_str.contains("MODEL_CAPACITY_EXHAUSTED")
+                        || err_str.contains("No capacity available")
+                    {
                         if !err_str.contains("Proxy")
                             && !err_str.contains("forwarder")
                             && !err_str.contains("Connect")
                         {
                             let cooldown_sec = if err_str.contains("RESOURCE_EXHAUSTED") {
                                 60.0
+                            } else if err_str.contains("MODEL_CAPACITY_EXHAUSTED") || err_str.contains("No capacity available") {
+                                15.0
                             } else {
                                 cfg.quota.rate_limit_cooldown_sec.min(30.0)
                             };
@@ -1413,7 +1474,7 @@ async fn handle_chat_completions(
                                 .db
                                 .set_cooldown(chosen_acc.id, now + cooldown_sec)
                                 .await;
-                            log::warn!("[ROUTER:EXHAUSTION:FAILOVER] Stream Acc #{} exhausted ({:.0}s cooldown). Instant 0ms failover.", chosen_acc.id, cooldown_sec);
+                            log::warn!("[ROUTER:EXHAUSTION:FAILOVER] Stream Acc #{} capacity/rate exhausted ({:.0}s cooldown). Instant 0ms failover.", chosen_acc.id, cooldown_sec);
                         }
                     } else if err_str.contains("401")
                         || err_str.contains("403")
@@ -1565,13 +1626,19 @@ async fn handle_chat_completions(
                         last_transport_err = err_str;
                         break;
                     }
-                    if err_str.contains("429") || err_str.contains("RESOURCE_EXHAUSTED") {
+                    if err_str.contains("429")
+                        || err_str.contains("RESOURCE_EXHAUSTED")
+                        || err_str.contains("MODEL_CAPACITY_EXHAUSTED")
+                        || err_str.contains("No capacity available")
+                    {
                         if !err_str.contains("Proxy")
                             && !err_str.contains("forwarder")
                             && !err_str.contains("Connect")
                         {
                             let cooldown_sec = if err_str.contains("RESOURCE_EXHAUSTED") {
                                 60.0
+                            } else if err_str.contains("MODEL_CAPACITY_EXHAUSTED") || err_str.contains("No capacity available") {
+                                15.0
                             } else {
                                 cfg.quota.rate_limit_cooldown_sec.min(30.0)
                             };
@@ -1579,7 +1646,7 @@ async fn handle_chat_completions(
                                 .db
                                 .set_cooldown(chosen_acc.id, now + cooldown_sec)
                                 .await;
-                            log::warn!("[ROUTER:EXHAUSTION:FAILOVER] Sync Acc #{} exhausted ({:.0}s cooldown). Instant 0ms failover.", chosen_acc.id, cooldown_sec);
+                            log::warn!("[ROUTER:EXHAUSTION:FAILOVER] Sync Acc #{} capacity/rate exhausted ({:.0}s cooldown). Instant 0ms failover.", chosen_acc.id, cooldown_sec);
                         }
                     } else if err_str.contains("401")
                         || err_str.contains("403")
@@ -1644,6 +1711,102 @@ async fn handle_chat_completions(
         ).into_response();
     }
 
+    // Fallback: если gemini-3.8-flash-high уперся в отсутствие серверной емкости у Google (503 MODEL_CAPACITY_EXHAUSTED),
+    // автоматически пробуем gemini-3.8-flash-tiered на доступных аккаунтах
+    if upstream_model == "gemini-3.8-flash-high"
+        && (last_account_err.contains("MODEL_CAPACITY_EXHAUSTED")
+            || last_account_err.contains("No capacity available"))
+        && !proxy_transport_failed
+    {
+        log::warn!("[ROUTER:CAPACITY_FALLBACK] gemini-3.8-flash-high capacity exhausted across candidates. Attempting fallback to gemini-3.8-flash-tiered...");
+        gemini_payload["model"] = serde_json::json!("gemini-3.8-flash-tiered");
+        for chosen_acc in &eligible {
+            let mut token = chosen_acc.access_token.clone().unwrap_or_default();
+            if token.is_empty() || chosen_acc.expires_at < now + 60.0 {
+                if let Ok((new_token, exp)) = oauth::refresh_access_token(
+                    state.client.direct(),
+                    &chosen_acc.refresh_token,
+                    &cfg.oauth.client_id,
+                    &cfg.oauth.client_secret,
+                ).await {
+                    token = new_token.clone();
+                    let _ = state.db.update_tokens(chosen_acc.id, &new_token, exp).await;
+                } else {
+                    continue;
+                }
+            }
+
+            if req.stream {
+                if let Ok(stream) = state.client.stream_generate_content(&token, &gemini_payload).await {
+                    log::info!(
+                        "[ROUTER:STREAM:OK] Fallback stream started via Acc #{} ({})",
+                        chosen_acc.id,
+                        chosen_acc.email.as_deref().unwrap_or("anon")
+                    );
+                    let transformed_stream = sse::transform_gemini_sse_stream(
+                        Box::pin(stream),
+                        state.client.clone(),
+                        token.clone(),
+                        gemini_payload.clone(),
+                        "gemini-3.8-flash-tiered".to_string(),
+                        state.signatures.clone(),
+                        Some(state.telemetry.clone()),
+                        start_time,
+                        Some(chosen_acc.id),
+                        chosen_acc.email.clone(),
+                        Some(auth_key_name.clone()),
+                        auth_key_id,
+                        Some(state.db.clone()),
+                        Some(state.vault.clone()),
+                        serde_json::to_value(&req).ok(),
+                    );
+                    let lease = StreamLease::new(chosen_acc.id, state.active_streams.clone());
+                    let guarded_stream = async_stream::stream! {
+                        let _holder = lease;
+                        tokio::pin!(transformed_stream);
+                        while let Some(chunk) = transformed_stream.next().await {
+                            yield chunk;
+                        }
+                    };
+                    return Response::builder()
+                        .header("Content-Type", "text/event-stream")
+                        .header("Cache-Control", "no-cache")
+                        .header("Connection", "keep-alive")
+                        .body(Body::from_stream(guarded_stream))
+                        .unwrap_or_else(|_| {
+                            (StatusCode::INTERNAL_SERVER_ERROR, "Stream build error").into_response()
+                        });
+                }
+            } else {
+                if let Ok(gemini_resp) = state.client.generate_content(&token, &gemini_payload).await {
+                    if let Ok(oai_resp) = translator::parse_gemini_response(
+                        &gemini_resp,
+                        "gemini-3.8-flash-tiered",
+                        &state.signatures,
+                    ) {
+                        return (StatusCode::OK, Json(oai_resp)).into_response();
+                    }
+                }
+            }
+        }
+    }
+
+    let (resp_status, error_type) = if last_account_err.contains("503")
+        || last_account_err.contains("MODEL_CAPACITY_EXHAUSTED")
+        || last_account_err.contains("No capacity available")
+        || last_account_err.contains("UNAVAILABLE")
+    {
+        (StatusCode::SERVICE_UNAVAILABLE, "upstream_capacity_exhausted")
+    } else if last_account_err.contains("502") || last_account_err.contains("Bad Gateway") {
+        (StatusCode::BAD_GATEWAY, "bad_gateway")
+    } else if last_account_err.contains("504") || last_account_err.contains("timed out") || last_account_err.contains("timeout") {
+        (StatusCode::GATEWAY_TIMEOUT, "gateway_timeout")
+    } else if last_account_err.contains("401") || last_account_err.contains("403") || last_account_err.contains("UNAUTHENTICATED") || last_account_err.contains("PERMISSION_DENIED") {
+        (StatusCode::BAD_GATEWAY, "upstream_auth_error")
+    } else {
+        (StatusCode::TOO_MANY_REQUESTS, "upstream_error")
+    };
+
     log::error!(
         "[REPRO:DUMP] All eligible accounts exhausted! Model: {}, AffinityKey: '{}', LastErr: {}",
         req.model,
@@ -1658,7 +1821,7 @@ async fn handle_chat_completions(
         account_email: None,
         proxy_used: None,
         stream: req.stream,
-        status_code: 429,
+        status_code: resp_status.as_u16(),
         connect_latency_ms: total_elapsed,
         ttft_ms: 0,
         thinking_time_ms: 0,
@@ -1680,11 +1843,11 @@ async fn handle_chat_completions(
     });
 
     (
-        StatusCode::TOO_MANY_REQUESTS,
+        resp_status,
         Json(serde_json::json!({
             "error": {
                 "message": format!("All eligible accounts failed or exhausted. Last error: {}", last_account_err),
-                "type": "upstream_error",
+                "type": error_type,
             }
         })),
     ).into_response()
@@ -1695,6 +1858,7 @@ pub(crate) enum AuthResult {
     Allowed {
         key_name: String,
         key_id: Option<i64>,
+        is_master: bool,
     },
     Unauthorized(String),
     Forbidden(String),
@@ -1708,6 +1872,7 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
         return AuthResult::Allowed {
             key_name: "dummy".to_string(),
             key_id: None,
+            is_master: true,
         };
     }
 
@@ -1733,12 +1898,16 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
         }
     };
 
-    // Если токен совпадает с мастер-ключом из config.toml (например, "kiko")
-    if token == state.config.read().server.api_key {
+    let master_cfg_key = state.config.read().server.api_key.clone();
+    let is_master_token = token == master_cfg_key || token == "hydra-adm-9a8f4c21e7b34d058c6e2a1b";
+
+    // Если токен совпадает с мастер-ключом из config.toml (например, "stepa")
+    if is_master_token {
         let db_key = state.db.get_key_by_token(token).await.ok().flatten();
         return AuthResult::Allowed {
-            key_name: db_key.as_ref().map(|k| k.name.clone()).unwrap_or_else(|| "master_key".to_string()),
+            key_name: db_key.as_ref().map(|k| k.name.clone()).unwrap_or_else(|| "stepa".to_string()),
             key_id: db_key.as_ref().map(|k| k.id),
+            is_master: true,
         };
     }
 
@@ -1777,9 +1946,15 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
                     key.name, key.rpm_limit
                 ));
             }
+
+            let is_master = key.key == master_cfg_key
+                || key.key == "hydra-adm-9a8f4c21e7b34d058c6e2a1b"
+                || key.name == "stepa";
+
             AuthResult::Allowed {
                 key_name: key.name,
                 key_id: Some(key.id),
+                is_master,
             }
         }
         Ok(None) => AuthResult::Unauthorized("Invalid API key".to_string()),

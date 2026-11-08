@@ -49,6 +49,10 @@ pub struct KeyDto {
     pub created_by: Option<i64>,
     pub can_edit: bool,
     pub is_self: bool,
+    pub cached_tokens_used: i64,
+    pub prompt_tokens_used: i64,
+    pub completion_tokens_used: i64,
+    pub actual_billed_tokens: i64,
 }
 
 pub struct CallerInfo {
@@ -155,6 +159,10 @@ pub(crate) async fn handle_get_keys(
                     created_by: k.created_by,
                     can_edit,
                     is_self,
+                    cached_tokens_used: k.cached_tokens_used,
+                    prompt_tokens_used: k.prompt_tokens_used,
+                    completion_tokens_used: k.completion_tokens_used,
+                    actual_billed_tokens: k.actual_billed_tokens,
                 });
             }
             (StatusCode::OK, Json(serde_json::json!({ "keys": dtos })))

@@ -171,37 +171,13 @@ impl AccountProber {
             }
         };
 
-        match quota_res {
+        let qs = match quota_res {
             Ok(qs) => {
                 let _ = self
                     .db
                     .update_quota(acc.id, &qs.raw_json, qs.gemini_fraction, qs.claude_fraction, now)
                     .await;
-
-                if acc.is_banned || acc.ban_reason.is_some() {
-                    let _ = self.db.mark_account_unbanned(acc.id).await;
-                    log::info!(
-                        "[ACCOUNT:PROBER] 🎉 Acc #{} ({}) UNBANNED! Appeal approved, reactivating.",
-                        acc.id, email
-                    );
-                    ProbeResult {
-                        id: acc.id,
-                        email,
-                        is_banned: false,
-                        ban_reason: None,
-                        status: "unbanned".to_string(),
-                        message: format!("Разбанен! Квота активна (Gemini: {:.0}%, Claude: {:.0}%)", qs.gemini_fraction * 100.0, qs.claude_fraction * 100.0),
-                    }
-                } else {
-                    ProbeResult {
-                        id: acc.id,
-                        email,
-                        is_banned: false,
-                        ban_reason: None,
-                        status: "healthy".to_string(),
-                        message: format!("Активен (Gemini: {:.0}%, Claude: {:.0}%)", qs.gemini_fraction * 100.0, qs.claude_fraction * 100.0),
-                    }
-                }
+                qs
             }
             Err(e) => {
                 let err_str = e.to_string();
@@ -214,23 +190,144 @@ impl AccountProber {
                     let reason = format!("Cloud Code PA Ban: {}", err_str);
                     let _ = self.db.mark_account_banned(acc.id, &reason).await;
                     log::warn!("[ACCOUNT:PROBER] Acc #{} ({}) BANNED on Cloud Code PA: {}", acc.id, email, reason);
-                    ProbeResult {
+                    return ProbeResult {
                         id: acc.id,
                         email,
                         is_banned: true,
                         ban_reason: Some(reason.clone()),
                         status: "banned".to_string(),
                         message: reason,
-                    }
+                    };
                 } else {
-                    ProbeResult {
+                    return ProbeResult {
                         id: acc.id,
                         email,
                         is_banned: acc.is_banned,
                         ban_reason: acc.ban_reason.clone(),
                         status: "error".to_string(),
                         message: format!("Ошибка проверки квоты: {}", err_str),
+                    };
+                }
+            }
+        };
+
+        // 3. Реальный тестовый инференс-зонд к upstream generateContent
+        // (retrieveUserQuotaSummary отдает 200 даже на забаненных по TOS аккаунтах!)
+        let probe_payload = serde_json::json!({
+            "model": "gemini-2.5-flash",
+            "project": "",
+            "request": {
+                "contents": [{
+                    "role": "user",
+                    "parts": [{ "text": "ping" }]
+                }],
+                "generationConfig": {
+                    "maxOutputTokens": 1
+                }
+            }
+        });
+
+        let mut probe_resp = self
+            .client
+            .direct()
+            .post("https://daily-cloudcode-pa.googleapis.com/v1internal:generateContent")
+            .header("Authorization", format!("Bearer {}", access_tok))
+            .header("Content-Type", "application/json")
+            .header("User-Agent", "antigravity/hub/2.23.1 darwin/arm64")
+            .header("x-client-name", "antigravity")
+            .json(&probe_payload)
+            .send()
+            .await;
+
+        if probe_resp.is_err() {
+            probe_resp = self
+                .client
+                .inner()
+                .post("https://daily-cloudcode-pa.googleapis.com/v1internal:generateContent")
+                .header("Authorization", format!("Bearer {}", access_tok))
+                .header("Content-Type", "application/json")
+                .header("User-Agent", "antigravity/hub/2.23.1 darwin/arm64")
+                .header("x-client-name", "antigravity")
+                .json(&probe_payload)
+                .send()
+                .await;
+        }
+
+        match probe_resp {
+            Ok(resp) => {
+                let status = resp.status();
+                if status.is_success() {
+                    if acc.is_banned || acc.ban_reason.is_some() {
+                        let _ = self.db.mark_account_unbanned(acc.id).await;
+                        log::info!(
+                            "[ACCOUNT:PROBER] Acc #{} ({}) UNBANNED! Appeal approved, reactivating.",
+                            acc.id, email
+                        );
+                        ProbeResult {
+                            id: acc.id,
+                            email,
+                            is_banned: false,
+                            ban_reason: None,
+                            status: "unbanned".to_string(),
+                            message: format!("Разбанен! Инференс и квоты активны (Gemini: {:.0}%, Claude: {:.0}%)", qs.gemini_fraction * 100.0, qs.claude_fraction * 100.0),
+                        }
+                    } else {
+                        ProbeResult {
+                            id: acc.id,
+                            email,
+                            is_banned: false,
+                            ban_reason: None,
+                            status: "healthy".to_string(),
+                            message: format!("Активен (Gemini: {:.0}%, Claude: {:.0}%)", qs.gemini_fraction * 100.0, qs.claude_fraction * 100.0),
+                        }
                     }
+                } else {
+                    let body = resp.text().await.unwrap_or_default();
+                    let body_lower = body.to_lowercase();
+                    let is_tos_ban = status.as_u16() == 403
+                        || body_lower.contains("terms of service")
+                        || body_lower.contains("disabled in this account")
+                        || body_lower.contains("permission_denied")
+                        || body_lower.contains("suspended");
+
+                    if is_tos_ban {
+                        let reason = if body_lower.contains("terms of service") || body_lower.contains("disabled in this account") {
+                            "Google TOS Ban: аккаунт заблокирован за нарушение условий использования".to_string()
+                        } else {
+                            format!("Cloud Code PA Ban (HTTP {}): {}", status.as_u16(), body)
+                        };
+
+                        let _ = self.db.mark_account_banned(acc.id, &reason).await;
+                        log::warn!("[ACCOUNT:PROBER] Acc #{} ({}) TOS BANNED on generateContent: {}", acc.id, email, reason);
+                        ProbeResult {
+                            id: acc.id,
+                            email,
+                            is_banned: true,
+                            ban_reason: Some(reason.clone()),
+                            status: "banned".to_string(),
+                            message: reason,
+                        }
+                    } else {
+                        ProbeResult {
+                            id: acc.id,
+                            email,
+                            is_banned: acc.is_banned,
+                            ban_reason: acc.ban_reason.clone(),
+                            status: "error".to_string(),
+                            message: format!("Временная ошибка upstream (HTTP {}): {}", status.as_u16(), body),
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                let err_str = e.to_string();
+                ProbeResult {
+                    id: acc.id,
+                    email,
+                    is_banned: acc.is_banned,
+                    ban_reason: acc.ban_reason.clone(),
+                    status: "error".to_string(),
+                    message: format!("Сетевой сбой зонда generateContent: {}", err_str),
                 }
             }
         }

@@ -425,8 +425,8 @@ pub(crate) async fn handle_anthropic_messages(
     Json(mut req): Json<AnthropicRequest>,
 ) -> Response {
     // 1. Авторизация
-    let auth_key_name = match crate::authenticate_request(&headers, &state).await {
-        crate::AuthResult::Allowed { key_name, .. } => key_name,
+    let (auth_key_name, is_master) = match crate::authenticate_request(&headers, &state).await {
+        crate::AuthResult::Allowed { key_name, is_master, .. } => (key_name, is_master),
         crate::AuthResult::Unauthorized(msg) => {
             return (
                 StatusCode::UNAUTHORIZED,
@@ -458,6 +458,24 @@ pub(crate) async fn handle_anthropic_messages(
                 .into_response();
         }
     };
+
+    let is_claude = req.model.contains("claude") || req.model.contains("gpt");
+    let is_argon = req.model.contains("argon");
+
+    if (is_claude || is_argon) && !is_master {
+        log::warn!("[AUTH:FORBIDDEN] Anthropic key '{}' attempted to access restricted model '{}'", auth_key_name, req.model);
+        return (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "type": "error",
+                "error": {
+                    "type": "permission_error",
+                    "message": format!("Access to model '{}' is restricted to authorized keys", req.model)
+                }
+            })),
+        )
+            .into_response();
+    }
 
     let session_key = auth_key_name.as_ref();
     let start_time = Instant::now();
@@ -527,6 +545,9 @@ pub(crate) async fn handle_anthropic_messages(
         "gemini-4-argon-low" => "gemini-4-argon-low",
         m if m.contains("argon") => "gemini-4-argon-high",
 
+        "gpt-oss-120b-medium" => "gpt-oss-120b-medium",
+        m if m.contains("gpt-oss") => "gpt-oss-120b-medium",
+
         other => other,
     };
 
@@ -565,7 +586,19 @@ pub(crate) async fn handle_anthropic_messages(
     let eligible: Vec<_> = accounts
         .into_iter()
         .filter(|a| {
-            a.enabled && a.cooldown_until <= now && a.claude_remaining >= cfg.quota.min_fraction
+            if !a.enabled || a.cooldown_until > now {
+                return false;
+            }
+            if is_argon {
+                let rem = crate::api_accounts::get_account_argon_remaining(a);
+                return rem >= cfg.quota.min_fraction;
+            }
+            let fraction = if is_claude {
+                a.claude_remaining
+            } else {
+                a.gemini_remaining
+            };
+            fraction >= cfg.quota.min_fraction
         })
         .collect();
 
@@ -590,6 +623,21 @@ pub(crate) async fn handle_anthropic_messages(
 
     let mut ranked = eligible;
     ranked.sort_by(|a, b| {
+        let rem_a = if is_argon {
+            crate::api_accounts::get_account_argon_remaining(a)
+        } else if is_claude {
+            a.claude_remaining
+        } else {
+            a.gemini_remaining
+        };
+        let rem_b = if is_argon {
+            crate::api_accounts::get_account_argon_remaining(b)
+        } else if is_claude {
+            b.claude_remaining
+        } else {
+            b.gemini_remaining
+        };
+
         let mut h_a = Sha256::new();
         h_a.update(&affinity_hash);
         h_a.update(a.id.to_le_bytes());
@@ -600,7 +648,10 @@ pub(crate) async fn handle_anthropic_messages(
         h_b.update(b.id.to_le_bytes());
         let score_b = h_b.finalize();
 
-        score_b.cmp(&score_a)
+        let weight_a = (u64::from_be_bytes(score_a[0..8].try_into().unwrap_or([0u8; 8])) as f64 / u64::MAX as f64) * rem_a.sqrt();
+        let weight_b = (u64::from_be_bytes(score_b[0..8].try_into().unwrap_or([0u8; 8])) as f64 / u64::MAX as f64) * rem_b.sqrt();
+
+        weight_b.partial_cmp(&weight_a).unwrap_or(std::cmp::Ordering::Equal)
     });
 
     let chosen_acc = &ranked[0];

@@ -25,30 +25,38 @@ pub struct AccountResponse {
     pub gemini_weekly_reset: Option<String>,
     pub claude_5h_reset: Option<String>,
     pub claude_weekly_reset: Option<String>,
+    pub argon_weekly: Option<f64>,
+    pub argon_weekly_reset: Option<String>,
+    pub has_argon: bool,
+}
+
+#[derive(Default)]
+pub struct ParsedWindows {
+    pub g_5h: f64,
+    pub g_wk: f64,
+    pub c_5h: f64,
+    pub c_wk: f64,
+    pub g_5h_reset: Option<String>,
+    pub g_wk_reset: Option<String>,
+    pub c_5h_reset: Option<String>,
+    pub c_wk_reset: Option<String>,
+    pub argon_wk: Option<f64>,
+    pub argon_wk_reset: Option<String>,
+    pub has_argon: bool,
 }
 
 pub(crate) fn parse_account_windows(
     raw_json: Option<&str>,
     gemini_rem: f64,
     claude_rem: f64,
-) -> (
-    f64,
-    f64,
-    f64,
-    f64,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-) {
-    let mut g_5h = gemini_rem;
-    let mut g_wk = gemini_rem;
-    let mut c_5h = claude_rem;
-    let mut c_wk = claude_rem;
-    let mut g_5h_reset = None;
-    let mut g_wk_reset = None;
-    let mut c_5h_reset = None;
-    let mut c_wk_reset = None;
+) -> ParsedWindows {
+    let mut p = ParsedWindows {
+        g_5h: gemini_rem,
+        g_wk: gemini_rem,
+        c_5h: claude_rem,
+        c_wk: claude_rem,
+        ..Default::default()
+    };
 
     if let Some(json_str) = raw_json {
         if let Ok(v) = serde_json::from_str::<serde_json::Value>(json_str) {
@@ -60,8 +68,9 @@ pub(crate) fn parse_account_windows(
                         .and_then(|d| d.as_str())
                         .unwrap_or("")
                         .to_lowercase();
-                    let is_gemini = desc.contains("gemini");
-                    let is_claude = desc.contains("claude") || desc.contains("3p");
+                    let is_argon_group = desc.contains("argon");
+                    let is_gemini_group = desc.contains("gemini") && !is_argon_group;
+                    let is_claude_group = desc.contains("claude") || desc.contains("3p") || desc.contains("gpt");
 
                     if let Some(buckets) = grp.get("buckets").and_then(|b| b.as_array()) {
                         for b in buckets {
@@ -80,21 +89,25 @@ pub(crate) fn parse_account_windows(
                                 .and_then(|rt| rt.as_str())
                                 .map(|s| s.to_string());
 
-                            if is_gemini || b_id.contains("gemini") {
+                            if is_argon_group || b_id.contains("argon") {
+                                p.has_argon = true;
+                                p.argon_wk = Some(rem);
+                                p.argon_wk_reset = reset;
+                            } else if is_gemini_group || (b_id.contains("gemini") && !b_id.contains("argon")) {
                                 if window == "5h" || b_id.contains("5h") {
-                                    g_5h = rem;
-                                    g_5h_reset = reset;
+                                    p.g_5h = rem;
+                                    p.g_5h_reset = reset;
                                 } else if window == "weekly" || b_id.contains("weekly") {
-                                    g_wk = rem;
-                                    g_wk_reset = reset;
+                                    p.g_wk = rem;
+                                    p.g_wk_reset = reset;
                                 }
-                            } else if is_claude || b_id.contains("3p") || b_id.contains("claude") {
+                            } else if is_claude_group || b_id.contains("3p") || b_id.contains("claude") {
                                 if window == "5h" || b_id.contains("5h") {
-                                    c_5h = rem;
-                                    c_5h_reset = reset;
+                                    p.c_5h = rem;
+                                    p.c_5h_reset = reset;
                                 } else if window == "weekly" || b_id.contains("weekly") {
-                                    c_wk = rem;
-                                    c_wk_reset = reset;
+                                    p.c_wk = rem;
+                                    p.c_wk_reset = reset;
                                 }
                             }
                         }
@@ -104,9 +117,17 @@ pub(crate) fn parse_account_windows(
         }
     }
 
-    (
-        g_5h, g_wk, c_5h, c_wk, g_5h_reset, g_wk_reset, c_5h_reset, c_wk_reset,
-    )
+    p
+}
+
+pub fn get_account_argon_remaining(a: &crate::types::Account) -> f64 {
+    if let Some(ref qj) = a.quota_json {
+        let p = parse_account_windows(Some(qj), a.gemini_remaining, a.claude_remaining);
+        if p.has_argon {
+            return p.argon_wk.unwrap_or(0.0);
+        }
+    }
+    0.0
 }
 
 #[derive(Deserialize)]
@@ -121,12 +142,11 @@ pub(crate) async fn handle_get_accounts(State(state): State<AppState>) -> impl I
             let res: Vec<AccountResponse> = accounts
                 .into_iter()
                 .map(|a| {
-                    let (g_5h, g_wk, c_5h, c_wk, g_5h_rst, g_wk_rst, c_5h_rst, c_wk_rst) =
-                        parse_account_windows(
-                            a.quota_json.as_deref(),
-                            a.gemini_remaining,
-                            a.claude_remaining,
-                        );
+                    let p = parse_account_windows(
+                        a.quota_json.as_deref(),
+                        a.gemini_remaining,
+                        a.claude_remaining,
+                    );
                     AccountResponse {
                         id: a.id,
                         email: a.email,
@@ -136,14 +156,17 @@ pub(crate) async fn handle_get_accounts(State(state): State<AppState>) -> impl I
                         is_banned: a.is_banned,
                         ban_reason: a.ban_reason,
                         last_quota_check: a.last_quota_check,
-                        gemini_5h: g_5h,
-                        gemini_weekly: g_wk,
-                        claude_5h: c_5h,
-                        claude_weekly: c_wk,
-                        gemini_5h_reset: g_5h_rst,
-                        gemini_weekly_reset: g_wk_rst,
-                        claude_5h_reset: c_5h_rst,
-                        claude_weekly_reset: c_wk_rst,
+                        gemini_5h: p.g_5h,
+                        gemini_weekly: p.g_wk,
+                        claude_5h: p.c_5h,
+                        claude_weekly: p.c_wk,
+                        gemini_5h_reset: p.g_5h_reset,
+                        gemini_weekly_reset: p.g_wk_reset,
+                        claude_5h_reset: p.c_5h_reset,
+                        claude_weekly_reset: p.c_wk_reset,
+                        argon_weekly: p.argon_wk,
+                        argon_weekly_reset: p.argon_wk_reset,
+                        has_argon: p.has_argon,
                     }
                 })
                 .collect();

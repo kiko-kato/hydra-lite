@@ -287,6 +287,200 @@
       background: linear-gradient(135deg, #9066ff, #7579f3);
     }
 
+    /* Account Cards Grid */
+    .account-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .account-card {
+      background: linear-gradient(135deg, rgba(22, 19, 38, 0.85) 0%, rgba(13, 11, 23, 0.95) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .account-card:hover {
+      border-color: rgba(124, 77, 255, 0.4);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(124, 77, 255, 0.1);
+      transform: translateY(-1px);
+    }
+    .account-card.card-active {
+      border-color: rgba(124, 77, 255, 0.35);
+    }
+    .account-card.card-banned {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(185, 28, 28, 0.05) 100%) !important;
+      border: 1px solid rgba(239, 68, 68, 0.55) !important;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.18) !important;
+    }
+    .account-card.card-disabled {
+      opacity: 0.65;
+    }
+    .account-card.probing-pulse {
+      animation: pulseCard 1s infinite alternate;
+    }
+    @keyframes pulseCard {
+      0% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+    .account-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .account-card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .account-card-id-email {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .account-id-chip {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--accent-light);
+      background: rgba(124, 77, 255, 0.15);
+      border: 1px solid rgba(124, 77, 255, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 2px 6px;
+      flex-shrink: 0;
+    }
+    .account-email-text {
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .account-card-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .btn-probe-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      border-radius: var(--radius-sm);
+      padding: 5px 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-probe-card:hover {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border-color: var(--accent-light);
+    }
+    .btn-probe-card.spinning svg, .spinner {
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    .quota-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .quota-group {
+      background: rgba(10, 8, 20, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .quota-group-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .quota-group-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .quota-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .quota-row-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .fill-amber {
+      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    }
+    .fill-argon {
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+    .argon-empty-pill {
+      font-size: 10px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px dashed rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      text-align: center;
+    }
+    .account-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-muted);
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .prober-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .prober-status-healthy { color: var(--success); }
+    .prober-status-banned { color: #f87171; }
+    .prober-status-error { color: #fbbf24; }
+    .dot-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-indicator.green {
+      background: #10b981;
+      box-shadow: 0 0 6px #10b981;
+    }
+
+
     /* Switch */
     .switch { position: relative; display: inline-block; width: 38px; height: 20px; }
     .switch input { opacity: 0; width: 0; height: 0; }
@@ -470,15 +664,15 @@
       </div>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-link active" onclick="switchMainTab('overview', 'Обзор и квоты')">
+      <button class="nav-link active" data-tab="overview" onclick="switchMainTab('overview', 'Обзор и квоты')">
         <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
         <span>Обзор и квоты</span>
       </button>
-      <button class="nav-link" onclick="switchMainTab('clients', 'Клиенты и ключи')">
+      <button class="nav-link" data-tab="clients" onclick="switchMainTab('clients', 'Клиенты и ключи')">
         <svg viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6zM12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65z"/></svg>
         <span>Клиенты и ключи</span>
       </button>
-      <button class="nav-link" onclick="switchMainTab('events', 'События и Антидот')">
+      <button class="nav-link" data-tab="events" onclick="switchMainTab('events', 'События и Антидот')">
         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
         <span>События и Антидот</span>
       </button>
@@ -608,35 +802,32 @@
             <div class="banned-alert-desc">Google заблокировал доступ (TOS / Suspended / invalid_grant). Hydra-Lite непрерывно опрашивает их каждые 3 мин в ожидании разбана по апелляциям.</div>
           </div>
           <div class="banned-alert-actions">
-            <button class="btn-action btn-probe-header" id="btnProbeAll" onclick="probeAllAccounts()">
-              <span id="probeBtnText">⚡ Дёрнуть все аккаунты</span>
+            <button class="btn-action btn-probe-header" onclick="probeAllAccounts()" title="Принудительно опросить все аккаунты прямо сейчас">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span>Дёрнуть все аккаунты</span>
             </button>
           </div>
         </div>
 
-        <!-- Сетка аккаунтов пула -->
+        <!-- Сетка карточек аккаунтов пула -->
         <div class="glass-table-container">
           <div class="glass-table-header">
-            <div class="glass-table-title">Состояние пула аккаунтов Google (5-часовые и недельные окна)</div>
+            <div class="glass-table-title">Состояние пула аккаунтов Google (Карточки квот и доступности)</div>
             <div style="display:flex; gap:8px;">
-              <button class="btn-action btn-probe-header" onclick="probeAllAccounts()" title="Принудительно дёрнуть все аккаунты Google прямо сейчас">⚡ Дёрнуть аккаунты</button>
-              <button class="btn-action" onclick="loadQuotas()">Обновить</button>
+              <button class="btn-action btn-probe-header" id="btnProbeAllAccounts" onclick="probeAllAccounts()" title="Принудительно опросить все аккаунты Google прямо сейчас">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span id="probeBtnText">Дёрнуть аккаунты</span>
+              </button>
+              <button class="btn-action" onclick="loadQuotas()" title="Обновить состояние квот">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Обновить</span>
+              </button>
             </div>
           </div>
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Email аккаунта</th>
-                <th>5-часовая квота & Сброс</th>
-                <th>Недельная квота & Дата сброса</th>
-                <th>Статус</th>
-              </tr>
-            </thead>
-            <tbody id="accountsTableBody">
-              <tr><td colspan="5" style="text-align:center;">Загрузка пула...</td></tr>
-            </tbody>
-          </table>
+          
+          <div id="accountsCardsGrid" class="account-cards-grid">
+            <div style="grid-column: 1 / -1; text-align:center; padding: 30px; color: var(--text-muted);">Загрузка пула аккаунтов...</div>
+          </div>
         </div>
       </section>
 
@@ -645,8 +836,8 @@
       =========================================== -->
       <section id="pane-clients" class="tab-pane">
         <div class="subtabs-pills">
-          <button class="subtab-btn active" onclick="switchClientSubTab('keys')">Реестр API ключей</button>
-          <button class="subtab-btn" onclick="switchClientSubTab('consumers')">Рейтинг потребления</button>
+          <button class="subtab-btn active" data-subtab="keys" onclick="switchClientSubTab('keys')">Реестр API ключей</button>
+          <button class="subtab-btn" data-subtab="consumers" onclick="switchClientSubTab('consumers')">Рейтинг потребления</button>
         </div>
 
         <!-- Sub 1: Ключи (по умолчанию) -->
@@ -712,10 +903,10 @@
       <section id="pane-events" class="tab-pane">
         <!-- Sub-tabs pills -->
         <div class="subtabs-pills">
-          <button class="subtab-btn active" onclick="switchEventSubTab('requests')">Логи запросов</button>
-          <button class="subtab-btn" onclick="switchEventSubTab('errors')">Логи ошибок</button>
-          <button class="subtab-btn" onclick="switchEventSubTab('antidote')">Антидот (База Знаний)</button>
-          <button class="subtab-btn" onclick="switchEventSubTab('models')">Активные модели</button>
+          <button class="subtab-btn active" data-subtab="requests" onclick="switchEventSubTab('requests')">Логи запросов</button>
+          <button class="subtab-btn" data-subtab="errors" onclick="switchEventSubTab('errors')">Логи ошибок</button>
+          <button class="subtab-btn" data-subtab="antidote" onclick="switchEventSubTab('antidote')">Антидот (База Знаний)</button>
+          <button class="subtab-btn" data-subtab="models" onclick="switchEventSubTab('models')">Активные модели</button>
         </div>
 
         <!-- Sub 1: Запросы -->
@@ -837,7 +1028,7 @@
     <div class="modal-box">
       <div class="modal-head">
         <span>Новый API ключ</span>
-        <button onclick="closeNewKeyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+        <button onclick="closeNewKeyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       
       <div class="modal-field">
@@ -905,7 +1096,7 @@
     <div class="modal-box">
       <div class="modal-head">
         <span>Настройки API ключа</span>
-        <button onclick="closeEditKeyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+        <button onclick="closeEditKeyModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       
       <input type="hidden" id="editKeyId">
@@ -994,7 +1185,7 @@
     <div class="modal-box" style="max-width:600px;">
       <div class="modal-head">
         <span>Добавить решение в Антидот L1</span>
-        <button onclick="closeAddAntidoteModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:20px;">✕</button>
+        <button onclick="closeAddAntidoteModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
       </div>
       
       <div class="modal-field">
@@ -1177,49 +1368,48 @@
       if (full) copyToClipboard(full);
     }
 
-    function switchMainTab(tabId, title) {
-      activeMainTab = tabId;
-      document.querySelectorAll('.sidebar .nav-link').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.content-area .tab-pane').forEach(p => p.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-      document.getElementById('pane-' + tabId).classList.add('active');
-      document.getElementById('activeSectionTitle').innerText = title;
-      
-      if (tabId === 'overview') { loadQuotas(); loadMyLimits(); }
-      if (tabId === 'clients') { loadKeys(); }
-      if (tabId === 'events') { loadRequests(); }
+    // Universal UTC+5 Formatter
+    function formatUtc5DateTime(dateInput) {
+      if (!dateInput) return 'нет данных';
+      const d = (typeof dateInput === 'number') ? new Date(dateInput * 1000) : new Date(dateInput);
+      if (isNaN(d.getTime())) return 'нет данных';
+
+      const utcMs = d.getTime() + (d.getTimezoneOffset() * 60000);
+      const targetMs = utcMs + (5 * 3600000);
+      const target = new Date(targetMs);
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const day = pad(target.getDate());
+      const month = pad(target.getMonth() + 1);
+      const hours = pad(target.getHours());
+      const mins = pad(target.getMinutes());
+      const secs = pad(target.getSeconds());
+      return `${day}.${month} ${hours}:${mins}:${secs} (UTC+5)`;
     }
 
-    function switchClientSubTab(subId) {
-      document.querySelectorAll('#pane-clients .subtab-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('subpane-keys').style.display = (subId === 'keys') ? 'block' : 'none';
-      document.getElementById('subpane-consumers').style.display = (subId === 'consumers') ? 'block' : 'none';
-      if (subId === 'keys') loadKeys();
-      if (subId === 'consumers') loadTopConsumers();
-    }
+    function formatUtc5DateShort(dateInput) {
+      if (!dateInput) return '';
+      const d = (typeof dateInput === 'number') ? new Date(dateInput * 1000) : new Date(dateInput);
+      if (isNaN(d.getTime())) return '';
 
-    function switchEventSubTab(subId) {
-      document.querySelectorAll('#pane-events .subtab-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      ['requests', 'errors', 'antidote', 'models'].forEach(id => {
-        document.getElementById('subpane-' + id).style.display = (id === subId) ? 'block' : 'none';
-      });
-      if (subId === 'requests') loadRequests();
-      if (subId === 'errors') loadErrors();
-      if (subId === 'antidote') loadAntidote();
-      if (subId === 'models') loadModels();
-    }
+      const utcMs = d.getTime() + (d.getTimezoneOffset() * 60000);
+      const targetMs = utcMs + (5 * 3600000);
+      const target = new Date(targetMs);
 
-    function logout() {
-      document.cookie = 'hydra_admin_auth=; path=/; max-age=0;';
-      localStorage.removeItem('hydra_admin_auth');
-      window.location.reload();
+      const months = ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'];
+      const day = target.getDate();
+      const mStr = months[target.getMonth()];
+      const pad = (n) => String(n).padStart(2, '0');
+      const hours = pad(target.getHours());
+      const mins = pad(target.getMinutes());
+      return `${day} ${mStr}, ${hours}:${mins} (UTC+5)`;
     }
 
     function formatTimeRemaining(isoDateStr) {
       if (!isoDateStr) return 'нет данных';
-      const diffMs = new Date(isoDateStr).getTime() - Date.now();
+      const targetMs = new Date(isoDateStr).getTime();
+      if (isNaN(targetMs)) return 'нет данных';
+      const diffMs = targetMs - Date.now();
       if (diffMs <= 0) return 'сброс прямо сейчас';
       const diffMins = Math.floor(diffMs / (1000 * 60));
       const hours = Math.floor(diffMins / 60);
@@ -1232,12 +1422,142 @@
       return `через ${mins} мин`;
     }
 
-    function formatDateShort(isoDateStr) {
-      if (!isoDateStr) return '';
-      return new Date(isoDateStr).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    function formatCountdownWithUtc5Date(isoDateStr) {
+      if (!isoDateStr) return 'нет данных';
+      const dateStr = formatUtc5DateShort(isoDateStr);
+      const countdown = formatTimeRemaining(isoDateStr);
+      return `${dateStr} (${countdown})`;
     }
 
-    // 1. Квоты и KPI
+    // URL Navigation & Hash Routing
+    let activeClientSubTab = 'keys';
+    let activeEventSubTab = 'requests';
+
+    function updateUrlHash() {
+      let hash = '#overview';
+      if (activeMainTab === 'clients') {
+        hash = '#clients/' + activeClientSubTab;
+      } else if (activeMainTab === 'events') {
+        hash = '#events/' + activeEventSubTab;
+      }
+      if (window.location.hash !== hash) {
+        history.replaceState(null, '', hash);
+      }
+    }
+
+    function switchMainTab(tabId, title, skipHash) {
+      activeMainTab = tabId;
+      document.querySelectorAll('.sidebar .nav-link').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
+      });
+      document.querySelectorAll('.content-area .tab-pane').forEach(p => p.classList.remove('active'));
+      
+      const pane = document.getElementById('pane-' + tabId);
+      if (pane) pane.classList.add('active');
+
+      const titleElem = document.getElementById('activeSectionTitle');
+      if (titleElem) {
+        const titles = {
+          'overview': 'Обзор и квоты',
+          'clients': 'Клиенты и ключи',
+          'events': 'События и Антидот'
+        };
+        titleElem.innerText = title || titles[tabId] || 'Панель управления';
+      }
+
+      if (tabId === 'overview') {
+        loadQuotas();
+        loadMyLimits();
+      } else if (tabId === 'clients') {
+        switchClientSubTab(activeClientSubTab, true);
+      } else if (tabId === 'events') {
+        switchEventSubTab(activeEventSubTab, true);
+      }
+
+      if (!skipHash) {
+        updateUrlHash();
+      }
+    }
+
+    function switchClientSubTab(subId, skipHash) {
+      activeClientSubTab = subId;
+      document.querySelectorAll('#pane-clients .subtab-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-subtab') === subId);
+      });
+      
+      const kPane = document.getElementById('subpane-keys');
+      const cPane = document.getElementById('subpane-consumers');
+      if (kPane) kPane.style.display = (subId === 'keys') ? 'block' : 'none';
+      if (cPane) cPane.style.display = (subId === 'consumers') ? 'block' : 'none';
+
+      if (subId === 'keys') loadKeys();
+      if (subId === 'consumers') loadTopConsumers();
+
+      if (!skipHash) {
+        updateUrlHash();
+      }
+    }
+
+    function switchEventSubTab(subId, skipHash) {
+      activeEventSubTab = subId;
+      document.querySelectorAll('#pane-events .subtab-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-subtab') === subId);
+      });
+
+      ['requests', 'errors', 'antidote', 'models'].forEach(id => {
+        const el = document.getElementById('subpane-' + id);
+        if (el) el.style.display = (id === subId) ? 'block' : 'none';
+      });
+
+      if (subId === 'requests') loadRequests();
+      if (subId === 'errors') loadErrors();
+      if (subId === 'antidote') loadAntidote();
+      if (subId === 'models') loadModels();
+
+      if (!skipHash) {
+        updateUrlHash();
+      }
+    }
+
+    function applyHashRoute() {
+      const rawHash = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
+      if (!rawHash || rawHash === 'overview' || rawHash === 'accounts' || rawHash === 'dashboard') {
+        switchMainTab('overview', 'Обзор и квоты', true);
+        return;
+      }
+
+      const parts = rawHash.split('/');
+      const main = parts[0];
+      const sub = parts[1] || '';
+
+      if (main === 'clients' || main === 'keys' || main === 'consumers' || main === 'rating') {
+        activeClientSubTab = (sub === 'consumers' || main === 'consumers' || main === 'rating') ? 'consumers' : 'keys';
+        switchMainTab('clients', 'Клиенты и ключи', true);
+        switchClientSubTab(activeClientSubTab, true);
+      } else if (main === 'events' || main === 'requests' || main === 'logs' || main === 'errors' || main === 'antidote' || main === 'models') {
+        if (main === 'events') {
+          activeEventSubTab = ['requests', 'errors', 'antidote', 'models'].includes(sub) ? sub : 'requests';
+        } else if (main === 'logs') {
+          activeEventSubTab = 'requests';
+        } else {
+          activeEventSubTab = main;
+        }
+        switchMainTab('events', 'События и Антидот', true);
+        switchEventSubTab(activeEventSubTab, true);
+      } else {
+        switchMainTab('overview', 'Обзор и квоты', true);
+      }
+    }
+
+    window.addEventListener('hashchange', applyHashRoute);
+
+    function logout() {
+      document.cookie = 'hydra_admin_auth=; path=/; max-age=0;';
+      localStorage.removeItem('hydra_admin_auth');
+      window.location.reload();
+    }
+
+    // 1. Квоты и Карточки Аккаунтов
     async function loadQuotas() {
       try {
         const [accRes, sumRes] = await Promise.all([
@@ -1266,19 +1586,23 @@
         const headroomPct = Math.round((1.0 / avgUsed) * 100);
 
         const hrElem = document.getElementById('statPoolHeadroom');
-        hrElem.innerText = headroomPct + '%';
-        if (headroomPct >= 200) hrElem.style.color = '#7c4dff';
-        else if (headroomPct >= 130) hrElem.style.color = '#10b981';
-        else hrElem.style.color = '#f59e0b';
-
-        const activeElem = document.getElementById('statActiveAccounts');
-        if (bannedCount > 0) {
-          activeElem.innerHTML = `Акк: <b>${activeCount}</b> / ${accounts.length} <span style="color:#ef4444; font-weight:700;">(⛔ ${bannedCount} в бане)</span>`;
-        } else {
-          activeElem.innerText = `Акк: ${activeCount} / ${accounts.length}`;
+        if (hrElem) {
+          hrElem.innerText = headroomPct + '%';
+          if (headroomPct >= 200) hrElem.style.color = '#7c4dff';
+          else if (headroomPct >= 130) hrElem.style.color = '#10b981';
+          else hrElem.style.color = '#f59e0b';
         }
 
-        // Обновление плашки бана над таблицей
+        const activeElem = document.getElementById('statActiveAccounts');
+        if (activeElem) {
+          if (bannedCount > 0) {
+            activeElem.innerHTML = `Акк: <b>${activeCount}</b> / ${accounts.length} <span style="color:#ef4444; font-weight:700; display:inline-flex; align-items:center; gap:3px;">(<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> ${bannedCount} в бане)</span>`;
+          } else {
+            activeElem.innerText = `Акк: ${activeCount} / ${accounts.length}`;
+          }
+        }
+
+        // Обновление плашки бана над сеткой
         const alertBanner = document.getElementById('bannedAccountsAlert');
         if (alertBanner) {
           if (bannedCount > 0) {
@@ -1316,8 +1640,14 @@
 
         loadSparkline();
 
-        const tbody = document.getElementById('accountsTableBody');
-        tbody.innerHTML = '';
+        const cardsGrid = document.getElementById('accountsCardsGrid');
+        if (!cardsGrid) return;
+        cardsGrid.innerHTML = '';
+        if (!accounts.length) {
+          cardsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding: 30px; color: var(--text-muted);">Аккаунты не добавлены в пул</div>';
+          return;
+        }
+
         accounts.forEach(a => {
           const isBanned = a.is_banned || (!a.enabled && a.ban_reason);
           const g5h = a.gemini_5h !== undefined ? a.gemini_5h : a.gemini_remaining;
@@ -1325,85 +1655,240 @@
           const gWk = a.gemini_weekly !== undefined ? a.gemini_weekly : a.gemini_remaining;
           const gWkPct = Math.round((gWk || 0) * 100);
 
-          const reset5hText = formatTimeRemaining(a.gemini_5h_reset);
-          const wkDateStr = formatDateShort(a.gemini_weekly_reset);
-          const resetWkText = a.gemini_weekly_reset ? `${wkDateStr} (${formatTimeRemaining(a.gemini_weekly_reset)})` : 'нет данных';
+          const c5h = a.three_party_5h !== undefined ? a.three_party_5h : (a.claude_5h !== undefined ? a.claude_5h : a.claude_remaining);
+          const c5hPct = Math.round((c5h || 0) * 100);
+          const cWk = a.three_party_weekly !== undefined ? a.three_party_weekly : (a.claude_weekly !== undefined ? a.claude_weekly : a.claude_remaining);
+          const cWkPct = Math.round((cWk || 0) * 100);
 
-          let statusHtml = '';
-          if (isBanned) {
-            statusHtml = `
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span class="badge badge-banned" title="${a.ban_reason || 'Google TOS Violation'}">⛔ В БАНЕ</span>
-                <button class="btn-probe-single" onclick="probeSingleAccount(${a.id})" title="Дёрнуть этот аккаунт прямо сейчас">🔄 Дёрнуть</button>
+          const reset5hText = formatTimeRemaining(a.gemini_5h_reset);
+          const resetWkText = a.gemini_weekly_reset ? formatCountdownWithUtc5Date(a.gemini_weekly_reset) : 'нет данных';
+
+          const resetC5hText = formatTimeRemaining(a.claude_5h_reset || a.three_party_5h_reset);
+          const resetCWkText = (a.claude_weekly_reset || a.three_party_weekly_reset) ? formatCountdownWithUtc5Date(a.claude_weekly_reset || a.three_party_weekly_reset) : 'нет данных';
+
+          let argonBlock = '';
+          if (a.has_argon && a.argon_weekly !== undefined && a.argon_weekly !== null) {
+            const argonPct = Math.round(a.argon_weekly * 100);
+            const resetArgonText = a.argon_weekly_reset ? formatCountdownWithUtc5Date(a.argon_weekly_reset) : 'нет данных';
+            argonBlock = `
+              <div class="quota-group">
+                <div class="quota-group-header">
+                  <div class="quota-group-title" style="color:#34d399;">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                    <span>Argon Weekly (Gemini 4 WTU)</span>
+                  </div>
+                  <span class="mono" style="font-weight:700; color:#34d399;">${argonPct}%</span>
+                </div>
+                <div class="quota-row">
+                  <div class="quota-row-meta">
+                    <span style="color:var(--text-secondary); font-size:10px;">Сброс (UTC+5):</span>
+                    <span style="color:#cbd5e1; font-size:10px;">${resetArgonText}</span>
+                  </div>
+                  <div class="progress-bar-bg"><div class="progress-bar-fill fill-argon" style="width:${argonPct}%"></div></div>
+                </div>
               </div>
             `;
           } else {
-            statusHtml = `
-              <div style="display:flex; align-items:center; gap:8px;">
-                <label class="switch">
-                  <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
-                  <span class="slider"></span>
-                </label>
-                <button class="btn-probe-single" onclick="probeSingleAccount(${a.id})" title="Проверить статус">🔄</button>
+            argonBlock = `
+              <div class="argon-empty-pill">
+                <span>План без Argon WTU (только Flash & 3Party)</span>
               </div>
             `;
           }
 
-          const rowClass = isBanned ? 'row-banned' : '';
-          const emailBadge = isBanned ? `
-            <div class="ban-pill-badge" title="${a.ban_reason || 'TOS Violation'}">
+          let cardStatusBadge = '';
+          if (isBanned) {
+            cardStatusBadge = `
+              <span class="badge badge-banned" title="${a.ban_reason || 'Google TOS Violation'}">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                В БАНЕ
+              </span>
+            `;
+          } else if (a.enabled) {
+            cardStatusBadge = `
+              <span class="badge badge-success">
+                <span class="dot-indicator green"></span>
+                АКТИВЕН
+              </span>
+            `;
+          } else {
+            cardStatusBadge = `
+              <span class="badge" style="background:rgba(255,255,255,0.06); color:var(--text-muted);">
+                ОТКЛЮЧЕН
+              </span>
+            `;
+          }
+
+          let cardClass = 'account-card';
+          if (isBanned) cardClass += ' card-banned';
+          else if (a.enabled) cardClass += ' card-active';
+          else cardClass += ' card-disabled';
+
+          const banReasonNotice = isBanned ? `
+            <div class="ban-pill-badge" title="${a.ban_reason || 'Google TOS Violation'}">
               <span class="ban-pill-dot"></span>
-              <span>⛔ В БАНЕ${a.ban_reason ? ': ' + a.ban_reason.substring(0, 32) + '...' : ''}</span>
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">${a.ban_reason || 'TOS Violation'}</span>
             </div>
           ` : '';
 
-          tbody.innerHTML += `
-            <tr class="${rowClass}">
-              <td class="mono">#${a.id}</td>
-              <td class="mono" style="font-weight:700; color:#fff;">
-                <div>${a.email || 'anon'}</div>
-                ${emailBadge}
-              </td>
-              <td style="width: 260px;">
-                <div style="display:flex; justify-content:space-between; font-size:11px;">
-                  <span>Остаток: <b>${g5hPct}%</b></span>
-                  <span style="color:var(--text-secondary);">${reset5hText}</span>
+          const checkTimeStr = a.last_quota_check ? formatUtc5DateShort(a.last_quota_check) : 'еще не опрашивался';
+
+          cardsGrid.innerHTML += `
+            <div id="accCard_${a.id}" class="${cardClass}">
+              <div class="account-card-header">
+                <div class="account-card-meta">
+                  <div class="account-card-id-email">
+                    <span class="account-id-chip">#${a.id}</span>
+                    <span class="account-email-text" title="${a.email || 'anon'}">${a.email || 'anon'}</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:6px; margin-top:2px;">
+                    ${cardStatusBadge}
+                    ${banReasonNotice}
+                  </div>
                 </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill fill-5h" style="width:${g5hPct}%"></div></div>
-              </td>
-              <td style="width: 260px;">
-                <div style="display:flex; justify-content:space-between; font-size:11px;">
-                  <span>Остаток: <b>${gWkPct}%</b></span>
-                  <span style="color:var(--text-secondary);">${resetWkText}</span>
+                <div class="account-card-controls">
+                  <label class="switch" title="${a.enabled ? 'Отключить аккаунт из пула' : 'Включить аккаунт в пул'}">
+                    <input type="checkbox" ${a.enabled ? 'checked' : ''} onchange="toggleAccount(${a.id})">
+                    <span class="slider"></span>
+                  </label>
+                  <button class="btn-probe-card" id="btnProbeAcc${a.id}" onclick="probeSingleAccount(${a.id}, this)" title="Опросить статус этого аккаунта прямо сейчас">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  </button>
                 </div>
-                <div class="progress-bar-bg"><div class="progress-bar-fill fill-weekly" style="width:${gWkPct}%"></div></div>
-              </td>
-              <td>${statusHtml}</td>
-            </tr>
+              </div>
+
+              <div class="quota-section">
+                <!-- 1. Gemini Models -->
+                <div class="quota-group">
+                  <div class="quota-group-header">
+                    <div class="quota-group-title" style="color:var(--accent-light);">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                      <span>Gemini Models</span>
+                    </div>
+                    <span class="mono" style="font-weight:700; color:var(--accent-light);">5ч: ${g5hPct}% • 1н: ${gWkPct}%</span>
+                  </div>
+                  
+                  <div class="quota-row">
+                    <div class="quota-row-meta">
+                      <span style="color:var(--text-secondary); font-size:10px;">5-часовое окно: <b>${g5hPct}%</b></span>
+                      <span style="color:#cbd5e1; font-size:10px;">${reset5hText}</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-5h" style="width:${g5hPct}%"></div></div>
+                  </div>
+
+                  <div class="quota-row" style="margin-top:2px;">
+                    <div class="quota-row-meta">
+                      <span style="color:var(--text-secondary); font-size:10px;">Недельное (UTC+5): <b>${gWkPct}%</b></span>
+                      <span style="color:#cbd5e1; font-size:10px;">${resetWkText}</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-weekly" style="width:${gWkPct}%"></div></div>
+                  </div>
+                </div>
+
+                <!-- 2. 3Party Models (Claude & GPT) -->
+                <div class="quota-group">
+                  <div class="quota-group-header">
+                    <div class="quota-group-title" style="color:#fbbf24;">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                      <span>3Party (Claude & GPT)</span>
+                    </div>
+                    <span class="mono" style="font-weight:700; color:#fbbf24;">5ч: ${c5hPct}% • 1н: ${cWkPct}%</span>
+                  </div>
+
+                  <div class="quota-row">
+                    <div class="quota-row-meta">
+                      <span style="color:var(--text-secondary); font-size:10px;">5-часовое окно: <b>${c5hPct}%</b></span>
+                      <span style="color:#cbd5e1; font-size:10px;">${resetC5hText}</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-amber" style="width:${c5hPct}%"></div></div>
+                  </div>
+
+                  <div class="quota-row" style="margin-top:2px;">
+                    <div class="quota-row-meta">
+                      <span style="color:var(--text-secondary); font-size:10px;">Недельное (UTC+5): <b>${cWkPct}%</b></span>
+                      <span style="color:#cbd5e1; font-size:10px;">${resetCWkText}</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill fill-amber" style="width:${cWkPct}%"></div></div>
+                  </div>
+                </div>
+
+                <!-- 3. Argon Weekly -->
+                ${argonBlock}
+              </div>
+
+              <div class="account-card-footer">
+                <span title="Время последней проверки квоты">Проверен: ${checkTimeStr}</span>
+                ${isBanned 
+                  ? `<span class="prober-status-badge prober-status-banned" title="${a.ban_reason || 'Banned'}"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Заблокирован</span>`
+                  : `<span class="prober-status-badge prober-status-healthy"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Доступен</span>`
+                }
+              </div>
+            </div>
           `;
         });
       } catch (e) { console.error(e); }
     }
 
     async function probeAllAccounts() {
-      const btn = document.getElementById('probeBtnText');
-      if (btn) btn.innerText = '⏳ Опрашиваю...';
+      const btn = document.getElementById('btnProbeAllAccounts');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.75';
+        btn.innerHTML = `<svg class="spinner" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg> <span>Опрашиваю пул...</span>`;
+      }
+      
+      document.querySelectorAll('.account-card').forEach(c => c.classList.add('probing-pulse'));
+
       try {
-        await fetch('/api/accounts/probe', { method: 'POST', headers: authHeaders() });
+        const res = await fetch('/api/accounts/probe', { method: 'POST', headers: authHeaders() });
+        const data = await res.json();
+        const results = data.results || [];
+        
+        let healthyCount = 0;
+        let bannedCount = 0;
+        let errorCount = 0;
+        results.forEach(r => {
+          if (r.is_banned || r.status === 'banned') bannedCount++;
+          else if (r.status === 'healthy' || r.status === 'unbanned') healthyCount++;
+          else errorCount++;
+        });
+
         await loadQuotas();
+
+        let summaryMsg = `Опрос завершен: ${healthyCount} активны`;
+        if (bannedCount > 0) summaryMsg += `, ${bannedCount} в бане!`;
+        if (errorCount > 0) summaryMsg += `, ${errorCount} ошибок`;
+        showToast(summaryMsg, bannedCount > 0 ? 'error' : 'success');
       } catch (e) {
         console.error(e);
+        showToast('Ошибка при опросе пула: ' + e.message, 'error');
       } finally {
-        if (btn) btn.innerText = '⚡ Дёрнуть все аккаунты';
+        document.querySelectorAll('.account-card').forEach(c => c.classList.remove('probing-pulse'));
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> <span>Дёрнуть аккаунты</span>`;
+        }
       }
     }
 
-    async function probeSingleAccount(id) {
+    async function probeSingleAccount(id, btnElem) {
+      if (btnElem) btnElem.classList.add('spinning');
       try {
-        await fetch(`/api/accounts/${id}/probe`, { method: 'POST', headers: authHeaders() });
+        const res = await fetch(`/api/accounts/${id}/probe`, { method: 'POST', headers: authHeaders() });
+        const resData = await res.json();
+        const r = resData.result || {};
         await loadQuotas();
+        if (r.is_banned || r.status === 'banned') {
+          showToast(`Аккаунт #${id} заблокирован: ${r.ban_reason || r.message}`, 'error');
+        } else {
+          showToast(`Аккаунт #${id} успешно проверен (${r.message || 'Активен'})`, 'success');
+        }
       } catch (e) {
         console.error(e);
+        showToast(`Ошибка проверки аккаунта #${id}: ` + e.message, 'error');
+      } finally {
+        if (btnElem) btnElem.classList.remove('spinning');
       }
     }
 
@@ -1444,7 +1929,7 @@
         document.getElementById('myBilledTokens').setAttribute('title', bTok.toLocaleString() + ' токенов');
 
         document.getElementById('myRpmLimit').innerText = k.rpm_limit > 0 ? k.rpm_limit + ' req/min' : 'Безлимит';
-        document.getElementById('myExpiresAt').innerText = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
+        document.getElementById('myExpiresAt').innerText = k.expires_at ? formatUtc5DateShort(k.expires_at) : 'Бессрочно';
 
         const isReq = k.limit_type === 'requests';
         const used = isReq ? (k.requests_count || 0) : (k.tokens_used || 0);
@@ -1528,7 +2013,7 @@
             ? (k.request_limit > 0 ? formatCompactNumber(k.request_limit) + ' req' : 'unlim')
             : (k.token_limit > 0 ? formatCompactNumber(k.token_limit) + ' tok' : 'unlim');
 
-          const expLabel = k.expires_at ? new Date(k.expires_at * 1000).toLocaleDateString() : 'Бессрочно';
+          const expLabel = k.expires_at ? formatUtc5DateShort(k.expires_at) : 'Бессрочно';
 
           let actionHtml = '';
           if (k.is_self) {
@@ -1590,7 +2075,7 @@
           const isOk = r.status_code >= 200 && r.status_code < 300;
           tbody.innerHTML += `
             <tr>
-              <td class="mono">${r.created_at || ''}</td>
+              <td class="mono" title="${r.timestamp_epoch ? formatUtc5DateTime(r.timestamp_epoch) : ''}">${r.created_at || (r.timestamp_epoch ? formatUtc5DateTime(r.timestamp_epoch) : '')}</td>
               <td class="mono" style="font-weight:700; color:#fff;">${r.model}</td>
               <td class="mono">${r.key_name || 'anon'}</td>
               <td><span class="badge ${isOk ? 'badge-success' : 'badge-danger'}">${r.status_code}</span></td>
@@ -1618,7 +2103,7 @@
         list.forEach(r => {
           tbody.innerHTML += `
             <tr>
-              <td class="mono">${r.created_at || ''}</td>
+              <td class="mono" title="${r.timestamp_epoch ? formatUtc5DateTime(r.timestamp_epoch) : ''}">${r.created_at || (r.timestamp_epoch ? formatUtc5DateTime(r.timestamp_epoch) : '')}</td>
               <td class="mono" style="color:#fff; font-weight:700;">${r.model}</td>
               <td class="mono">${r.key_name || 'anon'}</td>
               <td><span class="badge badge-danger">${r.status_code}</span></td>
@@ -1869,9 +2354,8 @@
       loadKeys();
     }
 
-    // Live AJAX Polling (Каждые 3.5 секунды тикают счетчики и квоты)
-    loadQuotas();
-    loadMyLimits();
+    // Live AJAX Polling & URL Hash Navigation
+    applyHashRoute();
 
     setInterval(() => {
       if (document.visibilityState === 'visible') {
@@ -1879,8 +2363,11 @@
           loadQuotas();
           loadMyLimits();
         } else if (activeMainTab === 'clients') {
-          loadTopConsumers();
-          loadKeys();
+          if (activeClientSubTab === 'consumers') {
+            loadTopConsumers();
+          } else {
+            loadKeys();
+          }
         }
       }
     }, 3500);

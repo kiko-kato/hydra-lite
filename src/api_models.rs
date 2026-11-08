@@ -14,7 +14,7 @@ pub struct UpdateModelConfigRequest {
 
 pub(crate) async fn handle_get_model_configs(State(state): State<AppState>) -> impl IntoResponse {
     let saved_configs = state.db.get_all_model_configs().await.unwrap_or_default();
-    let discovered = state.model_manager.get_model_items().await;
+    let discovered = state.model_manager.get_model_items(true).await;
 
     let mut list = Vec::new();
     let mut seen = std::collections::HashSet::new();

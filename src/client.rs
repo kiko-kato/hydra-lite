@@ -95,6 +95,7 @@ impl UpstreamClient {
             .header("Content-Type", "application/json")
             .header("User-Agent", "antigravity/hub/2.23.1 darwin/arm64")
             .header("x-client-name", "antigravity")
+            .header("x-client-version", "2.23.1")
             .json(payload)
             .send()
             .await
@@ -136,6 +137,7 @@ impl UpstreamClient {
             .header("Content-Type", "application/json")
             .header("User-Agent", "antigravity/hub/2.23.1 darwin/arm64")
             .header("x-client-name", "antigravity")
+            .header("x-client-version", "2.23.1")
             .json(payload)
             .send()
             .await

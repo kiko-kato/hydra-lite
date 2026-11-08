@@ -20,6 +20,25 @@ pub const STANDARD_MODELS: &[&str] = &[
     "gemini-3.1-flash-image",
 ];
 
+pub const RESTRICTED_MODELS: &[&str] = &[
+    "gemini-4-argon",
+    "gemini-4-argon-high",
+    "gemini-4-argon-medium",
+    "gemini-4-argon-low",
+    "claude-opus-5-5",
+    "claude-opus-5-5-high",
+    "claude-opus-5-5-medium",
+    "claude-opus-5-5-low",
+    "claude-sonnet-5-5",
+    "claude-sonnet-5-5-high",
+    "claude-sonnet-5-5-medium",
+    "claude-sonnet-5-5-low",
+    "claude-opus-4-6-thinking",
+    "claude-sonnet-4-6",
+    "gpt-oss-120b",
+    "gpt-oss-120b-medium",
+];
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiscoveredModel {
     pub original_id: String,
@@ -248,7 +267,7 @@ impl ModelManager {
     }
 
     /// Список всех доступных моделей для /v1/models
-    pub async fn get_model_items(&self) -> Vec<serde_json::Value> {
+    pub async fn get_model_items(&self, is_master: bool) -> Vec<serde_json::Value> {
         let saved_configs = self.db.get_all_model_configs().await.unwrap_or_default();
         let catalog = self.catalog.read().await;
         let now = SystemTime::now()
@@ -259,7 +278,7 @@ impl ModelManager {
         let mut list = Vec::new();
         let mut seen = std::collections::HashSet::new();
 
-        // 1. Стандартный каталог моделей (как в гидре на ноуте)
+        // 1. Стандартный каталог моделей (доступен всем)
         for orig in STANDARD_MODELS {
             let (custom_alias, enabled) = saved_configs.get(*orig).cloned().unwrap_or((None, true));
             if !enabled {
@@ -276,12 +295,43 @@ impl ModelManager {
             }
         }
 
-        // 2. Дополнительные динамически обнаруженные модели Upstream
+        // 2. 3P и Argon модели (только для мастер-ключа)
+        if is_master {
+            for orig in RESTRICTED_MODELS {
+                let custom_alias = saved_configs.get(*orig).and_then(|(alias, _)| alias.clone());
+                let public_id = custom_alias.unwrap_or_else(|| orig.to_string());
+                if seen.insert(public_id.clone()) {
+                    let owned_by = if public_id.contains("claude") {
+                        "anthropic"
+                    } else if public_id.contains("gpt") {
+                        "openai"
+                    } else {
+                        "google"
+                    };
+                    list.push(serde_json::json!({
+                        "id": public_id,
+                        "object": "model",
+                        "created": now,
+                        "owned_by": owned_by,
+                    }));
+                }
+            }
+        }
+
+        // 3. Дополнительные динамически обнаруженные модели Upstream
         for m in catalog.values() {
             if !m.enabled {
                 continue;
             }
             let public_id = m.primary_alias.as_deref().unwrap_or(&m.original_id);
+            let is_restricted = public_id.contains("claude")
+                || public_id.contains("opus")
+                || public_id.contains("sonnet")
+                || public_id.contains("gpt")
+                || public_id.contains("argon");
+            if is_restricted && !is_master {
+                continue;
+            }
             if seen.insert(public_id.to_string()) {
                 list.push(serde_json::json!({
                     "id": public_id,
