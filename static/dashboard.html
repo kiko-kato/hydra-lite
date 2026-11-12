@@ -1011,11 +1011,16 @@
               <tr>
                 <th>Имя из шлюза (Original ID)</th>
                 <th>Публичный алиас</th>
+                <th>Запросов</th>
+                <th>Ср. TTFT</th>
+                <th>Ср. Задержка</th>
+                <th>Скорость</th>
+                <th>Hitrate</th>
                 <th>Статус</th>
               </tr>
             </thead>
             <tbody id="modelsTableBody">
-              <tr><td colspan="3" style="text-align:center;">Загрузка моделей...</td></tr>
+              <tr><td colspan="8" style="text-align:center;">Загрузка моделей...</td></tr>
             </tbody>
           </table>
         </div>
@@ -2182,15 +2187,38 @@
 
     async function loadModels() {
       try {
-        const res = await fetch('/api/models/config', { headers: authHeaders() });
-        const data = await res.json();
+        const [modelsRes, sumRes] = await Promise.all([
+          fetch('/api/models/config', { headers: authHeaders() }),
+          fetch('/api/telemetry/summary', { headers: authHeaders() })
+        ]);
+        const data = await modelsRes.json();
+        const summary = await sumRes.json() || {};
+        const breakdown = summary.model_breakdown || [];
+        const statsMap = {};
+        breakdown.forEach(b => {
+          if (b.model) statsMap[b.model] = b;
+        });
+
         const tbody = document.getElementById('modelsTableBody');
         tbody.innerHTML = '';
         (data.models || []).filter(m => m.enabled).forEach(m => {
+          const s = statsMap[m.original_id] || statsMap[m.alias] || null;
+          const reqCount = s ? formatCompactNumber(s.request_count) : '0';
+          const ttft = s && s.avg_ttft_ms ? `${s.avg_ttft_ms} ms` : '—';
+          const totalLat = s && s.avg_total_latency_ms ? `${s.avg_total_latency_ms} ms` : '—';
+          const speed = s && s.avg_tok_per_sec ? `${s.avg_tok_per_sec} т/с` : '—';
+          const hr = s && s.hitrate_percent !== undefined ? `${s.hitrate_percent}%` : '—';
+          const isSlow = s && (s.avg_ttft_ms > 15000 || s.avg_total_latency_ms > 30000);
+
           tbody.innerHTML += `
             <tr>
               <td class="mono" style="font-weight:700; color:#fff;">${m.original_id}</td>
               <td class="mono" style="color:var(--accent-light); font-weight:700;">${m.alias || m.original_id}</td>
+              <td class="mono">${reqCount}</td>
+              <td class="mono" style="color:${isSlow ? '#f59e0b' : 'inherit'};">${ttft}</td>
+              <td class="mono" style="color:${isSlow ? '#ef4444' : 'inherit'}; font-weight:${isSlow ? '700' : 'normal'};">${totalLat}</td>
+              <td class="mono">${speed}</td>
+              <td class="mono" style="color:#10b981;">${hr}</td>
               <td><span class="badge badge-success">Активна</span></td>
             </tr>
           `;

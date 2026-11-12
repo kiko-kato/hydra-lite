@@ -39,6 +39,7 @@ pub struct RequestMetric {
 pub struct TelemetryAverages {
     pub total_requests: u64,
     pub avg_ttft_ms: f64,
+    pub avg_total_latency_ms: f64,
     pub avg_thinking_time_ms: f64,
     pub avg_generation_time_ms: f64,
     pub avg_clean_tok_per_sec: f64,
@@ -58,6 +59,7 @@ pub struct TelemetrySummary {
     pub total_billed_tokens: u64,
     pub total_context_tokens: u64,
     pub avg_ttft_ms: f64,
+    pub avg_total_latency_ms: f64,
     pub avg_tok_per_sec: f64,
     pub model_breakdown: Vec<ModelMetricSummary>,
     pub account_breakdown: Vec<AccountMetricSummary>,
@@ -73,6 +75,8 @@ pub struct ModelMetricSummary {
     pub billed_tokens: u64,
     pub hitrate_percent: f64,
     pub avg_tok_per_sec: f64,
+    pub avg_ttft_ms: f64,
+    pub avg_total_latency_ms: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -399,7 +403,8 @@ impl TelemetryEngine {
                 avg(CASE WHEN status_code = 200 AND thinking_time_ms > 0 THEN thinking_time_ms ELSE NULL END),
                 avg(CASE WHEN status_code = 200 AND generation_time_ms > 0 THEN generation_time_ms ELSE NULL END),
                 avg(CASE WHEN status_code = 200 AND clean_tok_per_sec > 0 THEN clean_tok_per_sec ELSE NULL END),
-                avg(CASE WHEN status_code = 200 AND max_chunk_gap_ms > 0 THEN max_chunk_gap_ms ELSE NULL END)
+                avg(CASE WHEN status_code = 200 AND max_chunk_gap_ms > 0 THEN max_chunk_gap_ms ELSE NULL END),
+                avg(CASE WHEN status_code = 200 AND total_latency_ms > 0 THEN total_latency_ms ELSE NULL END)
             FROM request_analytics
             "#,
         )?;
@@ -411,10 +416,12 @@ impl TelemetryEngine {
             let avg_gen: f64 = r.get(3).unwrap_or(0.0);
             let avg_clean_tps: f64 = r.get(4).unwrap_or(0.0);
             let avg_gap: f64 = r.get(5).unwrap_or(0.0);
+            let avg_total_lat: f64 = r.get(6).unwrap_or(0.0);
 
             Ok(TelemetryAverages {
                 total_requests: total_req as u64,
                 avg_ttft_ms: (avg_ttft * 10.0).round() / 10.0,
+                avg_total_latency_ms: (avg_total_lat * 10.0).round() / 10.0,
                 avg_thinking_time_ms: (avg_thinking * 10.0).round() / 10.0,
                 avg_generation_time_ms: (avg_gen * 10.0).round() / 10.0,
                 avg_clean_tok_per_sec: (avg_clean_tps * 10.0).round() / 10.0,
@@ -438,7 +445,8 @@ impl TelemetryEngine {
                 sum(CASE WHEN status_code = 200 THEN cached_tokens ELSE 0 END),
                 avg(CASE WHEN status_code = 200 THEN ttft_ms ELSE NULL END),
                 avg(CASE WHEN status_code = 200 AND tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END),
-                count(CASE WHEN status_code = 200 AND cached_tokens > 0 THEN 1 END)
+                count(CASE WHEN status_code = 200 AND cached_tokens > 0 THEN 1 END),
+                avg(CASE WHEN status_code = 200 AND total_latency_ms > 0 THEN total_latency_ms ELSE NULL END)
             FROM request_analytics
             "#,
         )?;
@@ -453,6 +461,7 @@ impl TelemetryEngine {
             let avg_ttft: f64 = row.get(6).unwrap_or(0.0);
             let avg_speed: f64 = row.get(7).unwrap_or(0.0);
             let cache_hits_cnt: i64 = row.get(8).unwrap_or(0);
+            let avg_total_lat: f64 = row.get(9).unwrap_or(0.0);
 
             let hitrate = if p_tokens > 0 {
                 (cached_tok as f64 / p_tokens as f64) * 100.0
@@ -481,6 +490,7 @@ impl TelemetryEngine {
                 total_billed_tokens: billed as u64,
                 total_context_tokens: total_context as u64,
                 avg_ttft_ms: (avg_ttft * 10.0).round() / 10.0,
+                avg_total_latency_ms: (avg_total_lat * 10.0).round() / 10.0,
                 avg_tok_per_sec: ((avg_speed.min(500.0)) * 10.0).round() / 10.0,
                 model_breakdown: Vec::new(),
                 account_breakdown: Vec::new(),
@@ -495,7 +505,9 @@ impl TelemetryEngine {
                 sum(CASE WHEN status_code = 200 THEN prompt_tokens ELSE 0 END), 
                 sum(CASE WHEN status_code = 200 THEN completion_tokens ELSE 0 END), 
                 sum(CASE WHEN status_code = 200 THEN cached_tokens ELSE 0 END), 
-                avg(CASE WHEN status_code = 200 AND tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END)
+                avg(CASE WHEN status_code = 200 AND tok_per_sec > 0 AND tok_per_sec <= 500.0 THEN tok_per_sec ELSE NULL END),
+                avg(CASE WHEN status_code = 200 AND ttft_ms > 0 THEN ttft_ms ELSE NULL END),
+                avg(CASE WHEN status_code = 200 AND total_latency_ms > 0 THEN total_latency_ms ELSE NULL END)
             FROM request_analytics
             GROUP BY model
             ORDER BY count(*) DESC
@@ -516,6 +528,8 @@ impl TelemetryEngine {
                 billed_tokens: billed as u64,
                 hitrate_percent: (hr * 100.0).round() / 100.0,
                 avg_tok_per_sec: (row.get::<_, f64>(5).unwrap_or(0.0) * 10.0).round() / 10.0,
+                avg_ttft_ms: (row.get::<_, f64>(6).unwrap_or(0.0) * 10.0).round() / 10.0,
+                avg_total_latency_ms: (row.get::<_, f64>(7).unwrap_or(0.0) * 10.0).round() / 10.0,
             })
         })?;
 

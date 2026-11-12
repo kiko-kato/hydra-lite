@@ -464,6 +464,7 @@ async fn handle_health(State(state): State<AppState>) -> impl IntoResponse {
         .unwrap_or(telemetry::TelemetryAverages {
             total_requests: 0,
             avg_ttft_ms: 0.0,
+            avg_total_latency_ms: 0.0,
             avg_thinking_time_ms: 0.0,
             avg_generation_time_ms: 0.0,
             avg_clean_tok_per_sec: 0.0,
@@ -497,6 +498,7 @@ async fn handle_health(State(state): State<AppState>) -> impl IntoResponse {
             "avg_thinking_time_ms": avg.avg_thinking_time_ms,
             "avg_max_chunk_gap_ms": avg.avg_max_chunk_gap_ms,
             "avg_ttft_ms": avg.avg_ttft_ms,
+            "avg_total_latency_ms": avg.avg_total_latency_ms,
         },
         "accounts": account_items,
     }))
