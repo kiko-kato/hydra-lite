@@ -1350,6 +1350,10 @@
     async function loadSparkline() {
       try {
         const res = await fetch(`/api/telemetry/sparkline?days=${chartDays}`, { headers: authHeaders() });
+        if (res.status === 401) {
+          console.warn('[CHART] Unauthorized, skipping chart load');
+          return;
+        }
         const data = await res.json();
         rawChartData = data;
         renderSmoothChart();
@@ -1424,10 +1428,10 @@
       });
       if (legendEl) legendEl.innerHTML = legendHtml;
 
-      // Габариты SVG
-      const rect = svg.getBoundingClientRect();
-      const W = rect.width || 800;
-      const H = rect.height || 190;
+      const wrapper = document.getElementById('chartSvgWrapper');
+      const W = (wrapper && wrapper.clientWidth) ? wrapper.clientWidth : (svg.clientWidth || 800);
+      const H = 190;
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
       const padTop = 15;
       const padBottom = 25;
       const padLeft = 10;
@@ -1540,6 +1544,8 @@
         }
       });
 
+      const primarySeries = seriesToDraw.find(s => s.isTotal) || seriesToDraw[0] || { color: '#7c4dff', pts: [] };
+
       // Crosshair guide line and glowing tracking dot
       svgContent += `
         <line id="chartCrosshairLine" x1="0" y1="${padTop}" x2="0" y2="${padTop + chartH}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="3 3" style="display:none; pointer-events:none;"/>
@@ -1548,7 +1554,6 @@
 
       svg.innerHTML = svgContent;
 
-      const wrapper = document.getElementById('chartSvgWrapper');
       const crosshairLine = document.getElementById('chartCrosshairLine');
       const crosshairDot = document.getElementById('chartCrosshairDot');
 
@@ -1625,6 +1630,10 @@
       activeKeyFilter = k;
       renderSmoothChart();
     }
+
+    window.addEventListener('resize', () => {
+      if (rawChartData) renderSmoothChart();
+    });
 
     function maskKey(keyStr) {
       if (!keyStr || keyStr.length < 16) return keyStr;
