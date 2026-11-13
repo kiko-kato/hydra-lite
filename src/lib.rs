@@ -546,11 +546,40 @@ async fn handle_telemetry_summary(State(state): State<AppState>) -> impl IntoRes
     }
 }
 
-async fn handle_telemetry_sparkline(State(state): State<AppState>) -> impl IntoResponse {
-    match state.telemetry.get_hourly_sparkline() {
+#[derive(serde::Deserialize)]
+struct SparklineQuery {
+    days: Option<u32>,
+    key: Option<String>,
+}
+
+async fn handle_telemetry_sparkline(
+    headers: HeaderMap,
+    State(state): State<AppState>,
+    axum::extract::Query(query): axum::extract::Query<SparklineQuery>,
+) -> impl IntoResponse {
+    let auth = authenticate_request(&headers, &state).await;
+    let (is_master, key_name) = match auth {
+        AuthResult::Allowed { is_master, key_name, .. } => (is_master, key_name),
+        _ => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({ "error": "Unauthorized" })),
+            )
+        }
+    };
+
+    let days = query.days.unwrap_or(7).min(30);
+    // Обычный пользователь видит ТОЛЬКО свою динамику. Админ/мастер видит всех (или фильтр по ключу)
+    let filter_key = if is_master {
+        query.key.as_deref()
+    } else {
+        Some(key_name.as_str())
+    };
+
+    match state.telemetry.get_hourly_sparkline(days, filter_key) {
         Ok(data) => (
             StatusCode::OK,
-            Json(serde_json::json!({ "sparkline": data })),
+            Json(data),
         ),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -1293,6 +1322,12 @@ async fn handle_chat_completions(
         "gemini-3.8-flash-high" => "gemini-3.8-flash-high",
         "gemini-3.8-flash-medium" => "gemini-3.8-flash-medium",
         "gemini-3.8-flash-low" => "gemini-3.8-flash-low",
+        "gemini-3.5-flash-lite" => "gemini-3.5-flash-lite",
+        "gemini-3.1-flash-lite" => "gemini-3.1-flash-lite",
+        "gemini-3-flash" => "gemini-3-flash",
+        "gemini-2.5-flash" => "gemini-2.5-flash",
+        "gemini-2.5-flash-lite" => "gemini-2.5-flash-lite",
+        "gemini-2.5-flash-thinking" => "gemini-2.5-flash-thinking",
         "gemini-2.5-flash-high" => "gemini-2.5-flash",
 
         "claude-opus-5-5-high" => "claude-opus-5-5-high",

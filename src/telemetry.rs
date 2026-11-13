@@ -572,38 +572,124 @@ impl TelemetryEngine {
         Ok(final_summary)
     }
 
-    pub fn get_hourly_sparkline(&self) -> Result<Vec<serde_json::Value>> {
+    pub fn get_hourly_sparkline(&self, days: u32, for_key: Option<&str>) -> Result<serde_json::Value> {
         let conn = Connection::open(&self.db_path)?;
-        let mut stmt = conn.prepare(
-            r#"
-            SELECT 
-                strftime('%H:00', datetime(timestamp_epoch, 'unixepoch')) as hour_slot,
-                count(*) as req_cnt,
-                sum(total_tokens) as tok_sum,
-                sum(cached_tokens) as cached_sum
-            FROM request_analytics
-            WHERE timestamp_epoch >= (strftime('%s', 'now') - 86400)
-            GROUP BY hour_slot
-            ORDER BY timestamp_epoch ASC
-            "#,
-        )?;
+        let seconds = (days as i64).max(1) * 86400;
 
-        let rows = stmt.query_map([], |row| {
-            Ok(serde_json::json!({
-                "hour": row.get::<_, String>(0)?,
-                "requests": row.get::<_, i64>(1).unwrap_or(0),
-                "tokens": row.get::<_, i64>(2).unwrap_or(0),
-                "cached": row.get::<_, i64>(3).unwrap_or(0),
-            }))
-        })?;
+        let (rows_res, keys_res) = if let Some(key) = for_key {
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT 
+                    strftime('%Y-%m-%d %H:00', datetime(timestamp_epoch, 'unixepoch', '+5 hours')) as slot,
+                    count(*) as req_cnt,
+                    sum(total_tokens) as tok_sum,
+                    sum(cached_tokens) as cached_sum,
+                    coalesce(key_name, 'unknown') as k_name
+                FROM request_analytics
+                WHERE timestamp_epoch >= (strftime('%s', 'now') - ?1) AND key_name = ?2
+                GROUP BY slot, k_name
+                ORDER BY slot ASC
+                "#,
+            )?;
+            let mapped = stmt.query_map(params![seconds, key], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, i64>(1).unwrap_or(0),
+                    row.get::<_, i64>(2).unwrap_or(0),
+                    row.get::<_, i64>(3).unwrap_or(0),
+                    row.get::<_, String>(4)?,
+                ))
+            })?;
+            let mut list = Vec::new();
+            for r in mapped {
+                if let Ok(v) = r { list.push(v); }
+            }
+            (list, vec![key.to_string()])
+        } else {
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT 
+                    strftime('%Y-%m-%d %H:00', datetime(timestamp_epoch, 'unixepoch', '+5 hours')) as slot,
+                    count(*) as req_cnt,
+                    sum(total_tokens) as tok_sum,
+                    sum(cached_tokens) as cached_sum,
+                    coalesce(key_name, 'unknown') as k_name
+                FROM request_analytics
+                WHERE timestamp_epoch >= (strftime('%s', 'now') - ?1)
+                GROUP BY slot, k_name
+                ORDER BY slot ASC
+                "#,
+            )?;
+            let mapped = stmt.query_map(params![seconds], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, i64>(1).unwrap_or(0),
+                    row.get::<_, i64>(2).unwrap_or(0),
+                    row.get::<_, i64>(3).unwrap_or(0),
+                    row.get::<_, String>(4)?,
+                ))
+            })?;
+            let mut list = Vec::new();
+            for r in mapped {
+                if let Ok(v) = r { list.push(v); }
+            }
 
-        let mut res = Vec::new();
-        for r in rows {
-            if let Ok(v) = r {
-                res.push(v);
+            let mut k_stmt = conn.prepare(
+                r#"
+                SELECT coalesce(key_name, 'unknown') as kn, count(*) as cnt
+                FROM request_analytics
+                WHERE timestamp_epoch >= (strftime('%s', 'now') - ?1)
+                GROUP BY kn
+                ORDER BY cnt DESC
+                "#,
+            )?;
+            let k_mapped = k_stmt.query_map(params![seconds], |r| r.get::<_, String>(0))?;
+            let mut k_list = Vec::new();
+            for k in k_mapped {
+                if let Ok(v) = k { k_list.push(v); }
+            }
+            (list, k_list)
+        };
+
+        // Группируем по таймслотам
+        let mut slots_map: std::collections::BTreeMap<String, serde_json::Value> = std::collections::BTreeMap::new();
+        for (slot, reqs, tok, cached, kname) in rows_res {
+            let entry = slots_map.entry(slot.clone()).or_insert_with(|| {
+                serde_json::json!({
+                    "slot": slot,
+                    "total_requests": 0,
+                    "total_tokens": 0,
+                    "total_cached": 0,
+                    "by_key": {}
+                })
+            });
+
+            if let Some(obj) = entry.as_object_mut() {
+                if let Some(tr) = obj.get_mut("total_requests").and_then(|v| v.as_i64()) {
+                    obj.insert("total_requests".to_string(), serde_json::json!(tr + reqs));
+                }
+                if let Some(tt) = obj.get_mut("total_tokens").and_then(|v| v.as_i64()) {
+                    obj.insert("total_tokens".to_string(), serde_json::json!(tt + tok));
+                }
+                if let Some(tc) = obj.get_mut("total_cached").and_then(|v| v.as_i64()) {
+                    obj.insert("total_cached".to_string(), serde_json::json!(tc + cached));
+                }
+                if let Some(bk) = obj.get_mut("by_key").and_then(|v| v.as_object_mut()) {
+                    bk.insert(kname, serde_json::json!({
+                        "requests": reqs,
+                        "tokens": tok,
+                        "cached": cached,
+                    }));
+                }
             }
         }
-        Ok(res)
+
+        let slots: Vec<serde_json::Value> = slots_map.into_values().collect();
+        Ok(serde_json::json!({
+            "days": days,
+            "keys": keys_res,
+            "timeline": slots
+        }))
     }
 }
 

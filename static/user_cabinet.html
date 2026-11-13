@@ -280,6 +280,25 @@
             <div style="font-size:13px; color:var(--text-secondary); margin-top:6px;" id="limitRemainingText">--</div>
           </div>
         </div>
+
+        <!-- Персональный график нагрузки пользователя (Неделя, почасово) -->
+        <div class="glass-card" style="padding: 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px;">
+            <div>
+              <div class="card-title" style="margin-bottom:2px;" id="userChartHeaderTitle">Моя динамика нагрузки (Неделя, почасово)</div>
+              <div style="font-size:12px; color:var(--text-secondary);" id="userSparkSummary">Загрузка данных...</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="badge" id="btnUserRange1" onclick="setUserChartRange(1)" style="cursor:pointer; background:rgba(255,255,255,0.06); color:#cbd5e1; border:1px solid var(--border);">24 часа</button>
+              <button class="badge" id="btnUserRange7" onclick="setUserChartRange(7)" style="cursor:pointer; background:rgba(124,77,255,0.25); color:#fff; border:1px solid var(--accent);">Неделя</button>
+            </div>
+          </div>
+
+          <div style="position:relative; width:100%; height:180px;">
+            <svg id="userTimelineSvg" style="width:100%; height:100%; overflow:visible;"></svg>
+            <div id="userChartTooltip" style="position:absolute; display:none; pointer-events:none; background:rgba(15,13,26,0.95); border:1px solid var(--accent); padding:8px 12px; border-radius:8px; font-size:12px; color:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:20; backdrop-filter:blur(8px);"></div>
+          </div>
+        </div>
       </section>
 
       <!-- Tab 2: Мои запросы -->
@@ -457,7 +476,165 @@ print(response.choices[0].message.content)</div>
             document.getElementById('limitRemainingText').innerText = 'Лимит токенов не ограничен';
           }
         }
+        loadUserSparkline();
       } catch (e) { console.error(e); }
+    }
+
+    let userChartDays = 7;
+    function setUserChartRange(days) {
+      userChartDays = days;
+      const b1 = document.getElementById('btnUserRange1');
+      const b7 = document.getElementById('btnUserRange7');
+      if (b1) {
+        b1.style.background = days === 1 ? 'rgba(124,77,255,0.25)' : 'rgba(255,255,255,0.06)';
+        b1.style.color = days === 1 ? '#fff' : '#cbd5e1';
+        b1.style.borderColor = days === 1 ? 'var(--accent)' : 'var(--border)';
+      }
+      if (b7) {
+        b7.style.background = days === 7 ? 'rgba(124,77,255,0.25)' : 'rgba(255,255,255,0.06)';
+        b7.style.color = days === 7 ? '#fff' : '#cbd5e1';
+        b7.style.borderColor = days === 7 ? 'var(--accent)' : 'var(--border)';
+      }
+      const titleEl = document.getElementById('userChartHeaderTitle');
+      if (titleEl) titleEl.innerText = days === 1 ? 'Моя динамика нагрузки (24 часа, почасово)' : 'Моя динамика нагрузки (Неделя, почасово)';
+      loadUserSparkline();
+    }
+
+    // Catmull-Rom to Cubic Bezier
+    function buildSmoothPathUser(points) {
+      if (points.length === 0) return '';
+      if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+      if (points.length === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+
+      let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(i - 1, 0)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(i + 2, points.length - 1)];
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+      }
+      return d;
+    }
+
+    async function loadUserSparkline() {
+      try {
+        const res = await fetch(`/api/telemetry/sparkline?days=${userChartDays}`, {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const data = await res.json();
+        const timeline = data.timeline || [];
+        const svg = document.getElementById('userTimelineSvg');
+        const tooltip = document.getElementById('userChartTooltip');
+        const summaryEl = document.getElementById('userSparkSummary');
+        if (!svg) return;
+
+        if (!timeline.length) {
+          svg.innerHTML = '<text x="50%" y="50%" fill="var(--text-muted)" text-anchor="middle" font-size="13">Нет активности за выбранный период</text>';
+          if (summaryEl) summaryEl.innerText = 'Нет данных';
+          return;
+        }
+
+        const totalReq = timeline.reduce((acc, s) => acc + (s.total_requests || 0), 0);
+        const totalTok = timeline.reduce((acc, s) => acc + (s.total_tokens || 0), 0);
+        if (summaryEl) {
+          summaryEl.innerText = `${formatCompactNumber(totalReq)} запросов • ${formatCompactNumber(totalTok)} токенов за период`;
+        }
+
+        const rect = svg.getBoundingClientRect();
+        const W = rect.width || 750;
+        const H = rect.height || 180;
+        const padTop = 15;
+        const padBottom = 25;
+        const padLeft = 10;
+        const padRight = 10;
+        const chartW = W - padLeft - padRight;
+        const chartH = H - padTop - padBottom;
+
+        const N = timeline.length;
+        const stepX = N > 1 ? chartW / (N - 1) : chartW;
+        let maxVal = Math.max(...timeline.map(s => s.total_tokens || 0), 1);
+
+        let svgContent = `
+          <defs>
+            <linearGradient id="userGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.38"/>
+              <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0"/>
+            </linearGradient>
+          </defs>
+        `;
+
+        for (let g = 0; g <= 3; g++) {
+          const gy = padTop + (chartH / 3) * g;
+          svgContent += `<line x1="${padLeft}" y1="${gy.toFixed(1)}" x2="${W - padRight}" y2="${gy.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="3 3"/>`;
+        }
+
+        const pts = timeline.map((slot, i) => {
+          const val = slot.total_tokens || 0;
+          const x = padLeft + i * stepX;
+          const y = padTop + chartH - (val / maxVal) * chartH;
+          return { x, y, val, reqs: slot.total_requests, slot: slot.slot };
+        });
+
+        const lineD = buildSmoothPathUser(pts);
+        const first = pts[0];
+        const last = pts[pts.length - 1];
+        const bottomY = padTop + chartH;
+        const areaD = `${lineD} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`;
+
+        svgContent += `<path d="${areaD}" fill="url(#userGrad)"/>`;
+        svgContent += `<path d="${lineD}" fill="none" stroke="#06b6d4" stroke-width="2.5" filter="drop-shadow(0 0 6px rgba(6,182,212,0.4))"/>`;
+
+        const labelInterval = Math.max(1, Math.floor(N / 8));
+        timeline.forEach((slot, i) => {
+          if (i % labelInterval === 0 || i === N - 1) {
+            const x = padLeft + i * stepX;
+            const parts = slot.slot.split(' ');
+            const datePart = parts[0] ? parts[0].slice(5) : '';
+            const hourPart = parts[1] || '';
+            const labelText = userChartDays > 1 ? `${datePart} ${hourPart}` : hourPart;
+            svgContent += `<text x="${x.toFixed(1)}" y="${H - 4}" fill="var(--text-muted)" font-size="10" font-family="monospace" text-anchor="middle">${labelText}</text>`;
+          }
+        });
+
+        pts.forEach(p => {
+          const tipHtml = `
+            <div style="font-weight:700; margin-bottom:4px; color:#fff;">${p.slot}</div>
+            <div style="color:#67e8f9;">Токены: <b>${formatCompactNumber(p.val)}</b></div>
+            <div style="color:var(--text-secondary); font-size:11px;">Запросов: <b>${p.reqs}</b></div>
+          `.replace(/"/g, '&quot;');
+          svgContent += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#06b6d4" stroke="#0b0a14" stroke-width="2" class="user-chart-point" data-tip="${tipHtml}" style="cursor:pointer; transition:all 0.15s;"/>`;
+        });
+
+        svg.innerHTML = svgContent;
+
+        svg.querySelectorAll('.user-chart-point').forEach(pt => {
+          pt.addEventListener('mouseenter', () => {
+            pt.setAttribute('r', '6');
+            pt.setAttribute('stroke', '#fff');
+            const tip = pt.getAttribute('data-tip');
+            if (tooltip) {
+              tooltip.innerHTML = tip;
+              tooltip.style.display = 'block';
+              const cx = parseFloat(pt.getAttribute('cx'));
+              const cy = parseFloat(pt.getAttribute('cy'));
+              tooltip.style.left = `${Math.min(W - 160, Math.max(10, cx - 70))}px`;
+              tooltip.style.top = `${Math.max(5, cy - 75)}px`;
+            }
+          });
+          pt.addEventListener('mouseleave', () => {
+            pt.setAttribute('r', '4');
+            pt.setAttribute('stroke', '#0b0a14');
+            if (tooltip) tooltip.style.display = 'none';
+          });
+        });
+      } catch (e) { console.error('user chart error', e); }
     }
 
     async function loadUserRequests() {

@@ -730,13 +730,33 @@
           </div>
         </div>
 
-        <!-- Виджет почасовой динамики трафика за 24 часа -->
-        <div class="glass-table-container" style="padding: 18px 22px; margin-bottom: 22px;">
-          <div class="glass-table-header" style="padding:0 0 12px 0; border-bottom: 1px solid var(--border);">
-            <div class="glass-table-title" style="font-size:15px;">Динамика нагрузки шлюза (последние 24 часа)</div>
-            <div style="font-size:12px; color:var(--text-secondary);" id="sparklineSummary">Почасовой срез запросов</div>
+        <!-- Виджет почасовой динамики трафика (Плавный SVG график) -->
+        <div class="glass-table-container" style="padding: 20px 24px; margin-bottom: 22px;">
+          <div class="glass-table-header" style="padding:0 0 14px 0; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div class="glass-table-title" style="font-size:15px;" id="chartHeaderTitle">Динамика нагрузки шлюза (Неделя, почасово)</div>
+              <div style="font-size:12px; color:var(--text-secondary); margin-top:2px;" id="sparklineSummary">Загрузка данных...</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div class="segment-control" id="segChartRange" style="margin:0;">
+                <button class="seg-btn" onclick="setChartRange(1)">24 часа</button>
+                <button class="seg-btn active" onclick="setChartRange(7)">Неделя</button>
+              </div>
+              <div class="segment-control" id="segChartMetric" style="margin:0;">
+                <button class="seg-btn active" onclick="setChartMetric('tokens')">Токены</button>
+                <button class="seg-btn" onclick="setChartMetric('requests')">Запросы</button>
+              </div>
+            </div>
           </div>
-          <div id="sparklineChart" style="width: 100%; height: 95px; display: flex; align-items: flex-end; gap: 6px; padding-top: 12px;"></div>
+
+          <!-- Легенда ключей (индивидуальные графики) -->
+          <div id="chartLegendContainer" style="display:flex; flex-wrap:wrap; gap:12px; padding:12px 0 6px 0; font-size:12px;"></div>
+
+          <!-- Контейнер SVG графика с плавной кривой и градиентными заливками -->
+          <div id="chartSvgWrapper" style="position:relative; width:100%; height:190px; margin-top:8px;">
+            <svg id="timelineSvg" style="width:100%; height:100%; overflow:visible;"></svg>
+            <div id="chartTooltip" style="position:absolute; display:none; pointer-events:none; background:rgba(15,13,26,0.95); border:1px solid var(--accent); padding:8px 12px; border-radius:8px; font-size:12px; color:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.6); z-index:20; backdrop-filter:blur(8px);"></div>
+          </div>
         </div>
 
         <!-- Виджет персонального баланса текущего админа -->
@@ -1290,36 +1310,285 @@
       if (el) el.value = str;
     }
 
+    let chartDays = 7;
+    let chartMetric = 'tokens'; // 'tokens' | 'requests'
+    let rawChartData = null;
+    let activeKeyFilter = 'ALL';
+
+    const KEY_COLORS = {
+      'stepa': '#7c4dff',
+      'evgesha': '#06b6d4',
+      'nikita': '#10b981',
+      'vanya': '#f59e0b',
+      'unknown': '#ec4899',
+    };
+    const PALETTE = ['#8b5cf6', '#38bdf8', '#34d399', '#fbbf24', '#f43f5e', '#a78bfa', '#2dd4bf'];
+
+    function getKeyColor(name, idx) {
+      if (KEY_COLORS[name]) return KEY_COLORS[name];
+      return PALETTE[idx % PALETTE.length];
+    }
+
+    function setChartRange(days) {
+      chartDays = days;
+      document.querySelectorAll('#segChartRange .seg-btn').forEach((b, i) => {
+        b.classList.toggle('active', (days === 1 && i === 0) || (days === 7 && i === 1));
+      });
+      const titleEl = document.getElementById('chartHeaderTitle');
+      if (titleEl) titleEl.innerText = days === 1 ? 'Динамика нагрузки шлюза (24 часа, почасово)' : 'Динамика нагрузки шлюза (Неделя, почасово)';
+      loadSparkline();
+    }
+
+    function setChartMetric(m) {
+      chartMetric = m;
+      document.querySelectorAll('#segChartMetric .seg-btn').forEach((b, i) => {
+        b.classList.toggle('active', (m === 'tokens' && i === 0) || (m === 'requests' && i === 1));
+      });
+      renderSmoothChart();
+    }
+
     async function loadSparkline() {
       try {
-        const res = await fetch('/api/telemetry/sparkline', { headers: authHeaders() });
+        const res = await fetch(`/api/telemetry/sparkline?days=${chartDays}`, { headers: authHeaders() });
         const data = await res.json();
-        const list = data.sparkline || [];
-        const container = document.getElementById('sparklineChart');
-        if (!container) return;
-        if (!list.length) {
-          container.innerHTML = '<div style="font-size:12px; color:var(--text-muted); align-self:center; margin:0 auto;">Нет активности за последние 24 часа</div>';
-          return;
-        }
-        const maxReq = Math.max(...list.map(x => x.requests || 0), 1);
-        let total24hReq = list.reduce((acc, x) => acc + (x.requests || 0), 0);
-        let total24hTok = list.reduce((acc, x) => acc + (x.tokens || 0), 0);
-        const sumEl = document.getElementById('sparklineSummary');
-        if (sumEl) sumEl.innerText = `${formatCompactNumber(total24hReq)} запр. / ${formatCompactNumber(total24hTok)} ток. за сутки`;
+        rawChartData = data;
+        renderSmoothChart();
+      } catch (e) {
+        console.error('chart error', e);
+      }
+    }
 
-        let html = '';
-        list.forEach(slot => {
-          const h = Math.max(8, Math.round(((slot.requests || 0) / maxReq) * 65));
-          const title = `${slot.hour}: ${slot.requests} запр., ${formatCompactNumber(slot.tokens)} ток. (кэш: ${formatCompactNumber(slot.cached)})`;
-          html += `
-            <div class="spark-bar-wrap" title="${title}">
-              <div class="spark-bar" style="height:${h}px;"></div>
-              <div class="spark-label">${slot.hour.split(':')[0]}</div>
-            </div>
+    // Построение плавной кривой Безье (Catmull-Rom to Cubic Bezier)
+    function buildSmoothPath(points) {
+      if (points.length === 0) return '';
+      if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+      if (points.length === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
+
+      let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(i - 1, 0)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(i + 2, points.length - 1)];
+
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+        d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+      }
+      return d;
+    }
+
+    function renderSmoothChart() {
+      if (!rawChartData) return;
+      const timeline = rawChartData.timeline || [];
+      const keys = rawChartData.keys || [];
+      const summaryEl = document.getElementById('sparklineSummary');
+      const legendEl = document.getElementById('chartLegendContainer');
+      const svg = document.getElementById('timelineSvg');
+      const tooltip = document.getElementById('chartTooltip');
+      if (!svg) return;
+
+      if (!timeline.length) {
+        svg.innerHTML = '<text x="50%" y="50%" fill="var(--text-muted)" text-anchor="middle" font-size="13">Нет данных за выбранный период</text>';
+        if (summaryEl) summaryEl.innerText = 'Нет данных';
+        if (legendEl) legendEl.innerHTML = '';
+        return;
+      }
+
+      // Сводка
+      const totalReq = timeline.reduce((acc, s) => acc + (s.total_requests || 0), 0);
+      const totalTok = timeline.reduce((acc, s) => acc + (s.total_tokens || 0), 0);
+      if (summaryEl) {
+        summaryEl.innerText = `${formatCompactNumber(totalReq)} запросов • ${formatCompactNumber(totalTok)} токенов за период`;
+      }
+
+      // Отрисовка легенды
+      let legendHtml = `
+        <div onclick="toggleKeyFilter('ALL')" style="cursor:pointer; display:flex; align-items:center; gap:6px; padding:3px 8px; border-radius:6px; background:${activeKeyFilter === 'ALL' ? 'rgba(124,77,255,0.25)' : 'rgba(255,255,255,0.05)'}; border:1px solid ${activeKeyFilter === 'ALL' ? 'var(--accent)' : 'transparent'};">
+          <span style="width:10px; height:10px; border-radius:50%; background:#fff; display:inline-block;"></span>
+          <span style="font-weight:700; color:#fff;">Все пользователи</span>
+        </div>
+      `;
+      keys.forEach((k, idx) => {
+        const color = getKeyColor(k, idx);
+        const isActive = activeKeyFilter === k;
+        legendHtml += `
+          <div onclick="toggleKeyFilter('${k}')" style="cursor:pointer; display:flex; align-items:center; gap:6px; padding:3px 8px; border-radius:6px; background:${isActive ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isActive ? color : 'transparent'};">
+            <span style="width:10px; height:10px; border-radius:50%; background:${color}; display:inline-block; box-shadow:0 0 6px ${color};"></span>
+            <span style="font-weight:600; color:${isActive ? '#fff' : 'var(--text-secondary)'};">${k}</span>
+          </div>
+        `;
+      });
+      if (legendEl) legendEl.innerHTML = legendHtml;
+
+      // Габариты SVG
+      const rect = svg.getBoundingClientRect();
+      const W = rect.width || 800;
+      const H = rect.height || 190;
+      const padTop = 15;
+      const padBottom = 25;
+      const padLeft = 10;
+      const padRight = 10;
+      const chartW = W - padLeft - padRight;
+      const chartH = H - padTop - padBottom;
+
+      // Определение точек
+      const N = timeline.length;
+      const stepX = N > 1 ? chartW / (N - 1) : chartW;
+
+      // Расчет максимального значения
+      let maxVal = 1;
+      timeline.forEach(slot => {
+        if (activeKeyFilter === 'ALL') {
+          const v = chartMetric === 'tokens' ? (slot.total_tokens || 0) : (slot.total_requests || 0);
+          if (v > maxVal) maxVal = v;
+        } else {
+          const b = slot.by_key && slot.by_key[activeKeyFilter];
+          if (b) {
+            const v = chartMetric === 'tokens' ? (b.tokens || 0) : (b.requests || 0);
+            if (v > maxVal) maxVal = v;
+          }
+        }
+      });
+
+      // SVG Gradients & Grid
+      let svgContent = `
+        <defs>
+          <linearGradient id="chartGradMain" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#7c4dff" stop-opacity="0.38"/>
+            <stop offset="100%" stop-color="#7c4dff" stop-opacity="0.0"/>
+          </linearGradient>
+          <linearGradient id="chartGradSecondary" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#06b6d4" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+      `;
+
+      // Горизонтальные линии сетки
+      for (let g = 0; g <= 3; g++) {
+        const gy = padTop + (chartH / 3) * g;
+        svgContent += `<line x1="${padLeft}" y1="${gy.toFixed(1)}" x2="${W - padRight}" y2="${gy.toFixed(1)}" stroke="rgba(255,255,255,0.05)" stroke-dasharray="3 3"/>`;
+      }
+
+      // Линии отдельных пользователей (если ALL) или одного активного
+      const seriesToDraw = [];
+      if (activeKeyFilter === 'ALL') {
+        // Линии для ключевых юзеров тонкими штрихами
+        keys.forEach((k, idx) => {
+          const color = getKeyColor(k, idx);
+          const pts = timeline.map((slot, i) => {
+            const b = slot.by_key && slot.by_key[k];
+            const val = b ? (chartMetric === 'tokens' ? (b.tokens || 0) : (b.requests || 0)) : 0;
+            const x = padLeft + i * stepX;
+            const y = padTop + chartH - (val / maxVal) * chartH;
+            return { x, y, val, slot: slot.slot, name: k };
+          });
+          seriesToDraw.push({ name: k, color, pts, isTotal: false });
+        });
+
+        // Главная суммарная кривая
+        const totalPts = timeline.map((slot, i) => {
+          const val = chartMetric === 'tokens' ? (slot.total_tokens || 0) : (slot.total_requests || 0);
+          const x = padLeft + i * stepX;
+          const y = padTop + chartH - (val / maxVal) * chartH;
+          return { x, y, val, slot: slot.slot, name: 'Всего' };
+        });
+        seriesToDraw.push({ name: 'Всего', color: '#a78bfa', pts: totalPts, isTotal: true });
+      } else {
+        const color = getKeyColor(activeKeyFilter, 0);
+        const pts = timeline.map((slot, i) => {
+          const b = slot.by_key && slot.by_key[activeKeyFilter];
+          const val = b ? (chartMetric === 'tokens' ? (b.tokens || 0) : (b.requests || 0)) : 0;
+          const x = padLeft + i * stepX;
+          const y = padTop + chartH - (val / maxVal) * chartH;
+          return { x, y, val, slot: slot.slot, name: activeKeyFilter };
+        });
+        seriesToDraw.push({ name: activeKeyFilter, color, pts, isTotal: true });
+      }
+
+      // Отрисовка заливок и линий
+      seriesToDraw.forEach(s => {
+        if (!s.pts.length) return;
+        const lineD = buildSmoothPath(s.pts);
+
+        if (s.isTotal) {
+          const first = s.pts[0];
+          const last = s.pts[s.pts.length - 1];
+          const bottomY = padTop + chartH;
+          const areaD = `${lineD} L ${last.x.toFixed(1)} ${bottomY} L ${first.x.toFixed(1)} ${bottomY} Z`;
+          svgContent += `<path d="${areaD}" fill="url(#chartGradMain)"/>`;
+          svgContent += `<path d="${lineD}" fill="none" stroke="${s.color}" stroke-width="2.5" filter="drop-shadow(0 0 6px rgba(124,77,255,0.4))"/>`;
+        } else {
+          svgContent += `<path d="${lineD}" fill="none" stroke="${s.color}" stroke-width="1.2" stroke-opacity="0.6"/>`;
+        }
+      });
+
+      // Метки времени по оси X
+      const labelInterval = Math.max(1, Math.floor(N / 8));
+      timeline.forEach((slot, i) => {
+        if (i % labelInterval === 0 || i === N - 1) {
+          const x = padLeft + i * stepX;
+          const parts = slot.slot.split(' ');
+          const datePart = parts[0] ? parts[0].slice(5) : '';
+          const hourPart = parts[1] || '';
+          const labelText = chartDays > 1 ? `${datePart} ${hourPart}` : hourPart;
+          svgContent += `<text x="${x.toFixed(1)}" y="${H - 4}" fill="var(--text-muted)" font-size="10" font-family="monospace" text-anchor="middle">${labelText}</text>`;
+        }
+      });
+
+      // Интерактивные точки поверх графика
+      const primarySeries = seriesToDraw.find(s => s.isTotal) || seriesToDraw[0];
+      if (primarySeries) {
+        primarySeries.pts.forEach((p, idx) => {
+          const slot = timeline[idx];
+          const byKeyStr = Object.entries(slot.by_key || {})
+            .map(([k, v]) => `<div style="font-size:11px; color:#cbd5e1;"><span style="color:${getKeyColor(k, 0)};">●</span> ${k}: <b>${formatCompactNumber(chartMetric === 'tokens' ? v.tokens : v.requests)}</b></div>`)
+            .join('');
+
+          const tipHtml = `
+            <div style="font-weight:700; margin-bottom:4px; color:#fff;">${slot.slot}</div>
+            <div style="color:var(--accent-light); margin-bottom:4px;">Всего: <b>${formatCompactNumber(p.val)}</b> ${chartMetric === 'tokens' ? 'токенов' : 'запросов'}</div>
+            ${byKeyStr}
+          `.replace(/"/g, '&quot;');
+
+          svgContent += `
+            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${primarySeries.color}" stroke="#0b0a14" stroke-width="2" class="chart-point" data-tip="${tipHtml}" style="cursor:pointer; transition:all 0.15s;"/>
           `;
         });
-        container.innerHTML = html;
-      } catch (e) { console.error('sparkline error', e); }
+      }
+
+      svg.innerHTML = svgContent;
+
+      // Event listeners для тултипа
+      svg.querySelectorAll('.chart-point').forEach(pt => {
+        pt.addEventListener('mouseenter', (e) => {
+          pt.setAttribute('r', '6');
+          pt.setAttribute('stroke', '#fff');
+          const tip = pt.getAttribute('data-tip');
+          if (tooltip) {
+            tooltip.innerHTML = tip;
+            tooltip.style.display = 'block';
+            const cx = parseFloat(pt.getAttribute('cx'));
+            const cy = parseFloat(pt.getAttribute('cy'));
+            tooltip.style.left = `${Math.min(W - 180, Math.max(10, cx - 80))}px`;
+            tooltip.style.top = `${Math.max(5, cy - 85)}px`;
+          }
+        });
+        pt.addEventListener('mouseleave', () => {
+          pt.setAttribute('r', '4');
+          pt.setAttribute('stroke', '#0b0a14');
+          if (tooltip) tooltip.style.display = 'none';
+        });
+      });
+    }
+
+    function toggleKeyFilter(k) {
+      activeKeyFilter = k;
+      renderSmoothChart();
     }
 
     function maskKey(keyStr) {
