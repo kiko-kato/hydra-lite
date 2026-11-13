@@ -1540,50 +1540,85 @@
         }
       });
 
-      // Интерактивные точки поверх графика
-      const primarySeries = seriesToDraw.find(s => s.isTotal) || seriesToDraw[0];
-      if (primarySeries) {
-        primarySeries.pts.forEach((p, idx) => {
-          const slot = timeline[idx];
-          const byKeyStr = Object.entries(slot.by_key || {})
-            .map(([k, v]) => `<div style="font-size:11px; color:#cbd5e1;"><span style="color:${getKeyColor(k, 0)};">●</span> ${k}: <b>${formatCompactNumber(chartMetric === 'tokens' ? v.tokens : v.requests)}</b></div>`)
-            .join('');
-
-          const tipHtml = `
-            <div style="font-weight:700; margin-bottom:4px; color:#fff;">${slot.slot}</div>
-            <div style="color:var(--accent-light); margin-bottom:4px;">Всего: <b>${formatCompactNumber(p.val)}</b> ${chartMetric === 'tokens' ? 'токенов' : 'запросов'}</div>
-            ${byKeyStr}
-          `.replace(/"/g, '&quot;');
-
-          svgContent += `
-            <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${primarySeries.color}" stroke="#0b0a14" stroke-width="2" class="chart-point" data-tip="${tipHtml}" style="cursor:pointer; transition:all 0.15s;"/>
-          `;
-        });
-      }
+      // Crosshair guide line and glowing tracking dot
+      svgContent += `
+        <line id="chartCrosshairLine" x1="0" y1="${padTop}" x2="0" y2="${padTop + chartH}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="3 3" style="display:none; pointer-events:none;"/>
+        <circle id="chartCrosshairDot" cx="0" cy="0" r="5" fill="#fff" stroke="${primarySeries.color}" stroke-width="2.5" style="display:none; pointer-events:none; filter:drop-shadow(0 0 8px ${primarySeries.color});"/>
+      `;
 
       svg.innerHTML = svgContent;
 
-      // Event listeners для тултипа
-      svg.querySelectorAll('.chart-point').forEach(pt => {
-        pt.addEventListener('mouseenter', (e) => {
-          pt.setAttribute('r', '6');
-          pt.setAttribute('stroke', '#fff');
-          const tip = pt.getAttribute('data-tip');
-          if (tooltip) {
-            tooltip.innerHTML = tip;
-            tooltip.style.display = 'block';
-            const cx = parseFloat(pt.getAttribute('cx'));
-            const cy = parseFloat(pt.getAttribute('cy'));
-            tooltip.style.left = `${Math.min(W - 180, Math.max(10, cx - 80))}px`;
-            tooltip.style.top = `${Math.max(5, cy - 85)}px`;
-          }
-        });
-        pt.addEventListener('mouseleave', () => {
-          pt.setAttribute('r', '4');
-          pt.setAttribute('stroke', '#0b0a14');
-          if (tooltip) tooltip.style.display = 'none';
-        });
-      });
+      const wrapper = document.getElementById('chartSvgWrapper');
+      const crosshairLine = document.getElementById('chartCrosshairLine');
+      const crosshairDot = document.getElementById('chartCrosshairDot');
+
+      function handleChartHover(clientX) {
+        const bRect = svg.getBoundingClientRect();
+        const mouseX = clientX - bRect.left;
+
+        if (mouseX < padLeft - 20 || mouseX > W - padRight + 20) {
+          hideChartHover();
+          return;
+        }
+
+        let idx = Math.round((mouseX - padLeft) / stepX);
+        idx = Math.max(0, Math.min(N - 1, idx));
+
+        const p = primarySeries.pts[idx];
+        const slot = timeline[idx];
+        if (!p || !slot) return;
+
+        if (crosshairLine) {
+          crosshairLine.setAttribute('x1', p.x.toFixed(1));
+          crosshairLine.setAttribute('x2', p.x.toFixed(1));
+          crosshairLine.style.display = 'block';
+        }
+
+        if (crosshairDot) {
+          crosshairDot.setAttribute('cx', p.x.toFixed(1));
+          crosshairDot.setAttribute('cy', p.y.toFixed(1));
+          crosshairDot.setAttribute('stroke', primarySeries.color);
+          crosshairDot.style.display = 'block';
+        }
+
+        const byKeyStr = Object.entries(slot.by_key || {})
+          .map(([k, v]) => `<div style="font-size:11px; color:#cbd5e1;"><span style="color:${getKeyColor(k, 0)};">●</span> ${k}: <b>${formatCompactNumber(chartMetric === 'tokens' ? v.tokens : v.requests)}</b></div>`)
+          .join('');
+
+        const tipHtml = `
+          <div style="font-weight:700; margin-bottom:4px; color:#fff;">${slot.slot}</div>
+          <div style="color:var(--accent-light); margin-bottom:4px;">Всего: <b>${formatCompactNumber(p.val)}</b> ${chartMetric === 'tokens' ? 'токенов' : 'запросов'}</div>
+          ${byKeyStr}
+        `;
+
+        if (tooltip) {
+          tooltip.innerHTML = tipHtml;
+          tooltip.style.display = 'block';
+          const tipW = tooltip.offsetWidth || 180;
+          let tipX = p.x - tipW / 2;
+          if (tipX < 10) tipX = 10;
+          if (tipX + tipW > W - 10) tipX = W - tipW - 10;
+          let tipY = p.y - 85;
+          if (tipY < 5) tipY = p.y + 15;
+          tooltip.style.left = `${tipX}px`;
+          tooltip.style.top = `${tipY}px`;
+        }
+      }
+
+      function hideChartHover() {
+        if (crosshairLine) crosshairLine.style.display = 'none';
+        if (crosshairDot) crosshairDot.style.display = 'none';
+        if (tooltip) tooltip.style.display = 'none';
+      }
+
+      if (wrapper) {
+        wrapper.onmousemove = (e) => handleChartHover(e.clientX);
+        wrapper.onmouseleave = hideChartHover;
+        wrapper.ontouchmove = (e) => {
+          if (e.touches && e.touches[0]) handleChartHover(e.touches[0].clientX);
+        };
+        wrapper.ontouchend = hideChartHover;
+      }
     }
 
     function toggleKeyFilter(k) {
