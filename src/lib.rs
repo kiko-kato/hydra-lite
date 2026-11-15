@@ -1036,7 +1036,7 @@ async fn handle_chat_completions(
 
     // 1. Проверяем 3PA модели (Dahl Inference) — идут строго в свой независимый пул с циклическим failover
     if state.third_party.is_3pa_model(&req.model) {
-        return state.third_party.handle_chat_completions(req, &auth_key_name, &state).await;
+        return state.third_party.handle_chat_completions(req, &auth_key_name, auth_key_id, &state).await;
     }
 
     // 2. Блокируем доступ к 3PA (Claude/GPT) и Argon через антигравити аккаунты

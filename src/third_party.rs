@@ -69,7 +69,8 @@ impl ThirdPartyManager {
         &self,
         mut req: ChatCompletionRequest,
         auth_key_name: &str,
-        _state: &AppState,
+        auth_key_id: Option<i64>,
+        state: &AppState,
     ) -> Response {
         let target_model = self.resolve_model(&req.model);
         req.model = target_model.to_string();
@@ -113,13 +114,16 @@ impl ThirdPartyManager {
 
             let auth_header = format!("Bearer {}", acc.api_key);
 
-            let send_payload = serde_json::json!({
+            let mut send_payload = serde_json::json!({
                 "model": req.model,
                 "messages": req.messages,
                 "stream": req.stream,
                 "temperature": req.temperature,
                 "max_tokens": req.max_tokens,
             });
+            if req.stream {
+                send_payload["stream_options"] = serde_json::json!({ "include_usage": true });
+            }
 
             if req.stream {
                 let send_res = self
@@ -140,7 +144,83 @@ impl ThirdPartyManager {
                                 acc.id, acc.username, req.model, attempt + 1, n
                             );
                             let stream = resp.bytes_stream();
-                            let body = axum::body::Body::from_stream(stream);
+                            let db = state.db.clone();
+                            let kid = auth_key_id;
+                            let telemetry = state.telemetry.clone();
+                            let start_time = std::time::Instant::now();
+                            let model_name = req.model.clone();
+                            let key_name = auth_key_name.to_string();
+
+                            let mut buffer = String::new();
+                            let mut usage_found = false;
+
+                            let transformed_stream = async_stream::stream! {
+                                for await chunk_res in stream {
+                                    match chunk_res {
+                                        Ok(bytes) => {
+                                            if !usage_found {
+                                                if let Ok(text) = std::str::from_utf8(&bytes) {
+                                                    buffer.push_str(text);
+                                                    while let Some(pos) = buffer.find('\n') {
+                                                        let line = buffer[..pos].trim();
+                                                        if line.starts_with("data: ") && line.contains("\"usage\"") {
+                                                            let json_str = &line[6..];
+                                                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                                                if let Some(usage) = val.get("usage") {
+                                                                    let pt = usage.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+                                                                    let ct = usage.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+                                                                    let total = pt + ct;
+                                                                    if let Some(k) = kid {
+                                                                        let _ = db.record_key_usage(k, pt, ct, 0).await;
+                                                                    }
+                                                                    let elapsed = start_time.elapsed().as_millis() as u64;
+                                                                    let (epoch, time_str) = crate::telemetry::now_epoch_and_string();
+                                                                    telemetry.record(crate::telemetry::RequestMetric {
+                                                                        timestamp_epoch: epoch,
+                                                                        created_at: time_str,
+                                                                        model: model_name.clone(),
+                                                                        account_id: None,
+                                                                        account_email: None,
+                                                                        proxy_used: None,
+                                                                        stream: true,
+                                                                        status_code: 200,
+                                                                        connect_latency_ms: 0,
+                                                                        ttft_ms: 0,
+                                                                        thinking_time_ms: 0,
+                                                                        generation_time_ms: elapsed,
+                                                                        total_latency_ms: elapsed,
+                                                                        prompt_tokens: pt as u32,
+                                                                        completion_tokens: ct as u32,
+                                                                        cached_tokens: 0,
+                                                                        reasoning_tokens: 0,
+                                                                        total_tokens: total as u32,
+                                                                        tok_per_sec: if elapsed > 0 { (ct as f64 / (elapsed as f64 / 1000.0)).min(500.0) } else { 0.0 },
+                                                                        clean_tok_per_sec: if elapsed > 0 { (ct as f64 / (elapsed as f64 / 1000.0)).min(500.0) } else { 0.0 },
+                                                                        chunks_count: 1,
+                                                                        max_chunk_gap_ms: 0,
+                                                                        fast_gate_us: 0,
+                                                                        cache_hit_type: "miss".to_string(),
+                                                                        error: None,
+                                                                        key_name: Some(key_name.clone()),
+                                                                    });
+                                                                    usage_found = true;
+                                                                }
+                                                            }
+                                                        }
+                                                        buffer = buffer[pos + 1..].to_string();
+                                                    }
+                                                }
+                                            }
+                                            yield Ok(bytes);
+                                        }
+                                        Err(e) => {
+                                            yield Err(e);
+                                        }
+                                    }
+                                }
+                            };
+
+                            let body = axum::body::Body::from_stream(transformed_stream);
                             return (
                                 StatusCode::OK,
                                 [
@@ -169,6 +249,7 @@ impl ThirdPartyManager {
                     }
                 }
             } else {
+                let start_time = std::time::Instant::now();
                 let send_res = self
                     .http_client
                     .post(upstream_url)
@@ -187,6 +268,48 @@ impl ThirdPartyManager {
                                 acc.id, acc.username, req.model, attempt + 1, n
                             );
                             let bytes = resp.bytes().await.unwrap_or_default();
+
+                            if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes) {
+                                if let Some(usage) = val.get("usage") {
+                                    let pt = usage.get("prompt_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+                                    let ct = usage.get("completion_tokens").and_then(|v| v.as_i64()).unwrap_or(0);
+                                    let total = pt + ct;
+                                    if let Some(k) = auth_key_id {
+                                        let _ = state.db.record_key_usage(k, pt, ct, 0).await;
+                                    }
+                                    let elapsed = start_time.elapsed().as_millis() as u64;
+                                    let (epoch, time_str) = crate::telemetry::now_epoch_and_string();
+                                    state.telemetry.record(crate::telemetry::RequestMetric {
+                                        timestamp_epoch: epoch,
+                                        created_at: time_str,
+                                        model: req.model.clone(),
+                                        account_id: None,
+                                        account_email: None,
+                                        proxy_used: None,
+                                        stream: false,
+                                        status_code: 200,
+                                        connect_latency_ms: 0,
+                                        ttft_ms: elapsed,
+                                        thinking_time_ms: 0,
+                                        generation_time_ms: elapsed,
+                                        total_latency_ms: elapsed,
+                                        prompt_tokens: pt as u32,
+                                        completion_tokens: ct as u32,
+                                        cached_tokens: 0,
+                                        reasoning_tokens: 0,
+                                        total_tokens: total as u32,
+                                        tok_per_sec: if elapsed > 0 { (ct as f64 / (elapsed as f64 / 1000.0)).min(500.0) } else { 0.0 },
+                                        clean_tok_per_sec: if elapsed > 0 { (ct as f64 / (elapsed as f64 / 1000.0)).min(500.0) } else { 0.0 },
+                                        chunks_count: 1,
+                                        max_chunk_gap_ms: 0,
+                                        fast_gate_us: 0,
+                                        cache_hit_type: "miss".to_string(),
+                                        error: None,
+                                        key_name: Some(auth_key_name.to_string()),
+                                    });
+                                }
+                            }
+
                             return (
                                 StatusCode::OK,
                                 [(header::CONTENT_TYPE, "application/json")],
