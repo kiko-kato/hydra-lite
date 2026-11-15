@@ -1990,7 +1990,8 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
 
             let is_master = key.key == master_cfg_key
                 || key.key == "hydra-adm-9a8f4c21e7b34d058c6e2a1b"
-                || key.name == "stepa";
+                || key.name == "stepa"
+                || key.name == "vanya";
 
             AuthResult::Allowed {
                 key_name: key.name,

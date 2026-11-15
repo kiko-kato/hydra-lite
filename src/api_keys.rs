@@ -134,7 +134,7 @@ pub(crate) async fn handle_get_keys(
                 let is_self = caller.key_id == Some(k.id) || caller.key_token == k.key;
                 let can_edit = if is_self {
                     false
-                } else if caller.is_master || caller.key_id == Some(1) {
+                } else if caller.is_master || caller.key_id == Some(1) || caller.key_id == Some(2) {
                     true
                 } else if let Some(my_id) = caller.key_id {
                     state.db.is_in_creator_tree(k.id, my_id).await.unwrap_or(false)
@@ -264,8 +264,8 @@ pub(crate) async fn handle_update_key(
         );
     }
 
-    // Защита 2: Дерево создателей (если не мастер и не root-админ ID=1)
-    if !caller.is_master && caller.key_id != Some(1) {
+    // Защита 2: Дерево создателей (если не мастер и не root-админ ID=1 / ID=2)
+    if !caller.is_master && caller.key_id != Some(1) && caller.key_id != Some(2) {
         let my_id = caller.key_id.unwrap_or(0);
         let in_tree = state.db.is_in_creator_tree(id, my_id).await.unwrap_or(false);
         if !in_tree {
@@ -329,7 +329,7 @@ pub(crate) async fn handle_delete_key(
     }
 
     // Защита 2: Дерево создателей
-    if !caller.is_master && caller.key_id != Some(1) {
+    if !caller.is_master && caller.key_id != Some(1) && caller.key_id != Some(2) {
         let my_id = caller.key_id.unwrap_or(0);
         let in_tree = state.db.is_in_creator_tree(id, my_id).await.unwrap_or(false);
         if !in_tree {
