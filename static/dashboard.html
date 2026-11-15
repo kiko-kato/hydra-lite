@@ -3030,7 +3030,15 @@
           }
 
           let cardStatusBadge = '';
-          if (isBanned) {
+          const isVerif = isBanned && a.ban_reason && (a.ban_reason.includes('верификац') || a.ban_reason.includes('Verification'));
+          if (isVerif) {
+            cardStatusBadge = `
+              <span class="badge" style="background:rgba(245, 158, 11, 0.25); color:#fcd34d; border:1px solid #f59e0b; font-weight:800;" title="${a.ban_reason}">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                ВЕРИФИКАЦИЯ
+              </span>
+            `;
+          } else if (isBanned) {
             cardStatusBadge = `
               <span class="badge badge-banned" title="${a.ban_reason || 'Google TOS Violation'}">
                 <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>

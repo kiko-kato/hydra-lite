@@ -284,13 +284,29 @@ impl AccountProber {
                 } else {
                     let body = resp.text().await.unwrap_or_default();
                     let body_lower = body.to_lowercase();
+                    let is_verify_required = body_lower.contains("verify your account")
+                        || body_lower.contains("verify your identity")
+                        || body_lower.contains("account verification");
+
                     let is_tos_ban = status.as_u16() == 403
                         || body_lower.contains("terms of service")
                         || body_lower.contains("disabled in this account")
                         || body_lower.contains("permission_denied")
                         || body_lower.contains("suspended");
 
-                    if is_tos_ban {
+                    if is_verify_required {
+                        let reason = "Требуется верификация аккаунта (SMS/Identity)".to_string();
+                        let _ = self.db.mark_account_banned(acc.id, &reason).await;
+                        log::warn!("[ACCOUNT:PROBER] Acc #{} ({}) NEEDS VERIFICATION: {}", acc.id, email, reason);
+                        ProbeResult {
+                            id: acc.id,
+                            email,
+                            is_banned: true,
+                            ban_reason: Some(reason.clone()),
+                            status: "needs_verification".to_string(),
+                            message: reason,
+                        }
+                    } else if is_tos_ban {
                         let reason = if body_lower.contains("terms of service") || body_lower.contains("disabled in this account") {
                             "Google TOS Ban: аккаунт заблокирован за нарушение условий использования".to_string()
                         } else {

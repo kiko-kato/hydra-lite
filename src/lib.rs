@@ -221,13 +221,13 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
 
     let active_streams = Arc::new(parking_lot::RwLock::new(std::collections::HashMap::new()));
 
-    // Фоновый демон регулярного опроса/проверки аккаунтов на бан и разбан (каждые 3 минуты)
+    // Фоновый демон регулярного опроса/проверки аккаунтов на бан и разбан (каждые 5 минут)
     let account_prober = Arc::new(account_prober::AccountProber::new(
         db.clone(),
         client.clone(),
         config.oauth.client_id.clone(),
         config.oauth.client_secret.clone(),
-        180,
+        300,
     ));
     account_prober.clone().start();
 
