@@ -293,6 +293,34 @@
       grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
       gap: 16px;
       margin-top: 14px;
+      transition: all 0.25s ease-out;
+    }
+    .account-cards-grid.collapsed {
+      display: none !important;
+    }
+    .category-collapse-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      padding: 6px 10px;
+      margin: -6px -10px 10px -10px;
+      border-radius: var(--radius-sm);
+      transition: background 0.2s;
+    }
+    .category-collapse-header:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .category-chevron {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 0.7;
+    }
+    .category-collapse-header.collapsed .category-chevron {
+      transform: rotate(-90deg);
     }
     .account-card {
       background: linear-gradient(135deg, rgba(22, 19, 38, 0.85) 0%, rgba(13, 11, 23, 0.95) 100%);
@@ -1329,10 +1357,13 @@
 
           <!-- КАТЕГОРИЯ 1: Активные аккаунты -->
           <div style="margin-bottom: 24px;">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
-              <span class="dot-indicator green"></span>
-              <span style="font-weight: 700; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Активные аккаунты в ротации</span>
-              <span class="badge badge-success" id="activeAccountsBadgeCount" style="font-size: 11px;">0</span>
+            <div class="category-collapse-header" onclick="toggleCategorySection('activeAccountsCardsGrid', this)">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="dot-indicator green"></span>
+                <span style="font-weight: 700; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Активные аккаунты в ротации</span>
+                <span class="badge badge-success" id="activeAccountsBadgeCount" style="font-size: 11px;">0</span>
+              </div>
+              <svg viewBox="0 0 24 24" class="category-chevron"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
             </div>
             <div id="activeAccountsCardsGrid" class="account-cards-grid" style="margin-top: 0;">
               <div style="grid-column: 1 / -1; text-align:center; padding: 20px; color: var(--text-muted);">Загрузка активных аккаунтов...</div>
@@ -1341,10 +1372,13 @@
 
           <!-- КАТЕГОРИЯ 2: Проблемные (Верификация и Бан) в самом низу -->
           <div id="problemAccountsSection" style="display: none; padding-top: 18px; border-top: 1px dashed rgba(239, 68, 68, 0.25);">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
-              <span class="dot-indicator" style="background:#ef4444;"></span>
-              <span style="font-weight: 700; font-size: 14px; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.5px;">Отключенные / Требующие верификации / В бане</span>
-              <span class="badge badge-danger" id="problemAccountsBadgeCount" style="font-size: 11px;">0</span>
+            <div class="category-collapse-header" onclick="toggleCategorySection('problemAccountsCardsGrid', this)">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span class="dot-indicator" style="background:#ef4444;"></span>
+                <span style="font-weight: 700; font-size: 14px; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.5px;">Отключенные / Требующие верификации / В бане</span>
+                <span class="badge badge-danger" id="problemAccountsBadgeCount" style="font-size: 11px;">0</span>
+              </div>
+              <svg viewBox="0 0 24 24" class="category-chevron"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
             </div>
             <div id="problemAccountsCardsGrid" class="account-cards-grid" style="margin-top: 0;"></div>
           </div>
@@ -2454,6 +2488,34 @@
       if (window.location.hash !== hash) {
         history.replaceState(null, '', hash);
       }
+    }
+
+    function toggleCategorySection(gridId, headerElem) {
+      const grid = document.getElementById(gridId);
+      if (!grid) return;
+      const isCollapsed = grid.classList.toggle('collapsed');
+      if (headerElem) {
+        headerElem.classList.toggle('collapsed', isCollapsed);
+      }
+      try {
+        localStorage.setItem('collapse_' + gridId, isCollapsed ? '1' : '0');
+      } catch (e) {}
+    }
+
+    function initCategoryCollapseStates() {
+      ['activeAccountsCardsGrid', 'problemAccountsCardsGrid'].forEach(id => {
+        try {
+          const saved = localStorage.getItem('collapse_' + id);
+          if (saved === '1') {
+            const grid = document.getElementById(id);
+            if (grid) grid.classList.add('collapsed');
+            const parent = grid?.previousElementSibling;
+            if (parent && parent.classList.contains('category-collapse-header')) {
+              parent.classList.add('collapsed');
+            }
+          }
+        } catch (e) {}
+      });
     }
 
     function switchMainTab(tabId, title, skipHash) {
@@ -3730,6 +3792,7 @@
     }
 
     // Live AJAX Polling & URL Hash Navigation
+    initCategoryCollapseStates();
     applyHashRoute();
 
     setInterval(() => {
