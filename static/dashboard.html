@@ -566,7 +566,7 @@
       z-index: 1000; opacity: 0; visibility: hidden;
       transition: opacity 0.22s ease-out, visibility 0.22s ease-out;
     }
-    .modal-backdrop.show { opacity: 1; visibility: visible; }
+    .modal-backdrop.show { opacity: 1 !important; visibility: visible !important; }
     .modal-box {
       background: linear-gradient(135deg, rgba(26, 23, 44, 0.96) 0%, rgba(14, 12, 24, 0.98) 100%);
       border: 1px solid var(--border-accent); border-top: 1px solid var(--border-top);
@@ -642,6 +642,466 @@
       .modal-box { width: 95% !important; padding: 20px 16px !important; margin: 10px; }
       .subtabs-pills { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
     }
+  
+/* Gmail Layout & Dark Theme overrides */
+    .mail-view-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 120px);
+      min-height: 600px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .mail-toolbar {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 13, 26, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-shrink: 0;
+    }
+
+    .mail-search-box {
+      flex: 1;
+      max-width: 520px;
+      position: relative;
+    }
+
+    .mail-search-box svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .mail-search-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      color: #fff;
+      font-size: 13px;
+      padding: 7px 14px 7px 36px;
+      outline: none;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .mail-search-input:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    .mail-main-container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Left Email List: Gmail compact density */
+    .mail-list-panel {
+      flex: 1;
+      min-width: 320px;
+      max-width: 540px;
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      background: rgba(11, 10, 20, 0.5);
+    }
+
+    .mail-list-panel.full-width {
+      max-width: 100%;
+      border-right: none;
+    }
+
+    .mail-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      transition: background 0.12s ease, border-color 0.12s ease;
+      user-select: none;
+      font-size: 13px;
+    }
+
+    .mail-row:hover {
+      background: rgba(124, 77, 255, 0.08);
+    }
+
+    .mail-row.selected {
+      background: rgba(124, 77, 255, 0.16);
+      border-left: 3px solid var(--accent);
+    }
+
+    .mail-row-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(124, 77, 255, 0.4), rgba(59, 130, 246, 0.4));
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-weight: 700;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+
+    .mail-row-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mail-row-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .mail-row-sender {
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 220px;
+    }
+
+    .mail-row-date {
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .mail-row-subject {
+      color: #cbd5e1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+      font-size: 12.5px;
+      margin-bottom: 3px;
+    }
+
+    .mail-row-to {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mail-row-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    /* Detail View Panel */
+    .mail-detail-panel {
+      flex: 1.2;
+      display: flex;
+      flex-direction: column;
+      background: rgba(14, 12, 24, 0.85);
+      overflow-y: auto;
+      padding: 24px 28px;
+    }
+
+    .mail-detail-empty {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      gap: 12px;
+    }
+
+    .mail-detail-empty svg {
+      opacity: 0.3;
+    }
+
+    .mail-detail-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 18px;
+      margin-bottom: 20px;
+    }
+
+    .mail-detail-subject {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+      line-height: 1.35;
+      letter-spacing: -0.2px;
+    }
+
+    .mail-detail-meta {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .mail-detail-sender-name {
+      font-weight: 600;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .mail-detail-sender-addr {
+      color: var(--text-muted);
+      font-size: 12px;
+      margin-left: 4px;
+    }
+
+    .mail-detail-to {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .mail-detail-to-val {
+      color: #38bdf8;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+    }
+
+    /* OTP Code card */
+    .mail-otp-banner {
+      background: linear-gradient(135deg, rgba(124, 77, 255, 0.22), rgba(59, 130, 246, 0.14));
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 8px 24px rgba(124, 77, 255, 0.12);
+    }
+
+    .mail-otp-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 3px;
+      text-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    /* Action Links card */
+    .mail-links-banner {
+      background: rgba(16, 185, 129, 0.09);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+
+    .mail-link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .mail-link-item:last-child {
+      border-bottom: none;
+    }
+
+    .mail-link-url {
+      color: #60a5fa;
+      text-decoration: none;
+      font-size: 12.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 480px;
+    }
+
+    .mail-link-url:hover {
+      text-decoration: underline;
+    }
+
+    /* Body tabs & iframe */
+    .mail-body-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mail-body-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      color: #e2e8f0;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 18px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .mail-body-iframe {
+      width: 100%;
+      height: 550px;
+      border-radius: var(--radius-sm);
+      background: #fff;
+      border: none;
+    }
+
+  
+    /* Modern Custom Scrollbars throughout Dashboard & Mail */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(124, 77, 255, 0.35) transparent;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(124, 77, 255, 0.28);
+      border-radius: 4px;
+      transition: background 0.15s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(124, 77, 255, 0.6);
+    }
+
+    /* Custom Glass Dropdown */
+    .custom-dropdown-wrap {
+      position: relative;
+      display: inline-block;
+      min-width: 200px;
+    }
+
+    .custom-dropdown-btn {
+      width: 100%;
+      height: 34px;
+      padding: 0 34px 0 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.18s ease;
+      position: relative;
+    }
+
+    .custom-dropdown-btn:hover {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(124, 77, 255, 0.4);
+    }
+
+    .custom-dropdown-btn.active {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+      background: rgba(124, 77, 255, 0.12);
+    }
+
+    .custom-dropdown-chevron {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      transition: transform 0.2s ease, color 0.2s ease;
+      pointer-events: none;
+    }
+
+    .custom-dropdown-btn.active .custom-dropdown-chevron {
+      transform: translateY(-50%) rotate(180deg);
+      color: var(--accent-light);
+    }
+
+    .custom-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 260px;
+      background: #141124;
+      backdrop-filter: blur(28px);
+      border: 1px solid rgba(124, 77, 255, 0.35);
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(124, 77, 255, 0.15);
+      padding: 6px;
+      z-index: 1050;
+      display: none;
+      flex-direction: column;
+      gap: 3px;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .custom-dropdown-menu.show {
+      display: flex;
+    }
+
+    .custom-dropdown-item {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      color: #e2e8f0;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      transition: background 0.12s ease, color 0.12s ease;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .custom-dropdown-item:hover {
+      background: rgba(124, 77, 255, 0.2);
+      color: #fff;
+    }
+
+    .custom-dropdown-item.selected {
+      background: rgba(124, 77, 255, 0.28);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .custom-dropdown-item-count {
+      font-size: 11px;
+      color: var(--accent-light);
+      background: rgba(124, 77, 255, 0.25);
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-family: inherit;
+    }
+
   </style>
 </head>
 <body>
@@ -676,6 +1136,10 @@
         <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>
         <span>События и Антидот</span>
       </button>
+      <button class="nav-link" data-tab="mail" onclick="switchMainTab('mail', 'Gmail Почта')">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        <span>Gmail Почта</span>
+      </button>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="logout()">
@@ -696,6 +1160,144 @@
            TAB 1: ОБЗОР И КВОТЫ (КОМАНДНЫЙ ЦЕНТР)
       =========================================== -->
       <section id="pane-overview" class="tab-pane active">
+        <!-- Сетка карточек провайдеров (Агрегированная сводка AntiGravity & Dahl Inference) -->
+        <div style="margin-bottom: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px;">
+            
+            <!-- ПРОВАЙДЕР 1: AntiGravity (Google Cloud Code) -->
+            <div class="glass-table-container" style="margin-bottom:0; border-top: 2px solid #10b981; padding: 22px 24px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                <div style="display:flex; align-items:center; gap: 12px;">
+                  <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #10b981; font-weight: 900; font-size: 15px;">AG</div>
+                  <div>
+                    <div style="font-weight: 800; font-size: 17px; color: #fff;">AntiGravity</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">Google Cloud Code (OAuth HRW Affinity)</div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="badge" id="agSummaryBadge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">-- / -- Активно</span>
+                  <button class="btn-action btn-probe-header" onclick="probeAllAccounts()" title="Опросить квоты Google">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Метрики квот AntiGravity в 4 ячейки -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; background: rgba(12, 10, 22, 0.6); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">5-часовое окно</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 2px;" id="ag5hQuotaVal">--%</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Flash / Nano</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">За неделю</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #34d399; margin-top: 2px;" id="agWeeklyQuotaVal">--%</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Пул аккаунтов</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Аргон (WTU)</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #60a5fa; margin-top: 2px;" id="agArgonQuotaVal">--%</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Jio #7, #8, #11</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">3Party (G&C)</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="ag3PartyQuotaVal">--%</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">5h / Wk остаток</div>
+                </div>
+              </div>
+
+              <!-- Прогресс-бары квот -->
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 14px;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                    <span style="color:var(--text-secondary);">Средняя емкость 5-часового пула</span>
+                    <span style="font-weight:700; color:#10b981;" id="ag5hBarText">--%</span>
+                  </div>
+                  <div class="progress-bar-bg"><div id="ag5hBar" class="progress-bar-fill fill-5h" style="width: 0%;"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                    <span style="color:var(--text-secondary);">Недельный ресурс аккаунтов</span>
+                    <span style="font-weight:700; color:#34d399;" id="agWkBarText">--%</span>
+                  </div>
+                  <div class="progress-bar-bg"><div id="agWkBar" class="progress-bar-fill fill-weekly" style="width: 0%;"></div></div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px solid rgba(255,255,255,0.06); pt-2; margin-top:12px; padding-top:10px;">
+                <span style="color: var(--text-muted);">Модели без префиксов:</span>
+                <span style="color: #cbd5e1; font-family: monospace; font-size: 11px;">gemini-3.8-flash*, nano-banana</span>
+              </div>
+            </div>
+
+            <!-- ПРОВАЙДЕР 2: Dahl Inference (3PA Token Pool) -->
+            <div class="glass-table-container" style="margin-bottom:0; border-top: 2px solid #7c4dff; padding: 22px 24px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+                <div style="display:flex; align-items:center; gap: 12px;">
+                  <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(124, 77, 255, 0.15); border: 1px solid var(--border-accent); display: flex; align-items: center; justify-content: center; color: var(--accent-light); font-weight: 900; font-size: 15px;">3P</div>
+                  <div>
+                    <div style="font-weight: 800; font-size: 17px; color: #fff;">Dahl Inference</div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">3PA Token Pool (Round-Robin failover)</div>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="badge" id="dahlSummaryBadge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-light); border: 1px solid var(--border-accent);">-- / -- Активно</span>
+                  <button class="btn-action" onclick="loadQuotas()" title="Обновить пул Dahl">
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Метрики пула Dahl в 4 ячейки -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; background: rgba(12, 10, 22, 0.6); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Общий пул</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #a78bfa; margin-top: 2px;" id="dahlTotalTokensVal">--</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Токенов в резерве</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Сгорание (Idle 7d)</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="dahlExpiryCountdownVal">--</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;" id="dahlExpiryDateVal">-- UTC</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Пачка под дорег</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #f43f5e; margin-top: 2px;" id="dahlExpiringBatchVal">--</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Аккаунтов сгорит</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Отказоустойчивость</div>
+                  <div style="font-size: 18px; font-weight: 800; color: #38bdf8; margin-top: 2px;">Next Key</div>
+                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Ротация 429 (∞)</div>
+                </div>
+              </div>
+
+              <!-- Индикатор заполненности и готовности пула Dahl -->
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 14px;">
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                    <span style="color:var(--text-secondary);">Доля активных ключей в ротации</span>
+                    <span style="font-weight:700; color:#a78bfa;" id="dahlHealthRatioText">--%</span>
+                  </div>
+                  <div class="progress-bar-bg"><div id="dahlHealthBar" class="progress-bar-fill fill-top" style="width: 0%;"></div></div>
+                </div>
+                <div>
+                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                    <span style="color:var(--text-secondary);">Таймер активности (до первого сгорания)</span>
+                    <span style="font-weight:700; color:#fbbf24;" id="dahlTimerBarText">--%</span>
+                  </div>
+                  <div class="progress-bar-bg"><div id="dahlTimerBar" class="progress-bar-fill fill-amber" style="width: 0%;"></div></div>
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px solid rgba(255,255,255,0.06); margin-top:12px; padding-top:10px;">
+                <span style="color: var(--text-muted);">Модели с префиксом:</span>
+                <span style="color: #cbd5e1; font-family: monospace; font-size: 11px;">dahl-deepseek-v4-flash, dahl-minimax-m2.7, dahl-glm</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
         <!-- 7 KPI Карточек с полным разделением Вход / Выход / Кэш / Факт -->
         <div class="kpi-cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
           <div class="kpi-card">
@@ -812,27 +1414,12 @@
           </div>
         </div>
 
-        <!-- Плашка сигнализации о заблокированных аккаунтах Google -->
-        <div id="bannedAccountsAlert" class="banned-alert-banner" style="display: none;">
-          <div class="banned-alert-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-          </div>
-          <div class="banned-alert-content">
-            <div class="banned-alert-title">Внимание: обнаружен бан аккаунтов Google (<span id="bannedCount">0</span> из <span id="totalAccountsCount">0</span> в бане)</div>
-            <div class="banned-alert-desc">Google заблокировал доступ (TOS / Suspended / invalid_grant). Hydra-Lite непрерывно опрашивает их каждые 3 мин в ожидании разбана по апелляциям.</div>
-          </div>
-          <div class="banned-alert-actions">
-            <button class="btn-action btn-probe-header" onclick="probeAllAccounts()" title="Принудительно опросить все аккаунты прямо сейчас">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              <span>Дёрнуть все аккаунты</span>
-            </button>
-          </div>
-        </div>
 
-        <!-- Сетка карточек аккаунтов пула -->
-        <div class="glass-table-container">
+
+        <!-- Сетка карточек аккаунтов пула (скрыта по умолчанию) -->
+        <div class="glass-table-container" id="accountsCardsContainer" style="display: none;">
           <div class="glass-table-header">
-            <div class="glass-table-title">Состояние пула аккаунтов Google (Карточки квот и доступности)</div>
+            <div class="glass-table-title">Детальные карточки аккаунтов Google (AntiGravity)</div>
             <div style="display:flex; gap:8px;">
               <button class="btn-action btn-probe-header" id="btnProbeAllAccounts" onclick="probeAllAccounts()" title="Принудительно опросить все аккаунты Google прямо сейчас">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
@@ -1045,6 +1632,121 @@
           </table>
         </div>
       </section>
+      <!-- ==========================================
+           TAB: Gmail Почта (Gmail Dark Design)
+           ========================================== -->
+      <section id="pane-mail" class="tab-pane">
+        <div class="subtabs-pills">
+          <button class="subtab-btn active" data-subtab="inbox" onclick="switchMailSubTab('inbox')">Входящие сообщения</button>
+          <button class="subtab-btn" data-subtab="accounts" onclick="switchMailSubTab('accounts')">Управление ящиками (Пул 5 Gmail)</button>
+        </div>
+
+        <!-- Sub 1: Входящие сообщения (Gmail Layout) -->
+        <div id="subpane-mail-inbox" class="mail-view-wrapper">
+          <div class="mail-toolbar">
+            <div style="display:flex; align-items:center; gap: 12px; flex: 1;">
+              <div class="custom-dropdown-wrap" id="customMailDropdown">
+                <button type="button" class="custom-dropdown-btn" onclick="toggleMailDropdown(event)" id="mailDropdownBtn">
+                  <span id="mailDropdownSelectedLabel">Все 5 ящиков (Пул)</span>
+                  <svg class="custom-dropdown-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="custom-dropdown-menu" id="mailDropdownMenu">
+                  <!-- Injected dynamically -->
+                </div>
+              </div>
+
+              <div class="mail-search-box">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="mailSearchInput" class="mail-search-input" placeholder="Поиск в почте, dot-trick получателю, кодам..." oninput="debounceMailSearch()">
+              </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap: 8px;">
+              <button class="btn-action" onclick="syncMailAll()" id="btnSyncMail" style="height: 34px; padding: 0 14px;">🔄 Обновить</button>
+              <button class="btn-action" onclick="openAddGmailModal()" style="height: 34px; padding: 0 14px;">+ Добавить ящик</button>
+            </div>
+          </div>
+
+          <div class="mail-main-container">
+            <!-- Left: Gmail Thread Feed -->
+            <div class="mail-list-panel" id="mailMessagesList">
+              <div style="padding: 40px 20px; text-align: center; color: var(--text-muted);">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                Загрузка почты из пула...
+              </div>
+            </div>
+
+            <!-- Right: Gmail Message Reader -->
+            <div class="mail-detail-panel" id="mailMessageDetail">
+              <div class="mail-detail-empty">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <div style="font-size: 14px; font-weight: 500;">Выберите письмо из списка для чтения</div>
+                <div style="font-size: 12px; color: var(--text-muted); max-width: 280px; text-align: center;">Коды верификации (OTP) и ссылки активации распознаются автоматически</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub 2: Управление аккаунтами (Таблица) -->
+        <div id="subpane-mail-accounts" class="glass-table-container" style="display:none;">
+          <div class="glass-table-header">
+            <div class="glass-table-title">Gmail ящики пула (Лимит: 5 аккаунтов)</div>
+            <button class="btn-action" onclick="openAddGmailModal()">+ Добавить ящик</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Email адрес</th>
+                <th>Метка</th>
+                <th>Статус</th>
+                <th>Сообщений</th>
+                <th>Синхронизация</th>
+                <th>Ошибка</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="mailAccountsTableBody">
+              <tr><td colspan="8" style="text-align:center;">Загрузка аккаунтов...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Modal: Подключение Gmail аккаунта -->
+  <div id="addGmailModalBackdrop" class="modal-backdrop">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-head">
+        <span>Подключение Gmail аккаунта</span>
+        <button onclick="closeAddGmailModal()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-field">
+        <label>Gmail Адрес</label>
+        <input type="email" id="modalGmailEmail" class="modal-input" placeholder="например: yourname@gmail.com" required>
+      </div>
+
+      <div class="modal-field">
+        <label>Пароль приложения Google (App Password)</label>
+        <input type="text" id="modalGmailPassword" class="modal-input" placeholder="16 символов (например: abcd efgh ijkl mnop)" required>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">
+          Создаётся в: <b style="color:var(--text);">Google Аккаунт ➔ Безопасность ➔ Двухэтапная аутентификация ➔ Пароли приложений</b>.
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>Метка / Заметка (опционально)</label>
+        <input type="text" id="modalGmailLabel" class="modal-input" placeholder="например: Основной / Резерв / Дроп">
+      </div>
+
+      <div class="modal-foot" style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="btn-page" onclick="closeAddGmailModal()">Отмена</button>
+        <button class="btn-action" onclick="submitAddGmailAccount()" id="btnSubmitGmail">Подключить аккаунт</button>
+      </div>
     </div>
   </div>
 
@@ -1245,6 +1947,14 @@
     let allKeys = [];
     let fullKeyMap = {};
     let activeMainTab = 'overview';
+    let activeClientSubTab = 'keys';
+    let activeEventSubTab = 'requests';
+    let activeMailSubTab = 'inbox';
+    let selectedMailMsgId = null;
+    let mailSearchTimeout = null;
+    let activeMailBodyTab = 'text';
+    let mailAccountsCache = [];
+    let selectedMailAccountId = '';
 
     function getCookie(name) {
       const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -1748,15 +2458,16 @@
     }
 
     // URL Navigation & Hash Routing
-    let activeClientSubTab = 'keys';
-    let activeEventSubTab = 'requests';
-
-    function updateUrlHash() {
+        function updateUrlHash() {
       let hash = '#overview';
       if (activeMainTab === 'clients') {
         hash = '#clients/' + activeClientSubTab;
       } else if (activeMainTab === 'events') {
         hash = '#events/' + activeEventSubTab;
+      } else if (activeMainTab === 'third-party') {
+        hash = '#/3pa';
+      } else if (activeMainTab === 'mail') {
+        hash = '#mail/' + activeMailSubTab;
       }
       if (window.location.hash !== hash) {
         history.replaceState(null, '', hash);
@@ -1778,7 +2489,9 @@
         const titles = {
           'overview': 'Обзор и квоты',
           'clients': 'Клиенты и ключи',
-          'events': 'События и Антидот'
+          'events': 'События и Антидот',
+          'third-party': '3PA модели',
+          'mail': 'Gmail Почта'
         };
         titleElem.innerText = title || titles[tabId] || 'Панель управления';
       }
@@ -1790,6 +2503,10 @@
         switchClientSubTab(activeClientSubTab, true);
       } else if (tabId === 'events') {
         switchEventSubTab(activeEventSubTab, true);
+      } else if (tabId === 'mail') {
+        switchMailSubTab(activeMailSubTab);
+      } else if (tabId === 'third-party') {
+        loadThirdPartyPool();
       }
 
       if (!skipHash) {
@@ -1848,6 +2565,11 @@
       const main = parts[0];
       const sub = parts[1] || '';
 
+      if (main === 'third-party' || main === '3pa' || main === 'dahl') {
+        switchMainTab('third-party', '3PA модели', true);
+        return;
+      }
+
       if (main === 'clients' || main === 'keys' || main === 'consumers' || main === 'rating') {
         activeClientSubTab = (sub === 'consumers' || main === 'consumers' || main === 'rating') ? 'consumers' : 'keys';
         switchMainTab('clients', 'Клиенты и ключи', true);
@@ -1862,6 +2584,9 @@
         }
         switchMainTab('events', 'События и Антидот', true);
         switchEventSubTab(activeEventSubTab, true);
+      } else if (main === 'mail' || main === 'inbox' || main === 'gmail') {
+        activeMailSubTab = (sub === 'accounts' || main === 'accounts') ? 'accounts' : 'inbox';
+        switchMainTab('mail', 'Gmail Почта', true);
       } else {
         switchMainTab('overview', 'Обзор и квоты', true);
       }
@@ -1873,6 +2598,206 @@
       document.cookie = 'hydra_admin_auth=; path=/; max-age=0;';
       localStorage.removeItem('hydra_admin_auth');
       window.location.reload();
+    }
+
+    // 3PA Multi-Service Pool Manager
+    let thirdPartyCacheData = null;
+    let selected3paProvider = 'dahl';
+
+    async function loadThirdPartyPool() {
+      try {
+        const res = await fetch('/api/3pa/pool', { headers: authHeaders() });
+        if (res.status === 401) return logout();
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        thirdPartyCacheData = data;
+
+        // 1. Render Multi-Service Cards Grid
+        const container = document.getElementById('3paProviderCardsContainer');
+        const providers = data.providers || [];
+
+        container.innerHTML = providers.map(p => {
+          const isSelected = p.provider === selected3paProvider;
+          const hasAccounts = p.total_accounts > 0;
+          
+          let expiryText = '—';
+          let expiryColor = 'var(--text-secondary)';
+          if (p.earliest_expiry) {
+            const expDate = new Date(p.earliest_expiry);
+            const diffMs = expDate - new Date();
+            if (diffMs > 0) {
+              const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              expiryText = `${days}д ${hours}ч (сгорит ${p.expiring_soon_count} акк)`;
+              expiryColor = days <= 2 ? '#ef4444' : '#fbbf24';
+            } else {
+              expiryText = 'Истёк (требуется дорега)';
+              expiryColor = '#ef4444';
+            }
+          } else if (!hasAccounts) {
+            expiryText = 'Нет аккаунтов (пул пуст)';
+            expiryColor = 'var(--text-muted)';
+          }
+
+          const cardBorder = isSelected ? 'border: 2px solid var(--accent);' : 'border: 1px solid var(--border);';
+          const badgeClass = hasAccounts ? 'background:rgba(16,185,129,0.15); color:#10b981;' : 'background:rgba(148,163,184,0.15); color:var(--text-muted);';
+
+          const modelsBadges = (p.models || []).map(m => `<span style="font-size:11px; font-family:monospace; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; margin-right:4px;">${m}</span>`).join(' ');
+
+          return `
+            <div class="kpi-card" style="${cardBorder} border-radius:var(--radius-lg); padding:20px; cursor:pointer; transition:all 0.2s;" onclick="select3paProvider('${p.provider}')">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <div style="font-weight:800; font-size:17px; color:#fff;">${p.provider_name}</div>
+                <span class="badge" style="${badgeClass}">${p.active_accounts} / ${p.total_accounts} акк</span>
+              </div>
+              <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:10px;">
+                <div style="font-size:26px; font-weight:800; color:#a78bfa;">${formatCompactNumber(p.total_tokens || 0)}</div>
+                <div style="font-size:12px; color:var(--text-secondary);">токенов в пуле</div>
+              </div>
+              <div style="font-size:12px; margin-bottom:8px;">
+                <span style="color:var(--text-secondary);">Срок годности:</span> <b style="color:${expiryColor};">${expiryText}</b>
+              </div>
+              <div style="font-size:11px; color:var(--text-muted); margin-top:8px; line-height:1.5;">
+                <div style="color:var(--text-secondary); margin-bottom:3px;">Модели:</div>
+                ${modelsBadges}
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // 2. Global Expiry Alert
+        const alertBox = document.getElementById('3paExpiryAlert');
+        const alertText = document.getElementById('3paExpiryAlertText');
+        const batchBadge = document.getElementById('3paExpiryBatchBadge');
+
+        // Check if any provider is expiring soon
+        let earliestGlobal = null;
+        let expiringProv = null;
+        providers.forEach(p => {
+          if (p.earliest_expiry) {
+            const d = new Date(p.earliest_expiry);
+            if (!earliestGlobal || d < earliestGlobal) {
+              earliestGlobal = d;
+              expiringProv = p;
+            }
+          }
+        });
+
+        if (earliestGlobal && expiringProv) {
+          const diffMs = earliestGlobal - new Date();
+          if (diffMs > 0) {
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            alertBox.style.display = 'flex';
+            alertText.innerText = `В пуле «${expiringProv.provider_name}» через ${days}д ${hours}ч сгорит пачка из ${expiringProv.expiring_soon_count} аккаунтов на ${formatCompactNumber(expiringProv.expiring_soon_tokens)} токенов. Пора подготовить дорегистрацию!`;
+            batchBadge.innerText = `${expiringProv.provider_name}: ${expiringProv.expiring_soon_count} акк (${formatCompactNumber(expiringProv.expiring_soon_tokens)})`;
+          } else {
+            alertBox.style.display = 'flex';
+            alertText.innerText = `Срок действия пула «${expiringProv.provider_name}» истёк! Запустите скрипт дорегистрации.`;
+            batchBadge.innerText = `ТРЕБУЕТСЯ ДОРЕГА`;
+          }
+        } else {
+          alertBox.style.display = 'none';
+        }
+
+        // 3. Render subtabs pills for providers
+        const pillsContainer = document.getElementById('3paProviderPills');
+        pillsContainer.innerHTML = providers.map(p => {
+          const isActive = p.provider === selected3paProvider ? 'active' : '';
+          return `<button class="subtab-btn ${isActive}" onclick="select3paProvider('${p.provider}')">${p.provider_name} (${p.active_accounts} / ${p.total_accounts})</button>`;
+        }).join('');
+
+        // 4. Render selected provider table
+        renderSelectedProviderTable();
+
+      } catch (err) {
+        console.error('loadThirdPartyPool error:', err);
+        showToast('Ошибка загрузки 3PA пула: ' + err.message);
+      }
+    }
+
+    function select3paProvider(provId) {
+      selected3paProvider = provId;
+      if (thirdPartyCacheData) {
+        loadThirdPartyPool();
+      }
+    }
+
+    function renderSelectedProviderTable() {
+      if (!thirdPartyCacheData) return;
+      const providers = thirdPartyCacheData.providers || [];
+      const current = providers.find(p => p.provider === selected3paProvider) || providers[0];
+      if (!current) return;
+
+      const titleEl = document.getElementById('3paActiveTableTitle');
+      titleEl.innerText = `Реестр аккаунтов пула ${current.provider_name} (${formatCompactNumber(current.total_tokens || 0)} токенов)`;
+
+      const tbody = document.getElementById('3paTableBody');
+      const accounts = current.accounts || [];
+
+      if (accounts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:28px;">В пуле «${current.provider_name}» пока нет аккаунтов. Запустите авторегер для пополнения пула.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = accounts.map(a => {
+        const isActive = a.status === 'active';
+        const statusBadge = isActive 
+          ? '<span class="badge" style="background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">Active</span>' 
+          : '<span class="badge" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);">Disabled</span>';
+        
+        let expFormatted = '—';
+        if (a.trial_expires_at) {
+          try {
+            const d = new Date(a.trial_expires_at);
+            expFormatted = d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+          } catch (_) {
+            expFormatted = a.trial_expires_at;
+          }
+        }
+
+        return `<tr>
+          <td class="mono">${a.id}</td>
+          <td><strong>${a.username}</strong></td>
+          <td class="mono" style="color:var(--accent-light);">${a.key_masked}</td>
+          <td><strong>${formatCompactNumber(a.tokens)}</strong></td>
+          <td style="color:var(--text-secondary); font-size:13px;">${expFormatted}</td>
+          <td>${statusBadge}</td>
+          <td>
+            <button class="btn-action" style="padding:4px 8px; font-size:12px; margin-right:4px;" onclick="toggleThirdPartyAccount(${a.id})">${isActive ? 'Отключить' : 'Включить'}</button>
+            <button class="btn-action" style="padding:4px 8px; font-size:12px; background:rgba(239,68,68,0.2); border-color:rgba(239,68,68,0.4); color:#ef4444;" onclick="deleteThirdPartyAccount(${a.id})">Удалить</button>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function toggleThirdPartyAccount(id) {
+      try {
+        const res = await fetch(`/api/3pa/accounts/${id}/toggle`, { method: 'PATCH', headers: authHeaders() });
+        if (res.ok) {
+          showToast('Статус аккаунта изменён');
+          loadThirdPartyPool();
+        } else {
+          showToast('Ошибка переключения');
+        }
+      } catch (err) {
+        showToast('Ошибка: ' + err.message);
+      }
+    }
+
+    async function deleteThirdPartyAccount(id) {
+      if (!confirm('Удалить аккаунт из 3PA пула?')) return;
+      try {
+        const res = await fetch(`/api/3pa/accounts/${id}`, { method: 'DELETE', headers: authHeaders() });
+        if (res.ok) {
+          showToast('Аккаунт удален');
+          loadThirdPartyPool();
+        } else {
+          showToast('Ошибка удаления');
+        }
+      } catch (err) {
+        showToast('Ошибка: ' + err.message);
+      }
     }
 
     // 1. Квоты и Карточки Аккаунтов
@@ -1920,19 +2845,109 @@
           }
         }
 
-        // Обновление плашки бана над сеткой
+        // Плашка бана удалена из UI
         const alertBanner = document.getElementById('bannedAccountsAlert');
         if (alertBanner) {
-          if (bannedCount > 0) {
-            alertBanner.style.display = 'flex';
-            document.getElementById('bannedCount').innerText = bannedCount;
-            document.getElementById('totalAccountsCount').innerText = accounts.length;
-          } else {
-            alertBanner.style.display = 'none';
-          }
+          alertBanner.style.display = 'none';
         }
 
         const totalReq = summary.total_requests || 0;
+        // 1. Обновляем плашку и карточку AntiGravity
+        const agAvgEl = document.getElementById('agAvgQuotaVal');
+        if (agAvgEl) agAvgEl.innerText = `${(avgRem * 100).toFixed(0)}%`;
+        const agBadgeEl = document.getElementById('agSummaryBadge');
+        if (agBadgeEl) agBadgeEl.innerText = `${activeCount} / ${accounts.length} Активно`;
+
+        // Считаем агрегаты для AntiGravity: 5h, Weekly, Argon, 3Party
+        let sum5h = 0, count5h = 0;
+        let sumWk = 0, countWk = 0;
+        let sumArgon = 0, countArgon = 0;
+        let sum3p = 0, count3p = 0;
+
+        accounts.forEach(a => {
+          if (!a.is_banned && a.enabled) {
+            const g5h = a.gemini_5h !== undefined ? a.gemini_5h : a.gemini_remaining;
+            if (g5h !== undefined && g5h !== null) { sum5h += g5h; count5h++; }
+            const gWk = a.gemini_weekly !== undefined ? a.gemini_weekly : a.gemini_remaining;
+            if (gWk !== undefined && gWk !== null) { sumWk += gWk; countWk++; }
+            if (a.has_argon && a.argon_weekly !== undefined && a.argon_weekly !== null) {
+              sumArgon += a.argon_weekly; countArgon++;
+            }
+            const c5h = a.three_party_5h !== undefined ? a.three_party_5h : a.claude_remaining;
+            if (c5h !== undefined && c5h !== null) { sum3p += c5h; count3p++; }
+          }
+        });
+
+        const avg5hPct = count5h ? Math.round((sum5h / count5h) * 100) : 0;
+        const avgWkPct = countWk ? Math.round((sumWk / countWk) * 100) : 0;
+        const avgArgonPct = countArgon ? Math.round((sumArgon / countArgon) * 100) : 0;
+        const avg3pPct = count3p ? Math.round((sum3p / count3p) * 100) : 0;
+
+        const ag5hEl = document.getElementById('ag5hQuotaVal');
+        if (ag5hEl) ag5hEl.innerText = `${avg5hPct}%`;
+        const agWkEl = document.getElementById('agWeeklyQuotaVal');
+        if (agWkEl) agWkEl.innerText = `${avgWkPct}%`;
+        const agArgonEl = document.getElementById('agArgonQuotaVal');
+        if (agArgonEl) agArgonEl.innerText = countArgon ? `${avgArgonPct}%` : 'N/A';
+        const ag3pEl = document.getElementById('ag3PartyQuotaVal');
+        if (ag3pEl) ag3pEl.innerText = count3p ? `${avg3pPct}%` : 'N/A';
+
+        const ag5hBar = document.getElementById('ag5hBar');
+        if (ag5hBar) ag5hBar.style.width = `${avg5hPct}%`;
+        const ag5hBarText = document.getElementById('ag5hBarText');
+        if (ag5hBarText) ag5hBarText.innerText = `${avg5hPct}%`;
+
+        const agWkBar = document.getElementById('agWkBar');
+        if (agWkBar) agWkBar.style.width = `${avgWkPct}%`;
+        const agWkBarText = document.getElementById('agWkBarText');
+        if (agWkBarText) agWkBarText.innerText = `${avgWkPct}%`;
+
+        // 2. Подгружаем агрегированную статистику Dahl для карточки
+        fetch('/api/3pa/pool', { headers: authHeaders() })
+          .then(r => r.json())
+          .then(d => {
+            const p = (d.providers || []).find(x => x.provider === 'dahl') || (d.providers && d.providers[0]);
+            if (p) {
+              const dahlTotalEl = document.getElementById('dahlTotalTokensVal');
+              if (dahlTotalEl) dahlTotalEl.innerText = formatCompactNumber(p.total_tokens || 0);
+              const dahlBadgeEl = document.getElementById('dahlSummaryBadge');
+              if (dahlBadgeEl) dahlBadgeEl.innerText = `${p.active_accounts} / ${p.total_accounts} Активно`;
+              
+              const dahlExpEl = document.getElementById('dahlExpiryCountdownVal');
+              const dahlExpDateEl = document.getElementById('dahlExpiryDateVal');
+              const dahlBatchEl = document.getElementById('dahlExpiringBatchVal');
+              const dahlHealthRatioEl = document.getElementById('dahlHealthRatioText');
+              const dahlHealthBar = document.getElementById('dahlHealthBar');
+              const dahlTimerBar = document.getElementById('dahlTimerBar');
+              const dahlTimerBarText = document.getElementById('dahlTimerBarText');
+
+              if (p.total_accounts > 0) {
+                const ratio = Math.round((p.active_accounts / p.total_accounts) * 100);
+                if (dahlHealthRatioEl) dahlHealthRatioEl.innerText = `${ratio}%`;
+                if (dahlHealthBar) dahlHealthBar.style.width = `${ratio}%`;
+              }
+
+              if (p.earliest_expiry) {
+                const diffMs = new Date(p.earliest_expiry) - new Date();
+                const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                if (dahlExpEl) dahlExpEl.innerText = days > 0 ? `${days}д ${hours}ч` : (diffMs > 0 ? `${hours}ч` : 'Истёк');
+                if (dahlExpDateEl) {
+                  const dt = new Date(p.earliest_expiry);
+                  dahlExpDateEl.innerText = `${dt.getUTCDate().toString().padStart(2, '0')}.${(dt.getUTCMonth()+1).toString().padStart(2, '0')} ${dt.getUTCHours().toString().padStart(2, '0')}:${dt.getUTCMinutes().toString().padStart(2, '0')} UTC`;
+                }
+                if (dahlBatchEl) dahlBatchEl.innerText = `${p.expiring_batch_size || p.total_accounts} акк`;
+
+                // Процент оставшегося времени из 7 дней
+                const totalWindowMs = 7 * 24 * 60 * 60 * 1000;
+                const timerPct = Math.max(0, Math.min(100, Math.round((diffMs / totalWindowMs) * 100)));
+                if (dahlTimerBar) dahlTimerBar.style.width = `${timerPct}%`;
+                if (dahlTimerBarText) dahlTimerBarText.innerText = `${timerPct}% времени`;
+              }
+            }
+          })
+          .catch(() => {});
+
         document.getElementById('statTotalRequests').innerText = formatCompactNumber(totalReq);
         document.getElementById('statTotalRequests').setAttribute('title', totalReq.toLocaleString() + ' запросов');
 
@@ -2712,6 +3727,441 @@
         }
       }
     }, 3500);
-  </script>
+  
+  // ==========================================
+  // GMAIL GATEWAY CLIENT MODULE (Gmail Density & Dot-Trick)
+  // ==========================================
+  function switchMailSubTab(subId) {
+    activeMailSubTab = subId;
+    document.querySelectorAll('#pane-mail .subtab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-subtab') === subId);
+    });
+    document.getElementById('subpane-mail-inbox').style.display = subId === 'inbox' ? 'flex' : 'none';
+    document.getElementById('subpane-mail-accounts').style.display = subId === 'accounts' ? 'block' : 'none';
+    updateUrlHash();
+    if (subId === 'inbox') {
+      loadMailAccounts();
+      loadMailMessages();
+    } else {
+      loadMailAccounts();
+    }
+  }
+
+  function openAddGmailModal() {
+    document.getElementById('modalGmailEmail').value = '';
+    document.getElementById('modalGmailPassword').value = '';
+    document.getElementById('modalGmailLabel').value = '';
+    document.getElementById('addGmailModalBackdrop').classList.add('show');
+  }
+
+  function closeAddGmailModal() {
+    document.getElementById('addGmailModalBackdrop').classList.remove('show');
+  }
+
+  async function submitAddGmailAccount() {
+    const email = document.getElementById('modalGmailEmail').value.trim();
+    const pwd = document.getElementById('modalGmailPassword').value.trim();
+    const label = document.getElementById('modalGmailLabel').value.trim();
+
+    if (!email || !pwd) {
+      alert('Заполните адрес почты и пароль приложения');
+      return;
+    }
+
+    const btn = document.getElementById('btnSubmitGmail');
+    btn.disabled = true;
+    btn.innerText = 'Подключение...';
+
+    try {
+      const res = await fetch('/api/mail/accounts', {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ email, app_password: pwd, label })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert('Ошибка добавления: ' + (err.detail || err.message || res.statusText));
+        return;
+      }
+      closeAddGmailModal();
+      showToast('Аккаунт успешно подключен');
+      loadMailAccounts();
+      setTimeout(loadMailMessages, 2000);
+    } catch (e) {
+      alert('Сетевая ошибка: ' + e);
+    } finally {
+      btn.disabled = false;
+      btn.innerText = 'Подключить аккаунт';
+    }
+  }
+
+
+  function toggleMailDropdown(e) {
+    if (e) e.stopPropagation();
+    const btn = document.getElementById('mailDropdownBtn');
+    const menu = document.getElementById('mailDropdownMenu');
+    const isOpen = menu.classList.contains('show');
+    if (isOpen) {
+      menu.classList.remove('show');
+      btn.classList.remove('active');
+    } else {
+      menu.classList.add('show');
+      btn.classList.add('active');
+    }
+  }
+
+  function closeMailDropdown() {
+    const btn = document.getElementById('mailDropdownBtn');
+    const menu = document.getElementById('mailDropdownMenu');
+    if (menu) menu.classList.remove('show');
+    if (btn) btn.classList.remove('active');
+  }
+
+  window.toggleMailDropdown = toggleMailDropdown;
+  window.closeMailDropdown = closeMailDropdown;
+  window.selectMailAccountOption = selectMailAccountOption;
+  window.openAddGmailModal = openAddGmailModal;
+  window.closeAddGmailModal = closeAddGmailModal;
+  window.submitAddGmailAccount = submitAddGmailAccount;
+  window.switchMailSubTab = switchMailSubTab;
+  window.syncMailAll = syncMailAll;
+  window.syncSingleMailAccount = syncSingleMailAccount;
+  window.deleteMailAccount = deleteMailAccount;
+  window.selectMailMessage = selectMailMessage;
+  window.switchMailBodyTab = switchMailBodyTab;
+  window.copyMailText = copyMailText;
+
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('customMailDropdown');
+    if (wrap && !wrap.contains(e.target)) {
+      closeMailDropdown();
+    }
+  });
+
+  function selectMailAccountOption(accId, label) {
+    selectedMailAccountId = accId;
+    const labelSpan = document.getElementById('mailDropdownSelectedLabel');
+    if (labelSpan) labelSpan.innerText = label;
+    closeMailDropdown();
+    renderCustomMailDropdown(mailAccountsCache);
+    loadMailMessages();
+  }
+
+  function renderCustomMailDropdown(accounts) {
+    const menu = document.getElementById('mailDropdownMenu');
+    if (!menu) return;
+
+    let totalAllMsgs = 0;
+    (accounts || []).forEach(a => totalAllMsgs += (a.total_messages || 0));
+
+    const isAllSel = !selectedMailAccountId;
+    let html = `
+      <div class="custom-dropdown-item ${isAllSel ? 'selected' : ''}" onclick="selectMailAccountOption('', 'Все 5 ящиков (Пул)')">
+        <span>Все 5 ящиков (Пул)</span>
+        <span class="custom-dropdown-item-count">${totalAllMsgs}</span>
+      </div>
+    `;
+
+    (accounts || []).forEach(a => {
+      const isSel = String(selectedMailAccountId) === String(a.id);
+      html += `
+        <div class="custom-dropdown-item ${isSel ? 'selected' : ''}" onclick="selectMailAccountOption('${a.id}', '${escapeHtml(a.email)}')">
+          <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${escapeHtml(a.email)}</span>
+          <span class="custom-dropdown-item-count">${a.total_messages || 0}</span>
+        </div>
+      `;
+    });
+
+    menu.innerHTML = html;
+  }
+
+  async function loadMailAccounts() {
+    try {
+      const res = await fetch('/api/mail/accounts', { headers: authHeaders() });
+      if (!res.ok) {
+        if (res.status === 401) return logout();
+        return;
+      }
+      const accounts = await res.json();
+      
+      mailAccountsCache = accounts;
+      renderCustomMailDropdown(accounts);
+
+      const tbody = document.getElementById('mailAccountsTableBody');
+      if (tbody) {
+        if (accounts.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted); padding:24px;">Нет подключенных аккаунтов. Нажмите «+ Добавить ящик»</td></tr>';
+          return;
+        }
+        let html = '';
+        accounts.forEach(a => {
+          let statusBadge = '<span class="status-badge active">Подключен</span>';
+          if (a.status === 'connecting') statusBadge = '<span class="status-badge" style="background:rgba(245,158,11,0.2);color:#f59e0b;border-color:rgba(245,158,11,0.4)">Синхронизация</span>';
+          else if (a.status === 'auth_failed' || a.status === 'error') statusBadge = '<span class="status-badge inactive">Ошибка авторизации</span>';
+          
+          html += `<tr>
+            <td style="font-family:'JetBrains Mono',monospace;">#${a.id}</td>
+            <td style="font-family:'JetBrains Mono',monospace; font-weight:600; color:#fff;">${escapeHtml(a.email)}</td>
+            <td>${escapeHtml(a.label || '—')}</td>
+            <td>${statusBadge}</td>
+            <td style="font-family:'JetBrains Mono',monospace; color:var(--accent-light); font-weight:600;">${a.total_messages || 0}</td>
+            <td style="font-size:11px; color:var(--text-muted);">${formatMailDate(a.last_sync)}</td>
+            <td style="font-size:11px; color:#ef4444; max-width:200px; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(a.last_error || '—')}</td>
+            <td>
+              <button class="btn-page" style="padding:3px 8px; font-size:11px;" onclick="syncSingleMailAccount(${a.id})" title="Синхронизировать">🔄</button>
+              <button class="btn-page" style="padding:3px 8px; font-size:11px; color:#ef4444;" onclick="deleteMailAccount(${a.id})" title="Удалить">🗑</button>
+            </td>
+          </tr>`;
+        });
+        tbody.innerHTML = html;
+      }
+    } catch (e) {
+      console.error("loadMailAccounts error:", e);
+    }
+  }
+
+  async function loadMailMessages() {
+    try {
+      const accFilter = selectedMailAccountId || '';
+      const searchEl = document.getElementById('mailSearchInput');
+      const q = (searchEl && searchEl.value) ? searchEl.value.trim() : '';
+      
+      let url = '/api/mail/messages?limit=60';
+      if (accFilter) url += `&account_id=${accFilter}`;
+      if (q) url += `&q=${encodeURIComponent(q)}`;
+
+      const res = await fetch(url, { headers: authHeaders() });
+      if (!res.ok) {
+        if (res.status === 401) return logout();
+        return;
+      }
+      const msgs = await res.json();
+      const listContainer = document.getElementById('mailMessagesList');
+
+      if (msgs.length === 0) {
+        listContainer.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--text-muted);">Входящих писем не найдено</div>';
+        return;
+      }
+
+      let html = '';
+      msgs.forEach(m => {
+        const isSel = selectedMailMsgId === m.id;
+        const selClass = isSel ? 'selected' : '';
+        const sender = m.from_name || m.from_addr || 'Google';
+        const initial = sender.charAt(0).toUpperCase();
+        
+        const otpBadge = m.extracted_code ? `<span style="background:rgba(124,77,255,0.25); color:#d8b4fe; border:1px solid rgba(124,77,255,0.5); padding:1px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:11px;">🔑 ${m.extracted_code}</span>` : '';
+        const linkBadge = (m.extracted_links && m.extracted_links.length > 0) ? `<span style="background:rgba(16,185,129,0.2); color:#6ee7b7; border:1px solid rgba(16,185,129,0.4); padding:1px 6px; border-radius:4px; font-size:10px;">🔗 Ссылка</span>` : '';
+        
+        html += `
+          <div class="mail-row ${selClass}" onclick="selectMailMessage(${m.id})">
+            <div class="mail-row-avatar">${initial}</div>
+            <div class="mail-row-content">
+              <div class="mail-row-header">
+                <span class="mail-row-sender">${escapeHtml(sender)}</span>
+                <span class="mail-row-date">${formatMailDate(m.date || m.created_at)}</span>
+              </div>
+              <div class="mail-row-subject">${escapeHtml(m.subject || '(Без темы)')}</div>
+              <div class="mail-row-to">To: ${highlightDots(m.to_addr || '')}</div>
+              ${(otpBadge || linkBadge) ? `<div class="mail-row-badges">${otpBadge}${linkBadge}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      listContainer.innerHTML = html;
+
+      // Auto select first message if none selected
+      if (!selectedMailMsgId && msgs.length > 0) {
+        selectMailMessage(msgs[0].id);
+      }
+    } catch (e) {
+      console.error("loadMailMessages error:", e);
+    }
+  }
+
+  async function selectMailMessage(id) {
+    selectedMailMsgId = id;
+    
+    // update selected class in list
+    document.querySelectorAll('.mail-row').forEach(row => {
+      row.classList.remove('selected');
+    });
+
+    try {
+      const res = await fetch(`/api/mail/messages/${id}`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const m = await res.json();
+      const container = document.getElementById('mailMessageDetail');
+
+      let otpHtml = '';
+      if (m.extracted_code) {
+        otpHtml = `
+          <div class="mail-otp-banner">
+            <div>
+              <div style="font-size:11px; color:#c084fc; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">Код верификации (OTP)</div>
+              <div class="mail-otp-code">${m.extracted_code}</div>
+            </div>
+            <button class="btn-action" onclick="copyMailText('${m.extracted_code}')">Скопировать код</button>
+          </div>
+        `;
+      }
+
+      let linksHtml = '';
+      if (m.extracted_links && m.extracted_links.length > 0) {
+        linksHtml = `
+          <div class="mail-links-banner">
+            <div style="font-size:11px; color:#34d399; text-transform:uppercase; font-weight:700; margin-bottom: 8px;">Ссылки действий и активации</div>
+            ${m.extracted_links.map(l => `
+              <div class="mail-link-item">
+                <a href="${l}" target="_blank" class="mail-link-url">${escapeHtml(l)}</a>
+                <button class="btn-page" style="padding:2px 8px; font-size:11px;" onclick="copyMailText('${l}')">Копировать</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="mail-detail-header">
+          <div class="mail-detail-subject">${escapeHtml(m.subject || '(Без темы)')}</div>
+          <div class="mail-detail-meta">
+            <div class="mail-row-avatar" style="width:38px; height:38px; font-size:14px;">${(m.from_name || m.from_addr || 'G').charAt(0).toUpperCase()}</div>
+            <div style="flex:1;">
+              <div>
+                <span class="mail-detail-sender-name">${escapeHtml(m.from_name || m.from_addr || '')}</span>
+                <span class="mail-detail-sender-addr">&lt;${escapeHtml(m.from_addr || '')}&gt;</span>
+              </div>
+              <div class="mail-detail-to">Кому: <span class="mail-detail-to-val">${highlightDots(m.to_addr || '')}</span></div>
+            </div>
+            <div style="font-size:12px; color:var(--text-muted); text-align:right;">
+              ${escapeHtml(m.date || m.created_at)}
+            </div>
+          </div>
+        </div>
+
+        ${otpHtml}
+        ${linksHtml}
+
+        <div class="mail-body-container">
+          <div style="display:flex; gap:10px; border-bottom: 1px solid var(--border); margin-bottom: 16px;">
+            <button class="subtab-btn ${activeMailBodyTab === 'text' ? 'active' : ''}" onclick="switchMailBodyTab('text')" id="btnTabMailText">Текст</button>
+            <button class="subtab-btn ${activeMailBodyTab === 'html' ? 'active' : ''}" onclick="switchMailBodyTab('html')" id="btnTabMailHtml">HTML Просмотр</button>
+          </div>
+
+          <div id="mailBodyText" style="display:${activeMailBodyTab === 'text' ? 'block' : 'none'};" class="mail-body-text">
+            ${escapeHtml(m.body_text || '(Текстовое содержимое отсутствует)')}
+          </div>
+
+          <div id="mailBodyHtml" style="display:${activeMailBodyTab === 'html' ? 'block' : 'none'};">
+            <iframe sandbox="allow-same-origin allow-popups" class="mail-body-iframe" srcdoc="${escapeAttr(m.body_html || m.body_text || '')}"></iframe>
+          </div>
+        </div>
+      `;
+    } catch (e) {
+      console.error("selectMailMessage error:", e);
+    }
+  }
+
+  function switchMailBodyTab(tab) {
+    activeMailBodyTab = tab;
+    document.getElementById('mailBodyText').style.display = tab === 'text' ? 'block' : 'none';
+    document.getElementById('mailBodyHtml').style.display = tab === 'html' ? 'block' : 'none';
+    document.getElementById('btnTabMailText').classList.toggle('active', tab === 'text');
+    document.getElementById('btnTabMailHtml').classList.toggle('active', tab === 'html');
+  }
+
+  function debounceMailSearch() {
+    clearTimeout(mailSearchTimeout);
+    mailSearchTimeout = setTimeout(loadMailMessages, 250);
+  }
+
+  async function syncMailAll() {
+    const btn = document.getElementById('btnSyncMail');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerText = '⏳ Обновление...';
+    }
+    await fetch('/api/mail/sync', { method: 'POST', headers: authHeaders() }).catch(() => {});
+    setTimeout(() => {
+      loadMailAccounts();
+      loadMailMessages();
+      if (btn) {
+        btn.disabled = false;
+        btn.innerText = '🔄 Обновить';
+      }
+      showToast('Почта синхронизирована');
+    }, 2000);
+  }
+
+  async function syncSingleMailAccount(id) {
+    await fetch(`/api/mail/accounts/${id}/sync`, { method: 'POST', headers: authHeaders() }).catch(() => {});
+    setTimeout(() => {
+      loadMailAccounts();
+      loadMailMessages();
+      showToast('Синхронизация запущена');
+    }, 1500);
+  }
+
+  async function deleteMailAccount(id) {
+    if (!confirm('Удалить этот Gmail ящик и его сообщения из пула?')) return;
+    await fetch(`/api/mail/accounts/${id}`, { method: 'DELETE', headers: authHeaders() }).catch(() => {});
+    loadMailAccounts();
+    loadMailMessages();
+    showToast('Аккаунт удален');
+  }
+
+  function copyMailText(txt) {
+    navigator.clipboard.writeText(txt);
+    showToast('Скопировано: ' + txt);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function escapeAttr(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function highlightDots(email) {
+    if (!email) return '';
+    const parts = email.split('@');
+    if (parts.length !== 2) return escapeHtml(email);
+    const u = parts[0];
+    const d = parts[1];
+    let res = '';
+    for (let i = 0; i < u.length; i++) {
+      if (u[i] === '.') {
+        res += '<span style="color:#ec4899; font-weight:900;">•</span>';
+      } else {
+        res += escapeHtml(u[i]);
+      }
+    }
+    return res + '@' + escapeHtml(d);
+  }
+
+  function formatMailDate(dStr) {
+    if (!dStr) return '';
+    try {
+      const d = new Date(dStr);
+      if (isNaN(d.getTime())) return dStr.substring(0, 16);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + d.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+    } catch {
+      return dStr.substring(0, 16);
+    }
+  }
+</script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 // Пул базы данных SQLite с разделением на чтение и запись (WAL-режим)
 // Без exact-кэширования ответов — только честный префикс-кэшинг провайдера
 
-use crate::types::Account;
+use crate::types::{Account, MultiProviderStats, ThirdPartyAccount, ThirdPartyAccountSummary, ThirdPartyStats};
 use anyhow::Result;
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -74,6 +74,19 @@ impl Database {
                 enabled INTEGER DEFAULT 1,
                 updated_at REAL NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS third_party_accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                provider TEXT NOT NULL DEFAULT 'dahl',
+                username TEXT NOT NULL,
+                fingerprint TEXT NOT NULL,
+                api_key TEXT NOT NULL UNIQUE,
+                tokens INTEGER DEFAULT 0,
+                trial_expires_at TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                status TEXT DEFAULT 'active'
+            );
+            CREATE INDEX IF NOT EXISTS idx_3p_lookup ON third_party_accounts(provider, status);
             "#,
         )?;
 
@@ -742,6 +755,127 @@ impl Database {
             "#,
             params![original_id, alias, if enabled { 1 } else { 0 }, now],
         )?;
+        Ok(())
+    }
+
+    // ==========================================
+    // 3PA (THIRD PARTY ACCOUNTS / DAHL) МЕТОДЫ
+    // ==========================================
+
+    pub async fn load_third_party_accounts(&self, provider: &str) -> Result<Vec<ThirdPartyAccount>> {
+        let r = self.reader();
+        let prov = provider.to_string();
+        tokio::task::spawn_blocking(move || {
+            let conn = r.lock();
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT id, provider, username, fingerprint, api_key, tokens, trial_expires_at, created_at, status
+                FROM third_party_accounts
+                WHERE provider = ?1 AND status = 'active'
+                ORDER BY id ASC
+                "#
+            )?;
+            let rows = stmt.query_map(params![prov], |row| {
+                Ok(ThirdPartyAccount {
+                    id: row.get(0)?,
+                    provider: row.get(1)?,
+                    username: row.get(2)?,
+                    fingerprint: row.get(3)?,
+                    api_key: row.get(4)?,
+                    tokens: row.get(5)?,
+                    trial_expires_at: row.get(6)?,
+                    created_at: row.get(7)?,
+                    status: row.get(8)?,
+                })
+            })?;
+            let mut list = Vec::new();
+            for r in rows {
+                list.push(r?);
+            }
+            Ok(list)
+        })
+        .await?
+    }
+
+    pub async fn load_all_third_party_accounts(&self, provider: &str) -> Result<Vec<ThirdPartyAccount>> {
+        let r = self.reader();
+        let prov = provider.to_string();
+        tokio::task::spawn_blocking(move || {
+            let conn = r.lock();
+            let mut stmt = conn.prepare(
+                r#"
+                SELECT id, provider, username, fingerprint, api_key, tokens, trial_expires_at, created_at, status
+                FROM third_party_accounts
+                WHERE provider = ?1
+                ORDER BY id ASC
+                "#
+            )?;
+            let rows = stmt.query_map(params![prov], |row| {
+                Ok(ThirdPartyAccount {
+                    id: row.get(0)?,
+                    provider: row.get(1)?,
+                    username: row.get(2)?,
+                    fingerprint: row.get(3)?,
+                    api_key: row.get(4)?,
+                    tokens: row.get(5)?,
+                    trial_expires_at: row.get(6)?,
+                    created_at: row.get(7)?,
+                    status: row.get(8)?,
+                })
+            })?;
+            let mut list = Vec::new();
+            for r in rows {
+                list.push(r?);
+            }
+            Ok(list)
+        })
+        .await?
+    }
+
+    pub async fn upsert_third_party_account(
+        &self,
+        provider: &str,
+        username: &str,
+        fingerprint: &str,
+        api_key: &str,
+        tokens: i64,
+        trial_expires_at: Option<&str>,
+    ) -> Result<()> {
+        let conn = self.writer.lock().await;
+        conn.execute(
+            r#"
+            INSERT INTO third_party_accounts (provider, username, fingerprint, api_key, tokens, trial_expires_at, status)
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'active')
+            ON CONFLICT(api_key) DO UPDATE SET
+                username = excluded.username,
+                fingerprint = excluded.fingerprint,
+                tokens = excluded.tokens,
+                trial_expires_at = excluded.trial_expires_at,
+                status = 'active'
+            "#,
+            params![provider, username, fingerprint, api_key, tokens, trial_expires_at],
+        )?;
+        Ok(())
+    }
+
+    pub async fn toggle_third_party_account(&self, id: i64) -> Result<String> {
+        let conn = self.writer.lock().await;
+        let current_status: String = conn.query_row(
+            "SELECT status FROM third_party_accounts WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        )?;
+        let next_status = if current_status == "active" { "disabled" } else { "active" };
+        conn.execute(
+            "UPDATE third_party_accounts SET status = ?1 WHERE id = ?2",
+            params![next_status, id],
+        )?;
+        Ok(next_status.to_string())
+    }
+
+    pub async fn delete_third_party_account(&self, id: i64) -> Result<()> {
+        let conn = self.writer.lock().await;
+        conn.execute("DELETE FROM third_party_accounts WHERE id = ?1", params![id])?;
         Ok(())
     }
 }

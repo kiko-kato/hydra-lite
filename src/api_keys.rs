@@ -61,7 +61,7 @@ pub struct CallerInfo {
     pub is_master: bool,
 }
 
-async fn extract_caller(headers: &HeaderMap, state: &AppState) -> Option<CallerInfo> {
+pub(crate) async fn extract_caller(headers: &HeaderMap, state: &AppState) -> Option<CallerInfo> {
     let mut tok_str = None;
     if let Some(auth) = headers.get("authorization").and_then(|h| h.to_str().ok()) {
         if let Some(bearer) = auth.strip_prefix("Bearer ") {

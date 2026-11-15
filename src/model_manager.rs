@@ -14,29 +14,32 @@ pub const STANDARD_MODELS: &[&str] = &[
     "gemini-3.8-flash-medium",
     "gemini-3.8-flash-low",
     "gemini-3.8-flash-tiered",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash-thinking",
     "nano-banana",
     "nano-banana-pro",
     "nano-banana-2",
     "gemini-3.1-flash-image",
 ];
 
-pub const RESTRICTED_MODELS: &[&str] = &[
-    "gemini-4-argon",
-    "gemini-4-argon-high",
-    "gemini-4-argon-medium",
-    "gemini-4-argon-low",
-    "claude-opus-5-5",
-    "claude-opus-5-5-high",
-    "claude-opus-5-5-medium",
-    "claude-opus-5-5-low",
-    "claude-sonnet-5-5",
-    "claude-sonnet-5-5-high",
-    "claude-sonnet-5-5-medium",
-    "claude-sonnet-5-5-low",
-    "claude-opus-4-6-thinking",
-    "claude-sonnet-4-6",
-    "gpt-oss-120b",
-    "gpt-oss-120b-medium",
+pub const RESTRICTED_MODELS: &[&str] = &[];
+
+pub const THIRD_PARTY_MODELS: &[&str] = &[
+    // Dahl Inference (с явным префиксом dahl-)
+    "dahl/deepseek-ai/DeepSeek-V4-Flash-0731",
+    "dahl-deepseek-v4-flash",
+    "dahl/MiniMaxAI/MiniMax-M2.7",
+    "dahl-minimax-m2.7",
+    "dahl/zai-org/GLM-5.3-Flash",
+    "dahl-glm-5.3-flash",
+    // Нативные оригинальные имена из апстрима Dahl
+    "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "MiniMaxAI/MiniMax-M2.7",
+    "zai-org/GLM-5.3-Flash",
 ];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -229,22 +232,24 @@ impl ModelManager {
             "gemini-3.8-flash-medium" => return "gemini-3.8-flash-medium".to_string(),
             "gemini-3.8-flash-low" => return "gemini-3.8-flash-low".to_string(),
 
-            // Claude 5.5
-            "claude-opus-5-5-high" => return "claude-opus-5-5-high".to_string(),
-            "claude-opus-5-5-medium" => return "claude-opus-5-5-medium".to_string(),
-            "claude-opus-5-5-low" => return "claude-opus-5-5-low".to_string(),
-            "claude-opus-5-5" | "claude-opus" | "opus" => return "claude-opus-5-5-high".to_string(),
+            // 3PA Dahl Models & Aliases (с префиксами dahl- и без)
+            "dahl-deepseek-v4-flash" | "dahl/deepseek-v4-flash" | "deepseek-v4-flash" | "dahl/deepseek-ai/DeepSeek-V4-Flash-0731" => {
+                return "deepseek-ai/DeepSeek-V4-Flash-0731".to_string();
+            }
+            "dahl-minimax-m2.7" | "dahl/minimax-m2.7" | "minimax-m2.7" | "dahl/MiniMaxAI/MiniMax-M2.7" => {
+                return "MiniMaxAI/MiniMax-M2.7".to_string();
+            }
+            "dahl-glm-5.3-flash" | "dahl/glm-5.3-flash" | "glm-5.3-flash" | "dahl/zai-org/GLM-5.3-Flash" => {
+                return "zai-org/GLM-5.3-Flash".to_string();
+            }
 
-            "claude-sonnet-5-5-high" => return "claude-sonnet-5-5-high".to_string(),
-            "claude-sonnet-5-5-medium" => return "claude-sonnet-5-5-medium".to_string(),
-            "claude-sonnet-5-5-low" => return "claude-sonnet-5-5-low".to_string(),
-            "claude-sonnet-5-5" | "claude-sonnet" | "sonnet" => return "claude-sonnet-5-5-high".to_string(),
-
-            // Gemini 4 Argon
-            "gemini-4-argon-high" => return "gemini-4-argon-high".to_string(),
-            "gemini-4-argon-medium" => return "gemini-4-argon-medium".to_string(),
-            "gemini-4-argon-low" => return "gemini-4-argon-low".to_string(),
-            "gemini-4-argon" | "argon" => return "gemini-4-argon-high".to_string(),
+            // Gemini Legacy & Lite Flash
+            "gemini-3.5-flash-lite" => return "gemini-3.5-flash-lite".to_string(),
+            "gemini-3.1-flash-lite" => return "gemini-3.1-flash-lite".to_string(),
+            "gemini-3-flash" => return "gemini-3-flash".to_string(),
+            "gemini-2.5-flash" => return "gemini-2.5-flash".to_string(),
+            "gemini-2.5-flash-lite" => return "gemini-2.5-flash-lite".to_string(),
+            "gemini-2.5-flash-thinking" => return "gemini-2.5-flash-thinking".to_string(),
 
             _ => {}
         }
@@ -295,30 +300,29 @@ impl ModelManager {
             }
         }
 
-        // 2. 3P и Argon модели (только для мастер-ключа)
-        if is_master {
-            for orig in RESTRICTED_MODELS {
-                let custom_alias = saved_configs.get(*orig).and_then(|(alias, _)| alias.clone());
-                let public_id = custom_alias.unwrap_or_else(|| orig.to_string());
-                if seen.insert(public_id.clone()) {
-                    let owned_by = if public_id.contains("claude") {
-                        "anthropic"
-                    } else if public_id.contains("gpt") {
-                        "openai"
-                    } else {
-                        "google"
-                    };
-                    list.push(serde_json::json!({
-                        "id": public_id,
-                        "object": "model",
-                        "created": now,
-                        "owned_by": owned_by,
-                    }));
-                }
+        // 2. 3PA модели (Dahl Inference)
+        for orig in THIRD_PARTY_MODELS {
+            let public_id = orig.to_string();
+            if seen.insert(public_id.clone()) {
+                let owned_by = if public_id.contains("deepseek") {
+                    "deepseek"
+                } else if public_id.contains("minimax") || public_id.contains("MiniMax") {
+                    "minimax"
+                } else if public_id.contains("glm") || public_id.contains("GLM") {
+                    "zhipu"
+                } else {
+                    "dahl"
+                };
+                list.push(serde_json::json!({
+                    "id": public_id,
+                    "object": "model",
+                    "created": now,
+                    "owned_by": owned_by,
+                }));
             }
         }
 
-        // 3. Дополнительные динамически обнаруженные модели Upstream
+        // 3. Дополнительные динамически обнаруженные модели Upstream (Gemini Only)
         for m in catalog.values() {
             if !m.enabled {
                 continue;
@@ -329,7 +333,7 @@ impl ModelManager {
                 || public_id.contains("sonnet")
                 || public_id.contains("gpt")
                 || public_id.contains("argon");
-            if is_restricted && !is_master {
+            if is_restricted {
                 continue;
             }
             if seen.insert(public_id.to_string()) {

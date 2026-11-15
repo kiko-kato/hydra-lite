@@ -459,18 +459,16 @@ pub(crate) async fn handle_anthropic_messages(
         }
     };
 
-    let is_claude = req.model.contains("claude") || req.model.contains("gpt");
-    let is_argon = req.model.contains("argon");
-
-    if (is_claude || is_argon) && !is_master {
-        log::warn!("[AUTH:FORBIDDEN] Anthropic key '{}' attempted to access restricted model '{}'", auth_key_name, req.model);
+    let is_detached = req.model.contains("claude") || req.model.contains("gpt") || req.model.contains("argon");
+    if is_detached {
+        log::warn!("[AUTH:DETACHED] Anthropic request for '{}' blocked: detached from AntiGravity accounts", req.model);
         return (
-            StatusCode::FORBIDDEN,
+            StatusCode::BAD_REQUEST,
             Json(json!({
                 "type": "error",
                 "error": {
-                    "type": "permission_error",
-                    "message": format!("Access to model '{}' is restricted to authorized keys", req.model)
+                    "type": "invalid_request_error",
+                    "message": format!("Model '{}' is detached from AntiGravity accounts. AntiGravity is reserved strictly for Gemini models.", req.model)
                 }
             })),
         )
@@ -589,16 +587,7 @@ pub(crate) async fn handle_anthropic_messages(
             if !a.enabled || a.cooldown_until > now {
                 return false;
             }
-            if is_argon {
-                let rem = crate::api_accounts::get_account_argon_remaining(a);
-                return rem >= cfg.quota.min_fraction;
-            }
-            let fraction = if is_claude {
-                a.claude_remaining
-            } else {
-                a.gemini_remaining
-            };
-            fraction >= cfg.quota.min_fraction
+            a.gemini_remaining >= cfg.quota.min_fraction
         })
         .collect();
 
@@ -623,20 +612,8 @@ pub(crate) async fn handle_anthropic_messages(
 
     let mut ranked = eligible;
     ranked.sort_by(|a, b| {
-        let rem_a = if is_argon {
-            crate::api_accounts::get_account_argon_remaining(a)
-        } else if is_claude {
-            a.claude_remaining
-        } else {
-            a.gemini_remaining
-        };
-        let rem_b = if is_argon {
-            crate::api_accounts::get_account_argon_remaining(b)
-        } else if is_claude {
-            b.claude_remaining
-        } else {
-            b.gemini_remaining
-        };
+        let rem_a = a.gemini_remaining;
+        let rem_b = b.gemini_remaining;
 
         let mut h_a = Sha256::new();
         h_a.update(&affinity_hash);

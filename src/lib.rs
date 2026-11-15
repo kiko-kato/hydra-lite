@@ -4,6 +4,7 @@ pub mod anthropic;
 pub mod antidote;
 pub mod api_accounts;
 pub mod api_keys;
+pub mod api_mail;
 pub mod api_models;
 pub mod circuit_breaker;
 pub mod client;
@@ -18,6 +19,7 @@ pub mod quota;
 pub mod signatures;
 pub mod sse;
 pub mod telemetry;
+pub mod third_party;
 pub mod translator;
 pub mod types;
 pub mod vault_logger;
@@ -34,7 +36,7 @@ use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
-    routing::{delete, get, patch, post},
+    routing::{any, delete, get, patch, post},
     Json, Router,
 };
 use db::Database;
@@ -118,6 +120,7 @@ pub(crate) struct AppState {
     pub(crate) active_streams: Arc<parking_lot::RwLock<std::collections::HashMap<i64, usize>>>,
     pub(crate) account_prober: Arc<account_prober::AccountProber>,
     pub(crate) vault: Arc<VaultLogger>,
+    pub(crate) third_party: Arc<third_party::ThirdPartyManager>,
 }
 
 pub async fn run_router(config: Arc<Config>) -> Result<()> {
@@ -236,6 +239,8 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
         }
     };
 
+    let third_party = Arc::new(third_party::ThirdPartyManager::new(db.clone()));
+
     let state = AppState {
         config: config_lock,
         db: db.clone(),
@@ -250,6 +255,7 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
         active_streams,
         account_prober,
         vault,
+        third_party,
     };
 
     // Фоновый демон обновления токенов Google OAuth (за 5 мин до истечения)
@@ -396,6 +402,20 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
             "/api/models/config/:id",
             patch(api_models::handle_update_model_config),
         )
+        .route(
+            "/api/3pa/pool",
+            get(third_party::handle_get_pool).post(third_party::handle_sync_pool),
+        )
+        .route(
+            "/api/3pa/accounts/:id/toggle",
+            patch(third_party::handle_toggle_account),
+        )
+        .route(
+            "/api/3pa/accounts/:id",
+            delete(third_party::handle_delete_account),
+        )
+        .route("/api/mail", any(api_mail::handle_mail_proxy))
+        .route("/api/mail/*path", any(api_mail::handle_mail_proxy))
         .layer(tower_http::cors::CorsLayer::permissive())
         .layer(axum::extract::DefaultBodyLimit::max(64 * 1024 * 1024))
         .with_state(state);
@@ -1014,18 +1034,21 @@ async fn handle_chat_completions(
     let resolved_model = state.model_manager.resolve(&req.model).await;
     req.model = resolved_model;
 
-    let is_claude = req.model.contains("claude") || req.model.contains("gpt");
-    let is_argon = req.model.contains("argon");
+    // 1. Проверяем 3PA модели (Dahl Inference) — идут строго в свой независимый пул с циклическим failover
+    if state.third_party.is_3pa_model(&req.model) {
+        return state.third_party.handle_chat_completions(req, &auth_key_name, &state).await;
+    }
 
-    if (is_claude || is_argon) && !is_master {
-        log::warn!("[AUTH:FORBIDDEN] Key '{}' attempted to access restricted model '{}'", auth_key_name, req.model);
+    // 2. Блокируем доступ к 3PA (Claude/GPT) и Argon через антигравити аккаунты
+    if req.model.contains("argon") || req.model.contains("claude") || req.model.contains("gpt") {
+        log::warn!("[AUTH:DETACHED] Request for '{}' blocked: detached from AntiGravity accounts", req.model);
         return (
-            StatusCode::FORBIDDEN,
+            StatusCode::BAD_REQUEST,
             Json(serde_json::json!({
                 "error": {
-                    "message": format!("Access to model '{}' is restricted to authorized keys", req.model),
-                    "type": "permission_denied",
-                    "code": "model_access_restricted"
+                    "message": format!("Model '{}' is detached from AntiGravity accounts. 3PA models route to dedicated providers, AntiGravity is reserved for Gemini.", req.model),
+                    "type": "invalid_request_error",
+                    "code": "model_detached_from_antigravity"
                 }
             })),
         )
@@ -1090,8 +1113,6 @@ async fn handle_chat_completions(
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs_f64();
-    let is_claude = req.model.contains("claude") || req.model.contains("gpt");
-    let is_argon = req.model.contains("argon");
 
     let mut eligible: Vec<_> = accounts
         .into_iter()
@@ -1102,16 +1123,7 @@ async fn handle_chat_completions(
             if a.cooldown_until > now {
                 return false;
             }
-            if is_argon {
-                let argon_rem = api_accounts::get_account_argon_remaining(a);
-                return argon_rem >= cfg.quota.min_fraction;
-            }
-            let fraction = if is_claude {
-                a.claude_remaining
-            } else {
-                a.gemini_remaining
-            };
-            fraction >= cfg.quota.min_fraction
+            a.gemini_remaining >= cfg.quota.min_fraction
         })
         .collect();
 
@@ -1141,20 +1153,8 @@ async fn handle_chat_completions(
     let active_streams_snapshot = state.active_streams.read().clone();
     if cfg.caching.enabled && cfg.caching.hrw_affinity {
         eligible.sort_by(|a, b| {
-            let rem_a = if is_claude {
-                a.claude_remaining
-            } else if is_argon {
-                api_accounts::get_account_argon_remaining(a)
-            } else {
-                a.gemini_remaining
-            };
-            let rem_b = if is_claude {
-                b.claude_remaining
-            } else if is_argon {
-                api_accounts::get_account_argon_remaining(b)
-            } else {
-                b.gemini_remaining
-            };
+            let rem_a = a.gemini_remaining;
+            let rem_b = b.gemini_remaining;
 
             let in_flight_a = active_streams_snapshot.get(&a.id).copied().unwrap_or(0);
             let in_flight_b = active_streams_snapshot.get(&b.id).copied().unwrap_or(0);
@@ -1175,13 +1175,7 @@ async fn handle_chat_completions(
                 &affinity_key[..12]
             );
             for (idx, acc) in eligible.iter().take(3).enumerate() {
-                let rem = if is_claude {
-                    acc.claude_remaining
-                } else if is_argon {
-                    api_accounts::get_account_argon_remaining(acc)
-                } else {
-                    acc.gemini_remaining
-                };
+                let rem = acc.gemini_remaining;
                 let score = compute_hrw_score(&affinity_key, acc.id, rem);
                 log::info!(
                     "   Rank #{}: Acc #{} ({}) -> HRW Score: {:.6}, Quota Rem: {:.1}%",
@@ -1195,20 +1189,8 @@ async fn handle_chat_completions(
         }
     } else {
         eligible.sort_by(|a, b| {
-            let f_a = if is_claude {
-                a.claude_remaining
-            } else if is_argon {
-                api_accounts::get_account_argon_remaining(a)
-            } else {
-                a.gemini_remaining
-            };
-            let f_b = if is_claude {
-                b.claude_remaining
-            } else if is_argon {
-                api_accounts::get_account_argon_remaining(b)
-            } else {
-                b.gemini_remaining
-            };
+            let f_a = a.gemini_remaining;
+            let f_b = b.gemini_remaining;
             f_b.partial_cmp(&f_a).unwrap_or(std::cmp::Ordering::Equal)
         });
     }
@@ -1261,7 +1243,53 @@ async fn handle_chat_completions(
         "contents": contents,
     });
     if let Some(sys) = sys_inst {
-        inner_req["systemInstruction"] = sys;
+        let mut sys_text = String::new();
+        if let Some(parts) = sys.get("parts").and_then(|p| p.as_array()) {
+            for part in parts {
+                if let Some(t) = part.get("text").and_then(|t| t.as_str()) {
+                    sys_text.push_str(t);
+                    sys_text.push_str("\n\n");
+                }
+            }
+        }
+        let sys_text = sys_text.trim();
+        // Google Cloud Code PA (AntiGravity) отшивает 429 RESOURCE_EXHAUSTED при systemInstruction > ~8400 симв.
+        // Если промпт короткий (<= 8000 симв) — передаем стандартно в systemInstruction.
+        // Если промпт длинный (> 8000 симв) — вшиваем в начало первого сообщения user в contents.
+        if sys_text.len() <= 8000 {
+            inner_req["systemInstruction"] = sys;
+        } else if !sys_text.is_empty() {
+            let mut prepended = false;
+            if let Some(arr) = inner_req["contents"].as_array_mut() {
+                for item in arr.iter_mut() {
+                    if item.get("role").and_then(|r| r.as_str()) == Some("user") {
+                        if let Some(parts) = item.get_mut("parts").and_then(|p| p.as_array_mut()) {
+                            let formatted = format!("<system_instructions>\n{}\n</system_instructions>", sys_text);
+                            let mut text_found = false;
+                            for part in parts.iter_mut() {
+                                if let Some(txt) = part.get("text").and_then(|t| t.as_str()) {
+                                    let new_text = format!("{}\n\n{}", formatted, txt);
+                                    *part = serde_json::json!({ "text": new_text });
+                                    text_found = true;
+                                    break;
+                                }
+                            }
+                            if !text_found {
+                                parts.insert(0, serde_json::json!({ "text": formatted }));
+                            }
+                            prepended = true;
+                            break;
+                        }
+                    }
+                }
+                if !prepended {
+                    arr.insert(0, serde_json::json!({
+                        "role": "user",
+                        "parts": [{ "text": format!("<system_instructions>\n{}\n</system_instructions>", sys_text) }]
+                    }));
+                }
+            }
+        }
     }
     if let Some(t) = tools {
         inner_req["tools"] = t;
@@ -1269,33 +1297,19 @@ async fn handle_chat_completions(
 
     strip_cache_control_recursive(&mut inner_req);
 
-    let (max_output_tokens, thinking_budget) = if is_claude {
-        (req.max_tokens.unwrap_or(64000).min(64000), 0)
-    } else {
-        (req.max_tokens.unwrap_or(65536).min(65536), 65535)
-    };
+    let max_output_tokens = req.max_tokens.unwrap_or(65536).min(65536);
+    let thinking_budget = 65535;
 
-    let gen_cfg = if is_claude {
-        let mut c = serde_json::json!({
-            "maxOutputTokens": max_output_tokens
-        });
-        if let Some(temp) = req.temperature {
-            c["temperature"] = serde_json::json!(temp);
+    let mut gen_cfg = serde_json::json!({
+        "maxOutputTokens": max_output_tokens,
+        "thinkingConfig": {
+            "thinkingBudget": thinking_budget,
+            "includeThoughts": true
         }
-        c
-    } else {
-        let mut c = serde_json::json!({
-            "maxOutputTokens": max_output_tokens,
-            "thinkingConfig": {
-                "thinkingBudget": thinking_budget,
-                "includeThoughts": true
-            }
-        });
-        if let Some(temp) = req.temperature {
-            c["temperature"] = serde_json::json!(temp);
-        }
-        c
-    };
+    });
+    if let Some(temp) = req.temperature {
+        gen_cfg["temperature"] = serde_json::json!(temp);
+    }
     inner_req["generationConfig"] = gen_cfg;
 
     let safety_categories = [
@@ -1329,30 +1343,6 @@ async fn handle_chat_completions(
         "gemini-2.5-flash-lite" => "gemini-2.5-flash-lite",
         "gemini-2.5-flash-thinking" => "gemini-2.5-flash-thinking",
         "gemini-2.5-flash-high" => "gemini-2.5-flash",
-
-        "claude-opus-5-5-high" => "claude-opus-5-5-high",
-        "claude-opus-5-5-medium" => "claude-opus-5-5-medium",
-        "claude-opus-5-5-low" => "claude-opus-5-5-low",
-        "claude-opus-4-6-thinking" => "claude-opus-4-6-thinking",
-        "claude-opus-4-6" => "claude-opus-4-6-thinking",
-        m if m.contains("opus-5-5") || m.contains("opus-5.5") || m == "claude-opus" || m == "opus" => "claude-opus-5-5-high",
-        m if m.contains("opus-4-6") || m.contains("opus-4.6") => "claude-opus-4-6-thinking",
-
-        "claude-sonnet-5-5-high" => "claude-sonnet-5-5-high",
-        "claude-sonnet-5-5-medium" => "claude-sonnet-5-5-medium",
-        "claude-sonnet-5-5-low" => "claude-sonnet-5-5-low",
-        "claude-sonnet-4-6" => "claude-sonnet-4-6",
-        m if m.contains("sonnet-5-5") || m.contains("sonnet-5.5") || m == "claude-sonnet" || m == "sonnet" => "claude-sonnet-5-5-high",
-        m if m.contains("sonnet-4-6") || m.contains("sonnet-4.6") => "claude-sonnet-4-6",
-        m if m.contains("claude") => "claude-sonnet-5-5-high",
-
-        "gemini-4-argon-high" => "gemini-4-argon-high",
-        "gemini-4-argon-medium" => "gemini-4-argon-medium",
-        "gemini-4-argon-low" => "gemini-4-argon-low",
-        m if m.contains("argon") => "gemini-4-argon-high",
-
-        "gpt-oss-120b-medium" => "gpt-oss-120b-medium",
-        m if m.contains("gpt-oss") => "gpt-oss-120b-medium",
 
         other => other,
     };
@@ -1923,6 +1913,20 @@ pub(crate) async fn authenticate_request(headers: &HeaderMap, state: &AppState) 
                 .get("x-api-key")
                 .and_then(|v| v.to_str().ok())
                 .map(|s| s.trim())
+        })
+        .or_else(|| {
+            headers
+                .get("cookie")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|c| {
+                    for part in c.split(';') {
+                        let trimmed = part.trim();
+                        if let Some(val) = trimmed.strip_prefix("hydra_admin_auth=") {
+                            return Some(val.trim());
+                        }
+                    }
+                    None
+                })
         });
 
     let token = match token_opt {

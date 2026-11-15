@@ -90,3 +90,48 @@ pub struct ChunkChoice {
     pub delta: serde_json::Value,
     pub finish_reason: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThirdPartyAccount {
+    pub id: i64,
+    pub provider: String,
+    pub username: String,
+    pub fingerprint: String,
+    pub api_key: String,
+    pub tokens: i64,
+    pub trial_expires_at: Option<String>,
+    pub created_at: String,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThirdPartyStats {
+    pub provider: String,
+    pub provider_name: String,
+    pub total_tokens: i64,
+    pub total_accounts: usize,
+    pub active_accounts: usize,
+    pub earliest_expiry: Option<String>,
+    pub expiring_soon_count: usize,
+    pub expiring_soon_tokens: i64,
+    pub models: Vec<String>,
+    pub accounts: Vec<ThirdPartyAccountSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MultiProviderStats {
+    pub total_tokens: i64,
+    pub total_accounts: usize,
+    pub active_accounts: usize,
+    pub providers: Vec<ThirdPartyStats>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ThirdPartyAccountSummary {
+    pub id: i64,
+    pub username: String,
+    pub key_masked: String,
+    pub tokens: i64,
+    pub trial_expires_at: Option<String>,
+    pub status: String,
+}

@@ -547,9 +547,10 @@ print(response.choices[0].message.content)</div>
           summaryEl.innerText = `${formatCompactNumber(totalReq)} запросов • ${formatCompactNumber(totalTok)} токенов за период`;
         }
 
-        const rect = svg.getBoundingClientRect();
-        const W = rect.width || 750;
-        const H = rect.height || 180;
+        const wrapper = document.getElementById('userChartWrapper');
+        const W = (wrapper && wrapper.clientWidth) ? wrapper.clientWidth : (svg.clientWidth || 750);
+        const H = 180;
+        svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
         const padTop = 15;
         const padBottom = 25;
         const padLeft = 10;
@@ -611,7 +612,6 @@ print(response.choices[0].message.content)</div>
 
         svg.innerHTML = svgContent;
 
-        const wrapper = document.getElementById('userChartWrapper');
         const crosshairLine = document.getElementById('userCrosshairLine');
         const crosshairDot = document.getElementById('userCrosshairDot');
 
