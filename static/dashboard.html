@@ -287,16 +287,27 @@
       background: linear-gradient(135deg, #9066ff, #7579f3);
     }
 
-    /* Account Cards Grid */
+    /* Account Cards Grid & Accordion */
     .account-cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
       gap: 16px;
       margin-top: 14px;
-      transition: all 0.25s ease-out;
     }
-    .account-cards-grid.collapsed {
-      display: none !important;
+    .category-collapse-wrapper {
+      display: grid;
+      grid-template-rows: 1fr;
+      transition: grid-template-rows 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease-out;
+      opacity: 1;
+    }
+    .category-collapse-wrapper.collapsed {
+      grid-template-rows: 0fr;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .category-collapse-inner {
+      overflow: hidden;
+      min-height: 0;
     }
     .category-collapse-header {
       display: flex;
@@ -304,13 +315,13 @@
       justify-content: space-between;
       cursor: pointer;
       user-select: none;
-      padding: 6px 10px;
-      margin: -6px -10px 10px -10px;
+      padding: 8px 12px;
+      margin: -6px -12px 6px -12px;
       border-radius: var(--radius-sm);
-      transition: background 0.2s;
+      transition: background 0.2s, color 0.2s;
     }
     .category-collapse-header:hover {
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.05);
     }
     .category-chevron {
       width: 18px;
@@ -318,6 +329,7 @@
       fill: currentColor;
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       opacity: 0.7;
+      transform: rotate(0deg);
     }
     .category-collapse-header.collapsed .category-chevron {
       transform: rotate(-90deg);
@@ -1356,8 +1368,8 @@
           </div>
 
           <!-- КАТЕГОРИЯ 1: Активные аккаунты -->
-          <div style="margin-bottom: 24px;">
-            <div class="category-collapse-header" onclick="toggleCategorySection('activeAccountsCardsGrid', this)">
+          <div style="margin-bottom: 20px;">
+            <div class="category-collapse-header collapsed" id="activeAccountsCollapseHeader" onclick="toggleCategorySection('activeAccountsCollapseWrapper', this)">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="dot-indicator green"></span>
                 <span style="font-weight: 700; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Активные аккаунты в ротации</span>
@@ -1365,14 +1377,18 @@
               </div>
               <svg viewBox="0 0 24 24" class="category-chevron"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
             </div>
-            <div id="activeAccountsCardsGrid" class="account-cards-grid" style="margin-top: 0;">
-              <div style="grid-column: 1 / -1; text-align:center; padding: 20px; color: var(--text-muted);">Загрузка активных аккаунтов...</div>
+            <div id="activeAccountsCollapseWrapper" class="category-collapse-wrapper collapsed">
+              <div class="category-collapse-inner">
+                <div id="activeAccountsCardsGrid" class="account-cards-grid" style="margin-top: 10px;">
+                  <div style="grid-column: 1 / -1; text-align:center; padding: 20px; color: var(--text-muted);">Загрузка активных аккаунтов...</div>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- КАТЕГОРИЯ 2: Проблемные (Верификация и Бан) в самом низу -->
-          <div id="problemAccountsSection" style="display: none; padding-top: 18px; border-top: 1px dashed rgba(239, 68, 68, 0.25);">
-            <div class="category-collapse-header" onclick="toggleCategorySection('problemAccountsCardsGrid', this)">
+          <div id="problemAccountsSection" style="display: none; padding-top: 16px; border-top: 1px dashed rgba(239, 68, 68, 0.25);">
+            <div class="category-collapse-header collapsed" id="problemAccountsCollapseHeader" onclick="toggleCategorySection('problemAccountsCollapseWrapper', this)">
               <div style="display:flex; align-items:center; gap:8px;">
                 <span class="dot-indicator" style="background:#ef4444;"></span>
                 <span style="font-weight: 700; font-size: 14px; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.5px;">Отключенные / Требующие верификации / В бане</span>
@@ -1380,7 +1396,11 @@
               </div>
               <svg viewBox="0 0 24 24" class="category-chevron"><path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/></svg>
             </div>
-            <div id="problemAccountsCardsGrid" class="account-cards-grid" style="margin-top: 0;"></div>
+            <div id="problemAccountsCollapseWrapper" class="category-collapse-wrapper collapsed">
+              <div class="category-collapse-inner">
+                <div id="problemAccountsCardsGrid" class="account-cards-grid" style="margin-top: 10px;"></div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2490,29 +2510,34 @@
       }
     }
 
-    function toggleCategorySection(gridId, headerElem) {
-      const grid = document.getElementById(gridId);
-      if (!grid) return;
-      const isCollapsed = grid.classList.toggle('collapsed');
+    function toggleCategorySection(wrapperId, headerElem) {
+      const wrapper = document.getElementById(wrapperId);
+      if (!wrapper) return;
+      const isCollapsed = wrapper.classList.toggle('collapsed');
       if (headerElem) {
         headerElem.classList.toggle('collapsed', isCollapsed);
       }
       try {
-        localStorage.setItem('collapse_' + gridId, isCollapsed ? '1' : '0');
+        localStorage.setItem('collapse_' + wrapperId, isCollapsed ? '1' : '0');
       } catch (e) {}
     }
 
     function initCategoryCollapseStates() {
-      ['activeAccountsCardsGrid', 'problemAccountsCardsGrid'].forEach(id => {
+      [
+        { wrapperId: 'activeAccountsCollapseWrapper', headerId: 'activeAccountsCollapseHeader' },
+        { wrapperId: 'problemAccountsCollapseWrapper', headerId: 'problemAccountsCollapseHeader' }
+      ].forEach(({ wrapperId, headerId }) => {
         try {
-          const saved = localStorage.getItem('collapse_' + id);
-          if (saved === '1') {
-            const grid = document.getElementById(id);
-            if (grid) grid.classList.add('collapsed');
-            const parent = grid?.previousElementSibling;
-            if (parent && parent.classList.contains('category-collapse-header')) {
-              parent.classList.add('collapsed');
-            }
+          const saved = localStorage.getItem('collapse_' + wrapperId);
+          const wrapper = document.getElementById(wrapperId);
+          const header = document.getElementById(headerId);
+          // По умолчанию свернуто! Раскрываем только если явно сохранено '0' (expanded)
+          if (saved === '0') {
+            if (wrapper) wrapper.classList.remove('collapsed');
+            if (header) header.classList.remove('collapsed');
+          } else {
+            if (wrapper) wrapper.classList.add('collapsed');
+            if (header) header.classList.add('collapsed');
           }
         } catch (e) {}
       });
