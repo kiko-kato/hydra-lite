@@ -1160,144 +1160,6 @@
            TAB 1: ОБЗОР И КВОТЫ (КОМАНДНЫЙ ЦЕНТР)
       =========================================== -->
       <section id="pane-overview" class="tab-pane active">
-        <!-- Сетка карточек провайдеров (Агрегированная сводка AntiGravity & Dahl Inference) -->
-        <div style="margin-bottom: 24px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px;">
-            
-            <!-- ПРОВАЙДЕР 1: AntiGravity (Google Cloud Code) -->
-            <div class="glass-table-container" style="margin-bottom:0; border-top: 2px solid #10b981; padding: 22px 24px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
-                <div style="display:flex; align-items:center; gap: 12px;">
-                  <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #10b981; font-weight: 900; font-size: 15px;">AG</div>
-                  <div>
-                    <div style="font-weight: 800; font-size: 17px; color: #fff;">AntiGravity</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">Google Cloud Code (OAuth HRW Affinity)</div>
-                  </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="badge" id="agSummaryBadge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">-- / -- Активно</span>
-                  <button class="btn-action btn-probe-header" onclick="probeAllAccounts()" title="Опросить квоты Google">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Метрики квот AntiGravity в 4 ячейки -->
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; background: rgba(12, 10, 22, 0.6); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border);">
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">5-часовое окно</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #10b981; margin-top: 2px;" id="ag5hQuotaVal">--%</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Flash / Nano</div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">За неделю</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #34d399; margin-top: 2px;" id="agWeeklyQuotaVal">--%</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Пул аккаунтов</div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Аргон (WTU)</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #60a5fa; margin-top: 2px;" id="agArgonQuotaVal">--%</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Jio #7, #8, #11</div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">3Party (G&C)</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="ag3PartyQuotaVal">--%</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">5h / Wk остаток</div>
-                </div>
-              </div>
-
-              <!-- Прогресс-бары квот -->
-              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 14px;">
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                    <span style="color:var(--text-secondary);">Средняя емкость 5-часового пула</span>
-                    <span style="font-weight:700; color:#10b981;" id="ag5hBarText">--%</span>
-                  </div>
-                  <div class="progress-bar-bg"><div id="ag5hBar" class="progress-bar-fill fill-5h" style="width: 0%;"></div></div>
-                </div>
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                    <span style="color:var(--text-secondary);">Недельный ресурс аккаунтов</span>
-                    <span style="font-weight:700; color:#34d399;" id="agWkBarText">--%</span>
-                  </div>
-                  <div class="progress-bar-bg"><div id="agWkBar" class="progress-bar-fill fill-weekly" style="width: 0%;"></div></div>
-                </div>
-              </div>
-
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px solid rgba(255,255,255,0.06); pt-2; margin-top:12px; padding-top:10px;">
-                <span style="color: var(--text-muted);">Модели без префиксов:</span>
-                <span style="color: #cbd5e1; font-family: monospace; font-size: 11px;">gemini-3.8-flash*, nano-banana</span>
-              </div>
-            </div>
-
-            <!-- ПРОВАЙДЕР 2: Dahl Inference (3PA Token Pool) -->
-            <div class="glass-table-container" style="margin-bottom:0; border-top: 2px solid #7c4dff; padding: 22px 24px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
-                <div style="display:flex; align-items:center; gap: 12px;">
-                  <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(124, 77, 255, 0.15); border: 1px solid var(--border-accent); display: flex; align-items: center; justify-content: center; color: var(--accent-light); font-weight: 900; font-size: 15px;">3P</div>
-                  <div>
-                    <div style="font-weight: 800; font-size: 17px; color: #fff;">Dahl Inference</div>
-                    <div style="font-size: 12px; color: var(--text-secondary);">3PA Token Pool (Round-Robin failover)</div>
-                  </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span class="badge" id="dahlSummaryBadge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-light); border: 1px solid var(--border-accent);">-- / -- Активно</span>
-                  <button class="btn-action" onclick="loadQuotas()" title="Обновить пул Dahl">
-                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Метрики пула Dahl в 4 ячейки -->
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; background: rgba(12, 10, 22, 0.6); padding: 14px; border-radius: var(--radius-md); border: 1px solid var(--border);">
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Общий пул</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #a78bfa; margin-top: 2px;" id="dahlTotalTokensVal">--</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Токенов в резерве</div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Сгорание (Idle 7d)</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="dahlExpiryCountdownVal">--</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;" id="dahlExpiryDateVal">-- UTC</div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Пачка под дорег</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #f43f5e; margin-top: 2px;" id="dahlExpiringBatchVal">--</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Аккаунтов сгорит</div>
-                </div>
-                <div>
-                  <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Отказоустойчивость</div>
-                  <div style="font-size: 18px; font-weight: 800; color: #38bdf8; margin-top: 2px;">Next Key</div>
-                  <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Ротация 429 (∞)</div>
-                </div>
-              </div>
-
-              <!-- Индикатор заполненности и готовности пула Dahl -->
-              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom: 14px;">
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                    <span style="color:var(--text-secondary);">Доля активных ключей в ротации</span>
-                    <span style="font-weight:700; color:#a78bfa;" id="dahlHealthRatioText">--%</span>
-                  </div>
-                  <div class="progress-bar-bg"><div id="dahlHealthBar" class="progress-bar-fill fill-top" style="width: 0%;"></div></div>
-                </div>
-                <div>
-                  <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                    <span style="color:var(--text-secondary);">Таймер активности (до первого сгорания)</span>
-                    <span style="font-weight:700; color:#fbbf24;" id="dahlTimerBarText">--%</span>
-                  </div>
-                  <div class="progress-bar-bg"><div id="dahlTimerBar" class="progress-bar-fill fill-amber" style="width: 0%;"></div></div>
-                </div>
-              </div>
-
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px solid rgba(255,255,255,0.06); margin-top:12px; padding-top:10px;">
-                <span style="color: var(--text-muted);">Модели с префиксом:</span>
-                <span style="color: #cbd5e1; font-family: monospace; font-size: 11px;">dahl-deepseek-v4-flash, dahl-minimax-m2.7, dahl-glm</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
         <!-- 7 KPI Карточек с полным разделением Вход / Выход / Кэш / Факт -->
         <div class="kpi-cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
           <div class="kpi-card">
@@ -1416,11 +1278,20 @@
 
 
 
-        <!-- Сетка карточек аккаунтов пула (скрыта по умолчанию) -->
-        <div class="glass-table-container" id="accountsCardsContainer" style="display: none;">
-          <div class="glass-table-header">
-            <div class="glass-table-title">Детальные карточки аккаунтов Google (AntiGravity)</div>
-            <div style="display:flex; gap:8px;">
+        <!-- ========================================================
+             ПРОВАЙДЕР 1: AntiGravity (Заглавие во всю ширину)
+        ========================================================= -->
+        <div class="glass-table-container" id="accountsCardsContainer" style="margin-bottom: 24px; border-top: 2px solid #10b981; padding: 22px 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap: 12px;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); display: flex; align-items: center; justify-content: center; color: #10b981; font-weight: 900; font-size: 15px;">AG</div>
+              <div>
+                <div style="font-weight: 800; font-size: 17px; color: #fff;">AntiGravity — Google Cloud Code</div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Пул OAuth аккаунтов (HRW Affinity ротация для Gemini Flash)</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge" id="agSummaryBadge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3);">-- / -- Активно</span>
               <button class="btn-action btn-probe-header" id="btnProbeAllAccounts" onclick="probeAllAccounts()" title="Принудительно опросить все аккаунты Google прямо сейчас">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 <span id="probeBtnText">Дёрнуть аккаунты</span>
@@ -1431,9 +1302,120 @@
               </button>
             </div>
           </div>
-          
-          <div id="accountsCardsGrid" class="account-cards-grid">
-            <div style="grid-column: 1 / -1; text-align:center; padding: 30px; color: var(--text-muted);">Загрузка пула аккаунтов...</div>
+
+          <!-- Сводка квот AntiGravity -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; background: rgba(12, 10, 22, 0.6); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">5-часовое окно</div>
+              <div style="font-size: 20px; font-weight: 800; color: #10b981; margin-top: 2px;" id="ag5hQuotaVal">--%</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Flash / Nano</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">За неделю</div>
+              <div style="font-size: 20px; font-weight: 800; color: #34d399; margin-top: 2px;" id="agWeeklyQuotaVal">--%</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Пул аккаунтов</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Аргон (WTU)</div>
+              <div style="font-size: 20px; font-weight: 800; color: #60a5fa; margin-top: 2px;" id="agArgonQuotaVal">--%</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Jio #7, #8, #11</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">3Party (G&C)</div>
+              <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="ag3PartyQuotaVal">--%</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">5h / Wk остаток</div>
+            </div>
+          </div>
+
+          <!-- КАТЕГОРИЯ 1: Активные аккаунты -->
+          <div style="margin-bottom: 24px;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
+              <span class="dot-indicator green"></span>
+              <span style="font-weight: 700; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Активные аккаунты в ротации</span>
+              <span class="badge badge-success" id="activeAccountsBadgeCount" style="font-size: 11px;">0</span>
+            </div>
+            <div id="activeAccountsCardsGrid" class="account-cards-grid" style="margin-top: 0;">
+              <div style="grid-column: 1 / -1; text-align:center; padding: 20px; color: var(--text-muted);">Загрузка активных аккаунтов...</div>
+            </div>
+          </div>
+
+          <!-- КАТЕГОРИЯ 2: Проблемные (Верификация и Бан) в самом низу -->
+          <div id="problemAccountsSection" style="display: none; padding-top: 18px; border-top: 1px dashed rgba(239, 68, 68, 0.25);">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom: 12px;">
+              <span class="dot-indicator" style="background:#ef4444;"></span>
+              <span style="font-weight: 700; font-size: 14px; color: #fca5a5; text-transform: uppercase; letter-spacing: 0.5px;">Отключенные / Требующие верификации / В бане</span>
+              <span class="badge badge-danger" id="problemAccountsBadgeCount" style="font-size: 11px;">0</span>
+            </div>
+            <div id="problemAccountsCardsGrid" class="account-cards-grid" style="margin-top: 0;"></div>
+          </div>
+        </div>
+
+        <!-- ========================================================
+             ПРОВАЙДЕР 2: Dahl Inference (Единая карточка во всю ширину)
+        ========================================================= -->
+        <div class="glass-table-container" style="margin-bottom: 24px; border-top: 2px solid #7c4dff; padding: 22px 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; align-items:center; gap: 12px;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(124, 77, 255, 0.15); border: 1px solid var(--border-accent); display: flex; align-items: center; justify-content: center; color: var(--accent-light); font-weight: 900; font-size: 15px;">3P</div>
+              <div>
+                <div style="font-weight: 800; font-size: 17px; color: #fff;">Dahl Inference — 3PA Token Pool</div>
+                <div style="font-size: 12px; color: var(--text-secondary);">Единый отказоустойчивый пул ключей (GLM, DeepSeek, MiniMax) с авто-дорегом и ротацией при 429</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge" id="dahlSummaryBadge" style="background: rgba(124, 77, 255, 0.15); color: var(--accent-light); border: 1px solid var(--border-accent);">-- / -- Активно</span>
+              <button class="btn-action" onclick="loadQuotas()" title="Обновить пул Dahl">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                <span>Обновить</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Метрики пула Dahl во всю ширину -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; background: rgba(12, 10, 22, 0.6); padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Общий пул токенов</div>
+              <div style="font-size: 20px; font-weight: 800; color: #a78bfa; margin-top: 2px;" id="dahlTotalTokensVal">--</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">В резерве аккаунтов</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Сгорание (Idle 7d)</div>
+              <div style="font-size: 20px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="dahlExpiryCountdownVal">--</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;" id="dahlExpiryDateVal">-- UTC</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Пачка под автодобор</div>
+              <div style="font-size: 20px; font-weight: 800; color: #f43f5e; margin-top: 2px;" id="dahlExpiringBatchVal">--</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Фармер держит &gt;= 15</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Отказоустойчивость</div>
+              <div style="font-size: 20px; font-weight: 800; color: #38bdf8; margin-top: 2px;">Round-Robin</div>
+              <div style="font-size: 10px; color: var(--text-secondary); margin-top: 2px;">Ротация 429 (∞)</div>
+            </div>
+          </div>
+
+          <!-- Индикаторы заполненности Dahl -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-bottom: 14px;">
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                <span style="color:var(--text-secondary);">Доля активных ключей в ротации</span>
+                <span style="font-weight:700; color:#a78bfa;" id="dahlHealthRatioText">--%</span>
+              </div>
+              <div class="progress-bar-bg"><div id="dahlHealthBar" class="progress-bar-fill fill-top" style="width: 0%;"></div></div>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                <span style="color:var(--text-secondary);">Таймер активности (до первого сгорания)</span>
+                <span style="font-weight:700; color:#fbbf24;" id="dahlTimerBarText">--%</span>
+              </div>
+              <div class="progress-bar-bg"><div id="dahlTimerBar" class="progress-bar-fill fill-amber" style="width: 0%;"></div></div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; border-top:1px solid rgba(255,255,255,0.06); margin-top:10px; padding-top:10px;">
+            <span style="color: var(--text-muted);">Модели провайдера:</span>
+            <span style="color: #cbd5e1; font-family: monospace; font-size: 11px;">dahl-deepseek-v4-flash, dahl-minimax-m2.7, dahl-glm-5.3-flash</span>
           </div>
         </div>
       </section>
@@ -2973,13 +2955,24 @@
 
         loadSparkline();
 
-        const cardsGrid = document.getElementById('accountsCardsGrid');
-        if (!cardsGrid) return;
-        cardsGrid.innerHTML = '';
+        const activeGrid = document.getElementById('activeAccountsCardsGrid');
+        const problemGrid = document.getElementById('problemAccountsCardsGrid');
+        const problemSection = document.getElementById('problemAccountsSection');
+        const activeBadgeCount = document.getElementById('activeAccountsBadgeCount');
+        const problemBadgeCount = document.getElementById('problemAccountsBadgeCount');
+
+        if (!activeGrid || !problemGrid) return;
+        activeGrid.innerHTML = '';
+        problemGrid.innerHTML = '';
+
         if (!accounts.length) {
-          cardsGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding: 30px; color: var(--text-muted);">Аккаунты не добавлены в пул</div>';
+          activeGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding: 30px; color: var(--text-muted);">Аккаунты не добавлены в пул</div>';
+          if (problemSection) problemSection.style.display = 'none';
           return;
         }
+
+        let activeCardCount = 0;
+        let problemCardCount = 0;
 
         accounts.forEach(a => {
           const isBanned = a.is_banned || (!a.enabled && a.ban_reason);
@@ -3061,20 +3054,21 @@
           }
 
           let cardClass = 'account-card';
-          if (isBanned) cardClass += ' card-banned';
+          if (isVerif) cardClass += ' card-banned';
+          else if (isBanned) cardClass += ' card-banned';
           else if (a.enabled) cardClass += ' card-active';
           else cardClass += ' card-disabled';
 
           const banReasonNotice = isBanned ? `
             <div class="ban-pill-badge" title="${a.ban_reason || 'Google TOS Violation'}">
-              <span class="ban-pill-dot"></span>
+              <span class="ban-pill-dot" style="${isVerif ? 'background:#f59e0b;' : ''}"></span>
               <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">${a.ban_reason || 'TOS Violation'}</span>
             </div>
           ` : '';
 
           const checkTimeStr = a.last_quota_check ? formatUtc5DateShort(a.last_quota_check) : 'еще не опрашивался';
 
-          cardsGrid.innerHTML += `
+          const cardHtml = `
             <div id="accCard_${a.id}" class="${cardClass}">
               <div class="account-card-header">
                 <div class="account-card-meta">
@@ -3135,7 +3129,7 @@
                     </div>
                     <span class="mono" style="font-weight:700; color:#fbbf24;">5ч: ${c5hPct}% • 1н: ${cWkPct}%</span>
                   </div>
-
+                  
                   <div class="quota-row">
                     <div class="quota-row-meta">
                       <span style="color:var(--text-secondary); font-size:10px;">5-часовое окно: <b>${c5hPct}%</b></span>
@@ -3159,14 +3153,31 @@
 
               <div class="account-card-footer">
                 <span title="Время последней проверки квоты">Проверен: ${checkTimeStr}</span>
-                ${isBanned 
-                  ? `<span class="prober-status-badge prober-status-banned" title="${a.ban_reason || 'Banned'}"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Заблокирован</span>`
-                  : `<span class="prober-status-badge prober-status-healthy"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Доступен</span>`
+                ${isVerif
+                  ? `<span class="prober-status-badge" style="background:rgba(245, 158, 11, 0.2); color:#fcd34d; border:1px solid #f59e0b;" title="${a.ban_reason}"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> Верификация</span>`
+                  : (isBanned
+                    ? `<span class="prober-status-badge prober-status-banned" title="${a.ban_reason || 'Banned'}"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Заблокирован</span>`
+                    : `<span class="prober-status-badge prober-status-healthy"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Доступен</span>`)
                 }
               </div>
             </div>
           `;
+
+          if (isBanned || !a.enabled) {
+            problemGrid.innerHTML += cardHtml;
+            problemCardCount++;
+          } else {
+            activeGrid.innerHTML += cardHtml;
+            activeCardCount++;
+          }
         });
+
+        if (activeBadgeCount) activeBadgeCount.innerText = activeCardCount;
+        if (problemBadgeCount) problemBadgeCount.innerText = problemCardCount;
+        if (problemSection) problemSection.style.display = problemCardCount > 0 ? 'block' : 'none';
+        if (activeCardCount === 0) {
+          activeGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; padding: 20px; color: var(--text-muted);">Нет активных аккаунтов в ротации</div>';
+        }
       } catch (e) { console.error(e); }
     }
 
