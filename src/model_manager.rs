@@ -14,6 +14,12 @@ pub const STANDARD_MODELS: &[&str] = &[
     "gemini-3.8-flash-medium",
     "gemini-3.8-flash-low",
     "gemini-3.8-flash-tiered",
+    "gemini-4-hydrogen",
+    "gemini-4-hydrogen-high",
+    "gemini-4-hydrogen-medium",
+    "gemini-4-hydrogen-low",
+    "gemini-4-hydrogen-xhigh",
+    "hydrogen",
     "gemini-3.5-flash-lite",
     "gemini-3.1-flash-lite",
     "gemini-3-flash",
@@ -118,6 +124,11 @@ impl ModelManager {
             short_aliases.push("gemini-3.1-flash-image".to_string());
             short_aliases.push("nano-banana-2".to_string());
             short_aliases.push("nano-banana-pro".to_string());
+        } else if base.contains("hydrogen") || key.contains("hydrogen") {
+            primary_alias = Some("hydrogen".to_string());
+            short_aliases.push("gemini-4-hydrogen".to_string());
+            short_aliases.push("gemini-4-hydrogen-high".to_string());
+            short_aliases.push("hydrogen-high".to_string());
         } else if base.contains("3.8-flash-medium") || key.contains("3.8-flash-medium") {
             short_aliases.push("flash-medium".to_string());
         } else if base.contains("3.8-flash-low") || key.contains("3.8-flash-low") {
@@ -231,6 +242,20 @@ impl ModelManager {
             "gemini-3.8-flash-high" => return "gemini-3.8-flash-high".to_string(),
             "gemini-3.8-flash-medium" => return "gemini-3.8-flash-medium".to_string(),
             "gemini-3.8-flash-low" => return "gemini-3.8-flash-low".to_string(),
+
+            // Gemini 4 Hydrogen
+            "hydrogen" | "gemini-4-hydrogen" | "gemini-4-hydrogen-high" | "hydrogen-high" => {
+                return "gemini-4-hydrogen-high".to_string();
+            }
+            "gemini-4-hydrogen-medium" | "hydrogen-medium" => {
+                return "gemini-4-hydrogen-medium".to_string();
+            }
+            "gemini-4-hydrogen-low" | "hydrogen-low" => {
+                return "gemini-4-hydrogen-low".to_string();
+            }
+            "gemini-4-hydrogen-xhigh" | "hydrogen-xhigh" => {
+                return "gemini-4-hydrogen-xhigh".to_string();
+            }
 
             // 3PA Dahl Models & Aliases (с префиксами dahl- и без)
             "dahl-deepseek-v4-flash" | "dahl/deepseek-v4-flash" | "deepseek-v4-flash" | "dahl/deepseek-ai/DeepSeek-V4-Flash-0731" => {

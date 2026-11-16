@@ -1127,6 +1127,20 @@ async fn handle_chat_completions(
         })
         .collect();
 
+    if req.model.contains("hydrogen") {
+        eligible.retain(|a| {
+            if a.id == 9 {
+                return true;
+            }
+            if let Some(ref q) = a.quota_json {
+                if q.to_lowercase().contains("hydrogen") {
+                    return true;
+                }
+            }
+            false
+        });
+    }
+
     if eligible.is_empty() {
         log::error!(
             "[REPRO:DUMP] All accounts exhausted! Model: {}, Messages: {}",
