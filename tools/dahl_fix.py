@@ -260,22 +260,25 @@ async def read_message(reader, headers):
     return await reader.read()
 
 
-def send_response(writer, status, reason, headers, body):
+def send_response(writer, status, reason, headers, body, is_head=False):
     lines = [f"HTTP/1.1 {status} {reason}\r\n"]
+    has_cl = False
     for k, v in headers.items():
+        if k.lower() == "content-length":
+            has_cl = True
         lines.append(f"{k}: {v}\r\n")
-    lines.append(f"Content-Length: {len(body)}\r\n")
+    if not has_cl:
+        lines.append(f"Content-Length: {len(body)}\r\n")
     lines.append("Connection: close\r\n\r\n")
-    writer.write("".join(lines).encode("latin1") + body)
+    writer.write("".join(lines).encode("latin1") + (b"" if is_head else body))
 
 
-async def pump_decoded(up_reader, up_headers, client_writer):
+async def pump_decoded(up_reader, status, reason, up_headers, client_writer):
     """Stream a DECODED body to the client (close-delimited), handling
     content-length / chunked / EOF framing from the upstream."""
-    status = up_headers.get(":status", "200")
     hdrs = {"Content-Type": up_headers.get("content-type", "application/octet-stream"),
             "Cache-Control": "no-cache", "Connection": "close"}
-    out = [f"HTTP/1.1 {status} OK\r\n"]
+    out = [f"HTTP/1.1 {status} {reason or 'OK'}\r\n"]
     for k, v in hdrs.items():
         out.append(f"{k}: {v}\r\n")
     out.append("\r\n")
@@ -321,7 +324,7 @@ async def parse_response_head(reader):
     except ValueError:
         _, status = status_line.decode("latin1").strip().split(" ", 1)
         reason = ""
-    headers = {":status": status}
+    headers = {}
     while True:
         raw = await reader.readline()
         if raw in (b"\r\n", b"\n", b"", b"\r"):
@@ -421,7 +424,7 @@ async def handle_dahl(target, headers, body, client_writer):
                 if want_stream:
                     log(f"key #{acct['id']} | {canonical} | tools={bool(has_tools)} "
                         f"stream=true | 200 | pumping")
-                    await pump_decoded(reader, rh, client_writer)
+                    await pump_decoded(reader, status, reason, rh, client_writer)
                 else:
                     resp_body = await asyncio.wait_for(read_message(reader, rh), IDLE_TIMEOUT)
                     ms = int((time.time() - t0) * 1000)
@@ -498,19 +501,17 @@ async def relay_hydra(method, target, headers, body, client_writer):
         cl = rh.get("content-length")
         te = rh.get("transfer-encoding", "").lower()
         if method == "HEAD":
-            out_headers = {"Content-Type": rh.get("content-type", "application/octet-stream")}
-            if cl is not None:
-                out_headers["Content-Length"] = cl
-            send_response(client_writer, status, reason, out_headers, b"")
+            out_headers = {k: v for k, v in rh.items() if k not in HOP_HEADERS}
+            send_response(client_writer, status, reason, out_headers, b"", is_head=True)
             return
         small = cl is not None and int(cl) <= 1024 * 1024
         if small:
             resp_body = await asyncio.wait_for(read_message(reader, rh), IDLE_TIMEOUT)
-            out_headers = {"Content-Type": rh.get("content-type", "application/octet-stream")}
+            out_headers = {k: v for k, v in rh.items() if k not in HOP_HEADERS}
             send_response(client_writer, status, reason, out_headers, resp_body)
         else:
             # stream (SSE or large): decode framing, pipe close-delimited
-            await pump_decoded(reader, rh, client_writer)
+            await pump_decoded(reader, status, reason, rh, client_writer)
     except asyncio.TimeoutError:
         log(f"hydra relay idle timeout on {method} {target}")
     except (ConnectionResetError, BrokenPipeError):
