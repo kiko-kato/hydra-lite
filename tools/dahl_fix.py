@@ -497,6 +497,12 @@ async def relay_hydra(method, target, headers, body, client_writer):
         status, reason, rh = await parse_response_head(reader)
         cl = rh.get("content-length")
         te = rh.get("transfer-encoding", "").lower()
+        if method == "HEAD":
+            out_headers = {"Content-Type": rh.get("content-type", "application/octet-stream")}
+            if cl is not None:
+                out_headers["Content-Length"] = cl
+            send_response(client_writer, status, reason, out_headers, b"")
+            return
         small = cl is not None and int(cl) <= 1024 * 1024
         if small:
             resp_body = await asyncio.wait_for(read_message(reader, rh), IDLE_TIMEOUT)

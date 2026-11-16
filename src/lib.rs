@@ -346,8 +346,11 @@ pub async fn run_router(config: Arc<Config>) -> Result<()> {
     });
 
     let app = Router::new()
-        .route("/", get(handle_admin_ui))
-        .route("/admin", get(handle_admin_ui))
+        .route("/panel", get(handle_admin_ui))
+        .route("/panel/", get(handle_admin_ui))
+        .route("/admin", get(|| async { axum::response::Redirect::temporary("/panel") }))
+        .route("/admin/", get(|| async { axum::response::Redirect::temporary("/panel") }))
+        .route("/", get(|| async { axum::response::Redirect::temporary("/panel") }))
         .route("/health", get(handle_health))
         .route("/v1/models", get(handle_models))
         .route("/v1/chat/completions", post(handle_chat_completions))
